@@ -31,15 +31,20 @@
         <option value="sd">Sindhi</option>
         <option value="ps">Pashto</option>
       </select>
-      <button id="largeText" class="tool-button" type="button" aria-pressed="false">A+ Text</button>
+      <button id="largeText" class="tool-button" type="button"
+        aria-pressed="false">A+ Text</button>
     </div>
   </header>
 
   <main id="main">
     <section class="hero">
-      <p class="eyebrow">ZUBaan AI <span>·</span> HAR KISI KE LIYE</p>
-      <h1>Assalam-o-alaikum.<br><span>Aaj kis cheez mein madad chahiye?</span></h1>
-      <p class="hero-copy">Apni zubaan mein baat karein. Sawal likhein ya bol kar poochhein.</p>
+      <p class="eyebrow">ZUBAAN AI <span>·</span> HAR KISI KE LIYE</p>
+      <h1>Assalam-o-alaikum.<br>
+        <span>Aaj kis cheez mein madad chahiye?</span>
+      </h1>
+      <p class="hero-copy">
+        Apni zubaan mein baat karein. Sawal likhein ya bol kar poochhein.
+      </p>
 
       <button class="voice-button" id="voiceButton" type="button">
         <span class="mic-circle" aria-hidden="true">🎙</span>
@@ -49,14 +54,21 @@
         </span>
         <span class="voice-arrow" aria-hidden="true">↗</span>
       </button>
-      <p class="voice-status" id="voiceStatus" aria-live="polite">Voice feature abhi browser support ke mutabiq test ho raha hai.</p>
+      <p class="voice-status" id="voiceStatus" aria-live="polite">
+        Voice feature browser support ke mutabiq kaam karta hai.
+      </p>
     </section>
 
     <section class="question-panel" aria-labelledby="questionTitle">
       <label for="question" id="questionTitle">Ya apna sawal likhein</label>
-      <textarea id="question" rows="2" maxlength="1000" placeholder="Misal: Mujhe ek kaam samjha dein..."></textarea>
-      <button class="primary-button" id="askButton" type="button">Sawal poochhein <span aria-hidden="true">→</span></button>
-      <p id="answer" class="answer" role="status" aria-live="polite" hidden></p>
+      <textarea id="question" rows="2" maxlength="4000"
+        placeholder="Misal: Pakistan ka capital kya hai?"></textarea>
+      <button class="primary-button" id="askButton" type="button">
+        <span id="askButtonText">Sawal poochhein</span>
+        <span aria-hidden="true">→</span>
+      </button>
+      <p id="answer" class="answer" role="status"
+        aria-live="polite" aria-atomic="true" hidden></p>
     </section>
 
     <section class="modes" aria-labelledby="modesTitle">
@@ -68,46 +80,68 @@
       </div>
 
       <div class="mode-grid">
-        <button class="mode-card active" data-mode="general" type="button" aria-pressed="true">
+        <button class="mode-card active" data-mode="general"
+          type="button" aria-pressed="true">
           <span class="mode-icon">✳</span>
-          <span><strong>Aam madad</strong><small>Rozmarra ke sawal aur maloomat</small></span>
+          <span><strong>Aam madad</strong>
+            <small>Rozmarra ke sawal aur maloomat</small></span>
           <span class="mode-arrow">↗</span>
         </button>
-        <button class="mode-card" data-mode="student" type="button" aria-pressed="false">
+
+        <button class="mode-card" data-mode="student"
+          type="button" aria-pressed="false">
           <span class="mode-icon">▤</span>
-          <span><strong>Student mode</strong><small>Notes, maths, homework aur study</small></span>
+          <span><strong>Student mode</strong>
+            <small>Notes, maths, homework aur study</small></span>
           <span class="mode-arrow">↗</span>
         </button>
-        <button class="mode-card" data-mode="shopkeeper" type="button" aria-pressed="false">
+
+        <button class="mode-card" data-mode="shopkeeper"
+          type="button" aria-pressed="false">
           <span class="mode-icon">▦</span>
-          <span><strong>Dukandaar mode</strong><small>Hisaab, sales, stock aur udhaar</small></span>
+          <span><strong>Dukandaar mode</strong>
+            <small>Hisaab, sales, stock aur udhaar</small></span>
           <span class="mode-arrow">↗</span>
         </button>
-        <button class="mode-card" data-mode="farmer" type="button" aria-pressed="false">
+
+        <button class="mode-card" data-mode="farmer"
+          type="button" aria-pressed="false">
           <span class="mode-icon">♧</span>
-          <span><strong>Kisan mode</strong><small>Fasal, pani aur kheti-baari</small></span>
+          <span><strong>Kisan mode</strong>
+            <small>Fasal, pani aur kheti-baari</small></span>
           <span class="mode-arrow">↗</span>
         </button>
-        <button class="mode-card" data-mode="debate" type="button" aria-pressed="false">
+
+        <button class="mode-card" data-mode="debate"
+          type="button" aria-pressed="false">
           <span class="mode-icon">◉</span>
-          <span><strong>Debate mode</strong><small>Politics, daleel aur evidence</small></span>
+          <span><strong>Debate mode</strong>
+            <small>Politics, daleel aur evidence</small></span>
           <span class="mode-arrow">↗</span>
         </button>
       </div>
-      <p class="mode-status" id="modeStatus" aria-live="polite">Aam madad select hai.</p>
+      <p class="mode-status" id="modeStatus" aria-live="polite">
+        Aam madad select hai.
+      </p>
     </section>
 
     <section class="bottom-note">
       <span class="note-mark">i</span>
-      <p><strong>Abhi ibtidai prototype hai.</strong> Asal AI jawab, offline voice aur kuch mode-specific tools abhi develop honay hain.</p>
+      <p><strong>Zubaan AI</strong> AI-powered madad faraham karta hai.
+        Jawabat ko zaroorat ke mutabiq verify karein.</p>
     </section>
 
-    <footer><span>© 2026 Zubaan AI</span><span>Ban raha hai Pakistan ke liye.</span></footer>
+    <footer>
+      <span>© 2026 Zubaan AI</span>
+      <span>Ban raha hai Pakistan ke liye.</span>
+    </footer>
   </main>
 
   <script>
     const $ = id => document.getElementById(id);
+
     let currentMode = "general";
+    let isAsking = false;
 
     const modeNames = {
       general: "Aam madad",
@@ -117,15 +151,48 @@
       debate: "Debate mode"
     };
 
+    const languageNames = {
+      roman: "Roman Urdu",
+      ur: "Urdu",
+      en: "English",
+      pa: "Punjabi",
+      sd: "Sindhi",
+      ps: "Pashto"
+    };
+
+    const languageInstructions = {
+      roman: "Roman Urdu",
+      ur: "Urdu",
+      en: "English",
+      pa: "Punjabi",
+      sd: "Sindhi",
+      ps: "Pashto"
+    };
+
+    const answer = $("answer");
+    const askButton = $("askButton");
+    const askButtonText = $("askButtonText");
+    const questionInput = $("question");
+
+    function showAnswer(message, isError = false) {
+      answer.hidden = false;
+      answer.textContent = message;
+      answer.classList.toggle("error", isError);
+    }
+
     document.querySelectorAll("[data-mode]").forEach(button => {
       button.addEventListener("click", () => {
         currentMode = button.dataset.mode;
+
         document.querySelectorAll("[data-mode]").forEach(item => {
           const selected = item === button;
           item.classList.toggle("active", selected);
           item.setAttribute("aria-pressed", String(selected));
         });
-        $("modeStatus").textContent = modeNames[currentMode] + " select hai. Aap apna sawal likh ya bol sakte hain.";
+
+        $("modeStatus").textContent =
+          modeNames[currentMode] +
+          " select hai. Ab apna sawal pooch sakte hain.";
       });
     });
 
@@ -135,64 +202,148 @@
       $("largeText").textContent = enabled ? "A− Text" : "A+ Text";
     });
 
-    $("askButton").addEventListener("click", () => {
-      const question = $("question").value.trim();
-      const answer = $("answer");
+    async function askAI() {
+      if (isAsking) return;
 
-      if (!question) {
-        $("question").focus();
-        answer.hidden = false;
-        answer.textContent = "Pehle apna sawal likhein.";
+      const message = questionInput.value.trim();
+
+      if (!message) {
+        showAnswer("Pehle apna sawal likhein.", true);
+        questionInput.focus();
         return;
       }
 
-      answer.hidden = false;
-      answer.textContent = "Aap ka sawal: “" + question + "” — " + modeNames[currentMode] +
-        " select hai. Yeh prototype abhi asal AI jawab generate nahi karta.";
+      if (message.length > 4000) {
+        showAnswer("Sawal 4000 characters se chhota rakhein.", true);
+        return;
+      }
+
+      isAsking = true;
+      askButton.disabled = true;
+      askButtonText.textContent = "Jawab aa raha hai...";
+      showAnswer("Zubaan AI aap ke sawal ka jawab tayyar kar raha hai...");
+
+      try {
+        const response = await fetch("/.netlify/functions/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message,
+            language: languageInstructions[$("language").value] || "Roman Urdu",
+            mode: currentMode
+          })
+        });
+
+        let data;
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error("Server se valid response nahi mila.");
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "AI request fail ho gayi. Dobara try karein."
+          );
+        }
+
+        if (typeof data.reply !== "string" || !data.reply.trim()) {
+          throw new Error("AI ka jawab khaali mila. Dobara try karein.");
+        }
+
+        showAnswer(data.reply);
+      } catch (error) {
+        console.error("Zubaan AI request failed:", error);
+        showAnswer(
+          error.message === "Failed to fetch"
+            ? "Server se connection nahi ho saka. Internet check karein aur dobara try karein."
+            : (error.message || "Kuch ghalat ho gaya. Dobara try karein."),
+          true
+        );
+      } finally {
+        isAsking = false;
+        askButton.disabled = false;
+        askButtonText.textContent = "Sawal poochhein";
+      }
+    }
+
+    askButton.addEventListener("click", askAI);
+
+    questionInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        askAI();
+      }
     });
 
     $("voiceButton").addEventListener("click", () => {
       const status = $("voiceStatus");
+      const SpeechAPI =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
 
-      if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
-        status.textContent = "Is browser mein voice input available nahi. Filhaal neeche sawal type karein.";
+      if (!SpeechAPI) {
+        status.textContent =
+          "Is browser mein voice input available nahi. Filhaal sawal type karein.";
         return;
       }
 
-      const SpeechAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechAPI();
-      recognition.lang = $("language").value === "en" ? "en-US" : "ur-PK";
-      recognition.interimResults = false;
+      const selectedLanguage = $("language").value;
 
-      status.textContent = "Sun raha hoon… ab boliye.";
+      const speechLanguages = {
+        roman: "ur-PK",
+        ur: "ur-PK",
+        en: "en-US",
+        pa: "pa-PK",
+        sd: "sd-PK",
+        ps: "ps-PK"
+      };
+
+      recognition.lang = speechLanguages[selectedLanguage] || "ur-PK";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      status.textContent = "Sun raha hoon... ab boliye.";
+
       recognition.onresult = event => {
-        $("question").value = event.results[0][0].transcript;
-        status.textContent = "Aap ki baat likh di gayi. Ab Sawal poochhein dabayein.";
-        $("question").focus();
+        questionInput.value = event.results[0][0].transcript;
+        status.textContent =
+          "Aap ki baat likh di gayi. Ab Sawal poochhein dabayein.";
+        questionInput.focus();
       };
+
       recognition.onerror = () => {
-        status.textContent = "Voice input nahi chal saka. Aap apna sawal type kar sakte hain.";
+        status.textContent =
+          "Voice input nahi chal saka. Aap apna sawal type kar sakte hain.";
       };
+
       recognition.onend = () => {
-        if (status.textContent === "Sun raha hoon… ab boliye.") {
-          status.textContent = "Voice session khatam hua. Zaroorat ho toh dobara try karein.";
+        if (status.textContent === "Sun raha hoon... ab boliye.") {
+          status.textContent =
+            "Voice session khatam hua. Zaroorat ho toh dobara try karein.";
         }
       };
-      recognition.start();
+
+      try {
+        recognition.start();
+      } catch {
+        status.textContent =
+          "Voice input start nahi ho saka. Dobara try karein.";
+      }
     });
 
     $("language").addEventListener("change", event => {
-      const languageNames = {
-        roman: "Roman Urdu",
-        ur: "Urdu",
-        en: "English",
-        pa: "Punjabi",
-        sd: "Sindhi",
-        ps: "Pashto"
-      };
-      $("brandTag").textContent = languageNames[event.target.value] + " selected";
-      document.documentElement.lang = event.target.value === "roman" ? "ur" : event.target.value;
-      document.documentElement.dir = ["ur", "pa", "sd", "ps"].includes(event.target.value) ? "rtl" : "ltr";
+      const selectedLanguage = event.target.value;
+
+      $("brandTag").textContent = languageNames[selectedLanguage];
+      document.documentElement.lang =
+        selectedLanguage === "roman" ? "ur" : selectedLanguage;
+
+      document.documentElement.dir =
+        selectedLanguage === "ur" ? "rtl" : "ltr";
     });
   </script>
 </body>
