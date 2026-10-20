@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101411">
-  <meta name="description" content="Zubaan AI — helpful technology in your language.">
+  <meta name="theme-color" content="#0d120e">
+  <meta name="description" content="Zubaan AI — voice-first help in the languages of Pakistan.">
   <title>Zubaan AI — Aap ki zubaan mein</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#" aria-label="Zubaan AI home">
+    <a class="brand" href="#home" aria-label="Zubaan AI home">
       <span class="brand-mark" aria-hidden="true">ز</span>
       <span class="brand-copy">
         <strong>Zubaan AI</strong>
@@ -21,9 +21,16 @@
       </span>
     </a>
 
-    <div class="header-tools">
-      <label class="language-label" for="language">Zubaan</label>
-      <select id="language" aria-label="Choose your language">
+    <div class="topbar-right">
+      <span class="connection" id="connection">
+        <span class="connection-dot"></span>
+        <span id="connectionText">Connection check</span>
+      </span>
+
+      <label class="sr-only" for="language" id="languageLabel">
+        Apni zubaan chunein
+      </label>
+      <select id="language" aria-label="Choose language">
         <option value="roman">Roman Urdu</option>
         <option value="ur">اردو</option>
         <option value="en">English</option>
@@ -31,320 +38,307 @@
         <option value="sd">Sindhi</option>
         <option value="ps">Pashto</option>
       </select>
-      <button id="largeText" class="tool-button" type="button"
-        aria-pressed="false">A+ Text</button>
+
+      <button class="tool-button" id="newChat" type="button">
+        <span aria-hidden="true">＋</span>
+        <span id="newChatLabel">Nayi guftagu</span>
+      </button>
+
+      <button class="tool-button" id="largeText" type="button" aria-pressed="false">
+        <span aria-hidden="true">Aa</span>
+        <span id="largeTextLabel">Bara text</span>
+      </button>
+
+      <button class="icon-button" id="helpButton" type="button"
+        aria-label="About Zubaan AI" title="About Zubaan AI">?</button>
     </div>
   </header>
 
-  <main id="main">
-    <section class="hero">
-      <p class="eyebrow">ZUBAAN AI <span>·</span> HAR KISI KE LIYE</p>
-      <h1>Assalam-o-alaikum.<br>
-        <span>Aaj kis cheez mein madad chahiye?</span>
-      </h1>
-      <p class="hero-copy">
-        Apni zubaan mein baat karein. Sawal likhein ya bol kar poochhein.
-      </p>
+  <main id="home" class="page-shell">
+    <section class="welcome-section" aria-labelledby="welcomeTitle">
+      <div class="welcome-copy">
+        <div class="eyebrow">
+          <span class="eyebrow-line"></span>
+          <span id="welcomeKicker">ASSAN. SAADA. SAB KE LIYE.</span>
+        </div>
 
-      <button class="voice-button" id="voiceButton" type="button">
-        <span class="mic-circle" aria-hidden="true">🎙</span>
-        <span class="voice-copy">
-          <strong id="voiceTitle">Bol kar poochhein</strong>
-          <small id="voiceHint">Yahan dabayein aur bolna shuru karein</small>
-        </span>
-        <span class="voice-arrow" aria-hidden="true">↗</span>
-      </button>
-      <p class="voice-status" id="voiceStatus" aria-live="polite">
-        Voice feature browser support ke mutabiq kaam karta hai.
-      </p>
+        <h1 id="welcomeTitle">
+          Assalam-o-alaikum<span class="welcome-period">.</span><br>
+          <span class="welcome-subtitle" id="welcomeSubtitle">
+            Aaj aap ko kis cheez mein madad chahiye?
+          </span>
+        </h1>
+
+        <p id="welcomeIntro">
+          Bol kar poochhein ya apna sawal likhein.
+          Mushkil alfaaz yaad rakhne ki zaroorat nahi.
+        </p>
+      </div>
+
+      <div class="welcome-decoration" aria-hidden="true">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="orbit-core">ز</div>
+        <span class="orbit-dot dot-one"></span>
+        <span class="orbit-dot dot-two"></span>
+        <span class="orbit-dot dot-three"></span>
+      </div>
     </section>
 
-    <section class="question-panel" aria-labelledby="questionTitle">
-      <label for="question" id="questionTitle">Ya apna sawal likhein</label>
-      <textarea id="question" rows="2" maxlength="4000"
-        placeholder="Misal: Pakistan ka capital kya hai?"></textarea>
-      <button class="primary-button" id="askButton" type="button">
-        <span id="askButtonText">Sawal poochhein</span>
-        <span aria-hidden="true">→</span>
-      </button>
-      <p id="answer" class="answer" role="status"
-        aria-live="polite" aria-atomic="true" hidden></p>
-    </section>
-
-    <section class="modes" aria-labelledby="modesTitle">
-      <div class="section-title">
+    <section class="assistant-panel" aria-labelledby="voiceTitle">
+      <div class="assistant-panel-top">
         <div>
-          <p class="eyebrow">AAP KA APNA WORKSPACE</p>
-          <h2 id="modesTitle">Aap kis kaam ke liye aaye hain?</h2>
+          <span class="live-indicator"></span>
+          <span id="assistantLabel">AAP KA AI SAATHI</span>
+        </div>
+        <span class="privacy-chip">
+          <span aria-hidden="true">◇</span>
+          <span id="privacyLabel">
+            Jawab online AI service se aata hai. Sensitive maloomat share na karein.
+          </span>
+        </span>
+      </div>
+
+      <div class="voice-stage">
+        <button class="voice-orb" id="voiceButton" type="button"
+          aria-label="Speak your question">
+          <span class="voice-orb-ring ring-a"></span>
+          <span class="voice-orb-ring ring-b"></span>
+          <span class="voice-orb-core">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/>
+              <path d="M6.5 10.5v.7a5.5 5.5 0 0 0 11 0v-.7M12 16.7V21m-3 0h6"/>
+            </svg>
+          </span>
+        </button>
+
+        <div class="voice-stage-copy">
+          <span class="voice-overline" id="voiceOverline">SAB SE AASAAN TAREEQA</span>
+          <h2 id="voiceTitle">Bol kar poochhein</h2>
+          <p id="voiceHint">Mic par tap karein aur apni zubaan mein baat karein.</p>
+          <p class="voice-status" id="voiceStatus" aria-live="polite">
+            Aap type bhi kar sakte hain.
+          </p>
+        </div>
+
+        <div class="voice-visual" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
       </div>
 
-      <div class="mode-grid">
-        <button class="mode-card active" data-mode="general"
-          type="button" aria-pressed="true">
-          <span class="mode-icon">✳</span>
-          <span><strong>Aam madad</strong>
-            <small>Rozmarra ke sawal aur maloomat</small></span>
-          <span class="mode-arrow">↗</span>
+      <form class="question-form" id="questionForm">
+        <label class="sr-only" for="question" id="questionLabel">
+          Apna sawal likhein
+        </label>
+
+        <div class="composer-wrap">
+          <span class="composer-symbol" aria-hidden="true">✎</span>
+          <textarea id="question" rows="1" maxlength="4000"
+            placeholder="Misal: Fraction kya hota hai?" required></textarea>
+          <button class="send-button" id="askButton" type="submit">
+            <span id="askButtonText">Sawal poochhein</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+
+        <div class="composer-bottom">
+          <span id="composerHint">Enter se bhejein · Shift + Enter se nayi line</span>
+          <span class="char-count" id="charCount">0 / 4000</span>
+        </div>
+      </form>
+
+      <div class="answer-panel" id="answer" hidden aria-live="polite" aria-atomic="true">
+        <div class="answer-heading">
+          <span class="answer-avatar">ز</span>
+          <div>
+            <strong id="answerTitle">Zubaan AI ka jawab</strong>
+            <small id="answerMeta">Aap ke sawal ka jawab</small>
+          </div>
+          <button class="answer-close" id="clearAnswer" type="button"
+            aria-label="Close answer">×</button>
+        </div>
+
+        <div class="answer-text" id="answerText"></div>
+
+        <div class="answer-actions">
+          <button type="button" id="copyAnswer" class="quiet-button">
+            ▢ <span id="copyAnswerLabel">Jawab copy karein</span>
+          </button>
+          <button type="button" id="speakAnswer" class="quiet-button">
+            ◖ <span id="speakAnswerLabel">Jawab sunain</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspaces-section" id="workspaces"
+      aria-labelledby="workspacesTitle">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            <span id="stepLabel">APNA KAAM CHUNEIN</span>
+          </div>
+          <h2 id="workspacesTitle">Aap kis kaam ke liye aaye hain?</h2>
+          <p id="workspacesIntro">
+            Sirf apna kaam chunein. Zubaan AI usi hisaab se madad karega.
+          </p>
+        </div>
+
+        <span class="section-count">
+          <strong>05</strong>
+          <span id="workspaceCountLabel">MADAD KE TAREEQE</span>
+        </span>
+      </div>
+
+      <div class="workspace-grid">
+        <button class="workspace-card active" type="button"
+          data-mode="general" aria-pressed="true">
+          <span class="workspace-icon icon-general">✳</span>
+          <span class="workspace-card-copy">
+            <strong id="modeGeneral">Aam madad</strong>
+            <small id="modeGeneralSub">Rozmarra ke sawal aur maloomat</small>
+          </span>
+          <span class="workspace-arrow">↗</span>
         </button>
 
-        <button class="mode-card" data-mode="student"
-          type="button" aria-pressed="false">
-          <span class="mode-icon">▤</span>
-          <span><strong>Student mode</strong>
-            <small>Notes, maths, homework aur study</small></span>
-          <span class="mode-arrow">↗</span>
+        <button class="workspace-card" type="button"
+          data-mode="student" aria-pressed="false">
+          <span class="workspace-icon icon-student">▤</span>
+          <span class="workspace-card-copy">
+            <strong id="modeStudent">Student</strong>
+            <small id="modeStudentSub">Homework, maths aur concepts seekhein</small>
+          </span>
+          <span class="workspace-arrow">↗</span>
         </button>
 
-        <button class="mode-card" data-mode="shopkeeper"
-          type="button" aria-pressed="false">
-          <span class="mode-icon">▦</span>
-          <span><strong>Dukandaar mode</strong>
-            <small>Hisaab, sales, stock aur udhaar</small></span>
-          <span class="mode-arrow">↗</span>
+        <button class="workspace-card" type="button"
+          data-mode="shopkeeper" aria-pressed="false">
+          <span class="workspace-icon icon-shop">▦</span>
+          <span class="workspace-card-copy">
+            <strong id="modeShopkeeper">Dukandaar</strong>
+            <small id="modeShopkeeperSub">Sales, hisaab, stock aur udhaar</small>
+          </span>
+          <span class="workspace-arrow">↗</span>
         </button>
 
-        <button class="mode-card" data-mode="farmer"
-          type="button" aria-pressed="false">
-          <span class="mode-icon">♧</span>
-          <span><strong>Kisan mode</strong>
-            <small>Fasal, pani aur kheti-baari</small></span>
-          <span class="mode-arrow">↗</span>
+        <button class="workspace-card" type="button"
+          data-mode="farmer" aria-pressed="false">
+          <span class="workspace-icon icon-farmer">♧</span>
+          <span class="workspace-card-copy">
+            <strong id="modeFarmer">Kisan</strong>
+            <small id="modeFarmerSub">Fasal, pani aur kheti-baari</small>
+          </span>
+          <span class="workspace-arrow">↗</span>
         </button>
 
-        <button class="mode-card" data-mode="debate"
-          type="button" aria-pressed="false">
-          <span class="mode-icon">◉</span>
-          <span><strong>Debate mode</strong>
-            <small>Politics, daleel aur evidence</small></span>
-          <span class="mode-arrow">↗</span>
+        <button class="workspace-card" type="button"
+          data-mode="debate" aria-pressed="false">
+          <span class="workspace-icon icon-debate">◉</span>
+          <span class="workspace-card-copy">
+            <strong id="modeDebate">Debate</strong>
+            <small id="modeDebateSub">Politics, daleel aur evidence</small>
+          </span>
+          <span class="workspace-arrow">↗</span>
         </button>
       </div>
-      <p class="mode-status" id="modeStatus" aria-live="polite">
-        Aam madad select hai.
-      </p>
+
+      <div class="selected-mode-note" id="modeStatus" aria-live="polite">
+        <span class="selected-dot"></span>
+        <span id="modeStatusText">Aam madad select hai. Apna sawal pooch sakte hain.</span>
+      </div>
     </section>
 
-    <section class="bottom-note">
-      <span class="note-mark">i</span>
-      <p><strong>Zubaan AI</strong> AI-powered madad faraham karta hai.
-        Jawabat ko zaroorat ke mutabiq verify karein.</p>
+    <section class="suggestions-section" aria-labelledby="suggestionsTitle">
+      <div class="section-heading compact-heading">
+        <div>
+          <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            <span id="quickEyebrow">SHURU KARNE KE LIYE</span>
+          </div>
+          <h2 id="suggestionsTitle">Kya poochna hai samajh nahi aa raha?</h2>
+        </div>
+      </div>
+
+      <div class="suggestion-list" id="suggestionList">
+        <button class="suggestion-chip" type="button"
+          data-question="Mujhe fractions asaan alfaaz mein samjhao.">
+          <span>▤</span>
+          <span id="suggestionOne">Fractions samjha dein</span>
+          <span class="chip-arrow">↗</span>
+        </button>
+
+        <button class="suggestion-chip" type="button"
+          data-question="Mujhe English mein ek formal message likh kar dein.">
+          <span>✎</span>
+          <span id="suggestionTwo">English message likhna hai</span>
+          <span class="chip-arrow">↗</span>
+        </button>
+
+        <button class="suggestion-chip" type="button"
+          data-question="Mere phone mein Wi-Fi kaise chalaun? Step by step samjhao.">
+          <span>⌁</span>
+          <span id="suggestionThree">Phone chalana seekhna hai</span>
+          <span class="chip-arrow">↗</span>
+        </button>
+      </div>
     </section>
 
-    <footer>
-      <span>© 2026 Zubaan AI</span>
-      <span>Ban raha hai Pakistan ke liye.</span>
+    <section class="recent-section" id="recent" aria-labelledby="recentTitle">
+      <div class="section-heading compact-heading">
+        <div>
+          <div class="eyebrow">
+            <span class="eyebrow-line"></span>
+            <span id="recentEyebrow">AAP KI GUFTAGU</span>
+          </div>
+          <h2 id="recentTitle">Recent chats</h2>
+        </div>
+        <button class="quiet-button" id="clearHistory" type="button">
+          History clear karein
+        </button>
+      </div>
+
+      <div class="recent-list" id="recentList">
+        <div class="empty-history">
+          <span class="empty-history-icon">◷</span>
+          <span id="emptyHistoryText">Aap ke naye sawal yahan nazar aayenge.</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      <div class="footer-brand">
+        <span class="footer-mark">ز</span>
+        <span>
+          <strong>Zubaan AI</strong>
+          <small id="footerTag">Aap ki zubaan mein</small>
+        </span>
+      </div>
+      <p id="footerNote">Pakistan ke liye, har kisi ke liye.</p>
+      <span class="footer-version">MADE FOR PAKISTAN</span>
     </footer>
   </main>
 
-  <script>
-    const $ = id => document.getElementById(id);
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    let currentMode = "general";
-    let isAsking = false;
+  <dialog class="about-dialog" id="aboutDialog">
+    <div class="dialog-head">
+      <span class="brand-mark">ز</span>
+      <button class="answer-close" id="closeAbout" type="button"
+        aria-label="Close">×</button>
+    </div>
+    <h2 id="aboutTitle">Zubaan AI</h2>
+    <p id="aboutText">
+      A voice-first assistant designed to make AI easier to use in the languages of Pakistan.
+    </p>
+    <p class="dialog-note" id="aboutPrivacy">
+      Aap ke sawal ka jawab online AI service se aata hai.
+      Sensitive information share na karein.
+    </p>
+    <button class="primary-action" id="aboutDone" type="button">Samajh gaya</button>
+  </dialog>
 
-    const modeNames = {
-      general: "Aam madad",
-      student: "Student mode",
-      shopkeeper: "Dukandaar mode",
-      farmer: "Kisan mode",
-      debate: "Debate mode"
-    };
-
-    const languageNames = {
-      roman: "Roman Urdu",
-      ur: "Urdu",
-      en: "English",
-      pa: "Punjabi",
-      sd: "Sindhi",
-      ps: "Pashto"
-    };
-
-    const languageInstructions = {
-      roman: "Roman Urdu",
-      ur: "Urdu",
-      en: "English",
-      pa: "Punjabi",
-      sd: "Sindhi",
-      ps: "Pashto"
-    };
-
-    const answer = $("answer");
-    const askButton = $("askButton");
-    const askButtonText = $("askButtonText");
-    const questionInput = $("question");
-
-    function showAnswer(message, isError = false) {
-      answer.hidden = false;
-      answer.textContent = message;
-      answer.classList.toggle("error", isError);
-    }
-
-    document.querySelectorAll("[data-mode]").forEach(button => {
-      button.addEventListener("click", () => {
-        currentMode = button.dataset.mode;
-
-        document.querySelectorAll("[data-mode]").forEach(item => {
-          const selected = item === button;
-          item.classList.toggle("active", selected);
-          item.setAttribute("aria-pressed", String(selected));
-        });
-
-        $("modeStatus").textContent =
-          modeNames[currentMode] +
-          " select hai. Ab apna sawal pooch sakte hain.";
-      });
-    });
-
-    $("largeText").addEventListener("click", () => {
-      const enabled = document.body.classList.toggle("large-text");
-      $("largeText").setAttribute("aria-pressed", String(enabled));
-      $("largeText").textContent = enabled ? "A− Text" : "A+ Text";
-    });
-
-    async function askAI() {
-      if (isAsking) return;
-
-      const message = questionInput.value.trim();
-
-      if (!message) {
-        showAnswer("Pehle apna sawal likhein.", true);
-        questionInput.focus();
-        return;
-      }
-
-      if (message.length > 4000) {
-        showAnswer("Sawal 4000 characters se chhota rakhein.", true);
-        return;
-      }
-
-      isAsking = true;
-      askButton.disabled = true;
-      askButtonText.textContent = "Jawab aa raha hai...";
-      showAnswer("Zubaan AI aap ke sawal ka jawab tayyar kar raha hai...");
-
-      try {
-        const response = await fetch("/.netlify/functions/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message,
-            language: languageInstructions[$("language").value] || "Roman Urdu",
-            mode: currentMode
-          })
-        });
-
-        let data;
-
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error("Server se valid response nahi mila.");
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data.error || "AI request fail ho gayi. Dobara try karein."
-          );
-        }
-
-        if (typeof data.reply !== "string" || !data.reply.trim()) {
-          throw new Error("AI ka jawab khaali mila. Dobara try karein.");
-        }
-
-        showAnswer(data.reply);
-      } catch (error) {
-        console.error("Zubaan AI request failed:", error);
-        showAnswer(
-          error.message === "Failed to fetch"
-            ? "Server se connection nahi ho saka. Internet check karein aur dobara try karein."
-            : (error.message || "Kuch ghalat ho gaya. Dobara try karein."),
-          true
-        );
-      } finally {
-        isAsking = false;
-        askButton.disabled = false;
-        askButtonText.textContent = "Sawal poochhein";
-      }
-    }
-
-    askButton.addEventListener("click", askAI);
-
-    questionInput.addEventListener("keydown", event => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        askAI();
-      }
-    });
-
-    $("voiceButton").addEventListener("click", () => {
-      const status = $("voiceStatus");
-      const SpeechAPI =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-
-      if (!SpeechAPI) {
-        status.textContent =
-          "Is browser mein voice input available nahi. Filhaal sawal type karein.";
-        return;
-      }
-
-      const recognition = new SpeechAPI();
-      const selectedLanguage = $("language").value;
-
-      const speechLanguages = {
-        roman: "ur-PK",
-        ur: "ur-PK",
-        en: "en-US",
-        pa: "pa-PK",
-        sd: "sd-PK",
-        ps: "ps-PK"
-      };
-
-      recognition.lang = speechLanguages[selectedLanguage] || "ur-PK";
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      status.textContent = "Sun raha hoon... ab boliye.";
-
-      recognition.onresult = event => {
-        questionInput.value = event.results[0][0].transcript;
-        status.textContent =
-          "Aap ki baat likh di gayi. Ab Sawal poochhein dabayein.";
-        questionInput.focus();
-      };
-
-      recognition.onerror = () => {
-        status.textContent =
-          "Voice input nahi chal saka. Aap apna sawal type kar sakte hain.";
-      };
-
-      recognition.onend = () => {
-        if (status.textContent === "Sun raha hoon... ab boliye.") {
-          status.textContent =
-            "Voice session khatam hua. Zaroorat ho toh dobara try karein.";
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch {
-        status.textContent =
-          "Voice input start nahi ho saka. Dobara try karein.";
-      }
-    });
-
-    $("language").addEventListener("change", event => {
-      const selectedLanguage = event.target.value;
-
-      $("brandTag").textContent = languageNames[selectedLanguage];
-      document.documentElement.lang =
-        selectedLanguage === "roman" ? "ur" : selectedLanguage;
-
-      document.documentElement.dir =
-        selectedLanguage === "ur" ? "rtl" : "ltr";
-    });
-  </script>
+  <script src="app.js" defer></script>
 </body>
 </html>
