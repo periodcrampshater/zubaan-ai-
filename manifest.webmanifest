@@ -1,0 +1,12 @@
+{
+  "name": "Zubaan AI — Aap ki zubaan mein madad",
+  "short_name": "Zubaan AI",
+  "description": "A voice-first multilingual helper prototype for everyday Pakistan.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0e0c",
+  "theme_color": "#101411",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}],
+  "categories": ["education", "utilities"]
+}
