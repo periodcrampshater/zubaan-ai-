@@ -1244,3 +1244,8 @@ body.large-text .welcome-container p {
     animation-iteration-count: 1 !important;
   }
 }
+@media (hover: none) {
+  .history-delete {
+    opacity: 1;
+  }
+}
