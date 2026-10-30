@@ -305,7 +305,74 @@
       easy: "Aasaan",
       medium: "Darmiyana",
       hard: "Mushkil"
-    }
+       },
+    pa: {
+      newChat: "نئی گفتگو",
+      general: "عام معاون",
+      student: "طالب علم",
+      shopkeeper: "دکاندار",
+      recent: "حالیہ گفتگو",
+      clear: "صاف کریں",
+      language: "زبان",
+      largerText: "وڈا متن",
+      about: "زبان اے آئی بارے",
+      welcome: "اج میں تہاڈی کی مدد کراں؟",
+      welcomeIntro: "کجھ وی پچھو، اپنی زبان وچ جواب حاصل کرو۔",
+      placeholder: "زبان اے آئی نوں لکھو...",
+      hint: "تہاڈی زبان، تہاڈا انداز۔",
+      send: "بھیجو",
+      thinking: "سوچ ریا ہاں...",
+      back: "واپس",
+      add: "شامل کرو",
+      update: "اپڈیٹ کرو",
+      edit: "ترمیم کرو",
+      delete: "مٹاؤ",
+      cancel: "منسوخ",
+      save: "محفوظ کرو",
+      gotIt: "سمجھ آ گئی",
+      online: "آن لائن",
+      offline: "آف لائن",
+      ready: "مدد لئی تیار",
+      listening: "سن ریا ہاں...",
+      customer: "گاہک",
+      amount: "رقم (روپے)",
+      name: "ناں",
+      phone: "فون",
+      address: "پتہ",
+      note: "نوٹ",
+      date: "تاریخ",
+      subject: "مضمون",
+      chapter: "باب / موضوع",
+      difficulty: "مشکل دا درجہ",
+      generate: "تیار کرو",
+      summarize: "خلاصہ بناؤ",
+      title: "عنوان",
+      content: "متن",
+      task: "کم",
+      due: "آخری تاریخ",
+      flashcards: "فلیش کارڈز",
+      summary: "باباں دے خلاصے",
+      notes: "میرے نوٹس",
+      planner: "پڑھائی دا منصوبہ",
+      customers: "گاہک",
+      sales: "روزانہ دی فروخت",
+      expenses: "اخراجات",
+      stock: "سٹاک",
+      quantity: "تعداد",
+      price: "قیمت (روپے)",
+      product: "سٹاک وچوں پروڈکٹ",
+      item: "چیز",
+      cash: "نقد",
+      category: "قسم",
+      lowStock: "سٹاک گھٹ اے",
+      showAnswer: "جواب وکھاؤ",
+      hideAnswer: "جواب لُکاؤ",
+      markDone: "مکمل کرو",
+      reopen: "دوبارہ کھولو",
+      easy: "آسان",
+      medium: "درمیانہ",
+      hard: "اوکھا"
+    },
   };
 
   const UR = {
@@ -441,6 +508,206 @@
     hard: "مشکل"
   };
 
+  TEXT.sd = {
+    newChat: "نئين گفتگو",
+    general: "عام مددگار",
+    student: "شاگرد",
+    shopkeeper: "دڪاندار",
+    recent: "تازيون ڳالهيون",
+    clear: "صاف ڪريو",
+    language: "ٻولي",
+    largerText: "وڏو متن",
+    about: "زبان AI بابت",
+    welcome: "اڄ مان توهان جي ڪهڙي مدد ڪري سگهان ٿو؟",
+    welcomeIntro: "ڪجهه به پڇو.",
+    placeholder: "پنهنجو سوال هتي لکو...",
+    hint: "پنهنجو سوال لکو",
+    send: "موڪليو",
+    thinking: "سوچي رهيو آهي...",
+    back: "واپس",
+    add: "شامل ڪريو",
+    update: "اپڊيٽ ڪريو",
+    edit: "تبديل ڪريو",
+    delete: "ختم ڪريو",
+    cancel: "رد ڪريو",
+    save: "محفوظ ڪريو",
+    gotIt: "سمجهي ويس",
+    online: "آن لائن",
+    offline: "آف لائن",
+    ready: "تيار",
+    listening: "ٻڌي رهيو آهي...",
+    customer: "گراهڪ",
+    amount: "رقم",
+    name: "نالو",
+    phone: "فون",
+    address: "پتو",
+    note: "نوٽ",
+    date: "تاريخ",
+    subject: "مضمون",
+    chapter: "باب",
+    difficulty: "ڏکيائي",
+    generate: "تيار ڪريو",
+    summarize: "خلاصو",
+    title: "عنوان",
+    content: "مواد",
+    task: "ڪم",
+    due: "آخري تاريخ",
+    flashcards: "فليش ڪارڊ",
+    summary: "خلاصو",
+    notes: "نوٽس",
+    planner: "منصوبه بندي",
+    customers: "گراهڪ",
+    sales: "وڪرو",
+    expenses: "خرچ",
+    stock: "اسٽاڪ",
+    quantity: "مقدار",
+    price: "قيمت",
+    product: "پراڊڪٽ",
+    item: "شيءِ",
+    cash: "نقد",
+    category: "قسم",
+    lowStock: "گهٽ اسٽاڪ",
+    showAnswer: "جواب ڏيکاريو",
+    hideAnswer: "جواب لڪايو",
+    markDone: "مڪمل ڪريو",
+    reopen: "ٻيهر کوليو",
+    easy: "آسان",
+    medium: "وچولو",
+    hard: "مشڪل"
+  };
+    TEXT.ps = {
+    newChat: "نوې خبرې اترې",
+    general: "عمومي مرستیال",
+    student: "زده کوونکی",
+    shopkeeper: "دوکاندار",
+    recent: "وروستۍ خبرې اترې",
+    clear: "پاکول",
+    language: "ژبه",
+    largerText: "لوی متن",
+    about: "د زبان AI په اړه",
+    welcome: "نن څنګه مرسته درسره وکړم؟",
+    welcomeIntro: "هر څه وپوښتئ. په خپله خوښه ژبه روښانه ځوابونه ترلاسه کړئ.",
+    placeholder: "Zubaan AI ته پیغام ولیکئ...",
+    hint: "ستاسو ژبه، ستاسو طریقه.",
+    send: "لېږل",
+    disclaimer: "Zubaan AI تېروتنه کولی شي. مهم معلومات تایید کړئ.",
+    thinking: "فکر کوم...",
+    emptyHistory: "ستاسو خبرې اترې به دلته ښکاره شي.",
+    noRecords: "تر اوسه هېڅ ریکارډ نشته.",
+    savedEmpty: "ستاسو خوندي شوي فصلونه به دلته ښکاره شي.",
+    back: "← شاته",
+    add: "زیاتول",
+    update: "تازه کول",
+    edit: "سمول",
+    delete: "ړنګول",
+    cancel: "لغوه کول",
+    save: "ساتل",
+    gotIt: "سمه ده",
+    online: "آنلاین",
+    offline: "آفلاین",
+    ready: "مرستې ته چمتو",
+    notConnected: "د AI خدمت نه دی نښلول شوی",
+    listening: "اورم...",
+    errNoApi: "د AI خدمت نه دی نښلول شوی. په app.js کې API_URL تنظیم کړئ.",
+    errOffline: "تاسو آفلاین ښکاري.",
+    errRequest: "یو څه ستونزه پېښه شوه. بیا هڅه وکړئ.",
+    errTimeout: "غوښتنې ډېر وخت ونیو. بیا هڅه وکړئ.",
+    errInvalid: "د AI ځواب ونه لوستل شو.",
+    errEmpty: "لومړی پیغام ولیکئ.",
+    errVoice: "په دې براوزر کې غږیز ان پټ نشته.",
+    errVoiceFail: "غږیز ان پټ ناکام شو. بیا هڅه وکړئ.",
+    toastLang: "ژبه بدله شوه",
+    toastNew: "نوې خبرې اترې پیل شوې",
+    toastCleared: "تاریخچه پاکه شوه",
+    toastSaved: "وساتل شو",
+    toastUpdated: "تازه شو",
+    toastDeleted: "ړنګ شو",
+    toastStorage: "په دې وسیله کې معلومات نه شول ساتل کېدای.",
+    confirmHistory: "ټولې خبرې اترې ړنګې کړئ؟",
+    confirmDelete: "دا توکی ړنګ کړئ؟",
+    errRequired: "مهرباني وکړئ اړین ځایونه ډک کړئ.",
+    errName: "مهرباني وکړئ نوم ولیکئ.",
+    errAmount: "له صفر څخه زیاته اندازه ولیکئ.",
+    errNumber: "سمه شمېره ولیکئ.",
+    errCustomer: "مهرباني وکړئ پېرودونکی وټاکئ.",
+    errOverpay: "تادیه له پاتې پور څخه زیاته ده.",
+    errStock: "د دې پلور لپاره کافي ذخیره نشته.",
+    errItem: "توکی ولیکئ یا محصول وټاکئ.",
+    errDuplicate: "په دې نوم محصول له مخکې شته.",
+    balance: "پاتې حساب",
+    customer: "پېرودونکی",
+    amount: "اندازه (روپۍ)",
+    name: "نوم",
+    phone: "ټیلیفون",
+    address: "پته",
+    note: "یادښت",
+    date: "نېټه",
+    subject: "مضمون",
+    chapter: "څپرکی / موضوع",
+    count: "د پوښتنو شمېر",
+    difficulty: "د ستونزمنوالي کچه",
+    material: "مواد دلته کېږدئ (اختیاري)",
+    generate: "جوړول",
+    summarize: "د AI له لارې لنډیز",
+    title: "سرلیک",
+    content: "متن",
+    task: "دنده",
+    due: "وروستۍ نېټه",
+    front: "مخ (پوښتنه)",
+    backSide: "شا (ځواب)",
+    addCard: "کارت زیاتول",
+    flashcards: "فلش کارتونه",
+    mock: "ازمایښتي ازموینه جوړول",
+    mcq: "MCQs جوړول",
+    summary: "د څپرکو لنډیزونه",
+    notes: "زما یادښتونه",
+    planner: "د زده کړې پلان",
+    credit: "د پور حساب",
+    customers: "پېرودونکي",
+    sales: "ورځنی پلور",
+    expenses: "لګښتونه",
+    payments: "د تادیاتو تاریخچه",
+    stock: "د زېرمو یادښتونه",
+    quantity: "اندازه",
+    price: "د واحد بیه (روپۍ)",
+    product: "له زېرمو څخه محصول",
+    item: "توکی",
+    paymentType: "د تادیې ډول",
+    cash: "نغدې پیسې",
+    creditType: "پور",
+    category: "کټګوري",
+    low: "د کمې زېرمو خبرتیا",
+    selectCustomer: "— پېرودونکی وټاکئ —",
+    otherItem: "— بل توکی —",
+    noCustomer: "لومړی یو پېرودونکی زیات کړئ.",
+    lowStock: "زېرمه کمه ده",
+    tasksDone: "ترسره شوې دندې",
+    savedChapters: "خوندي شوي څپرکي",
+    showAnswer: "ځواب ښکاره کړئ",
+    hideAnswer: "ځواب پټ کړئ",
+    markDone: "بشپړ شوی وټاکئ",
+    reopen: "بیا پرانیستل",
+    confirmCustomer: "دا پېرودونکی او اړوند ریکارډونه ړنګ کړئ؟",
+    sCustomers: "پېرودونکي",
+    sOutstanding: "پاتې پور",
+    sOwing: "پور لرونکي پېرودونکي",
+    sSalesToday: "د نن پلور",
+    sSalesAll: "ټول پلور",
+    sExpenses: "ټول لګښتونه",
+    sProfit: "پلور − لګښتونه",
+    sReceived: "ټولې ترلاسه شوې پیسې",
+    sProducts: "محصولات",
+    sLow: "کمه زېرمه",
+    sValue: "د زېرمو ارزښت",
+    saveChapter: "څپرکی خوندي کول",
+    saveOut: "څپرکو کې خوندي کول",
+    saveCards: "دا کارتونه خوندي کول",
+    addCardAI: "د AI په مرسته کارتونه جوړول",
+    easy: "اسانه",
+    medium: "منځنۍ",
+    hard: "ستونزمن"
+  };
+
   const state = {
     lang: "roman",
     mode: "general",
@@ -477,11 +744,20 @@
   const today = () => new Date().toISOString().slice(0, 10);
   const money = value => "Rs " + (Number(value) || 0).toLocaleString();
 
-  function t(key) {
-    if (state.lang === "ur") return UR[key] || TEXT.en[key] || key;
-    if (state.lang === "roman") return TEXT.roman[key] || TEXT.en[key] || key;
-    return TEXT.en[key] || key;
-  }
+ function t(key) {
+  const dictionaries = {
+    en: TEXT.en,
+    roman: TEXT.roman,
+    ur: UR,
+    pa: TEXT.pa,
+    sd: TEXT.sd,
+    ps: TEXT.ps
+  };
+
+  const dictionary = dictionaries[state.lang] || TEXT.en;
+
+  return dictionary[key] || TEXT.en[key] || key;
+}
 
   function safeStoreGet(key, fallback) {
     try {
@@ -982,8 +1258,7 @@
       showToast(t("errVoiceFail"), "error");
     }
   }
-
-  /* FORMS */
+    /* FORMS */
 
   function field(name, label, type = "text", required = false, extra = {}) {
     return { name, label, type, required, ...extra };
@@ -1492,8 +1767,7 @@
 
         return null;
       },
-
-      remove(sale) {
+            remove(sale) {
         const linked = shop.ledger.find(item => item.saleId === sale.id);
 
         if (linked && balance(linked.customerId, linked.id) < 0) {
@@ -2122,22 +2396,16 @@
 
     if (id === "planner") {
       wrapper.append(
-        statsBar([
-          [
-            "tasksDone",
-            state.student.plans.filter(item => item.done).length +
-            " / " + state.student.plans.length
-          ]
-        ]),
         buildForm(
-          "stu:plan",
+          "stu:planner",
           [
-            field("subject", "subject", "text", true),
-            field("task", "task", "text", true),
-            field("due", "due", "date")
+            field("title", "title", "text", true),
+            field("due", "due", "date"),
+            field("note", "note", "textarea")
           ],
-          {},
-          [{ label: "add" }]
+          editing || {},
+          [{ label: editing ? "update" : "add" }],
+          !!editing
         )
       );
 
@@ -2146,17 +2414,22 @@
           ? element(
               "div",
               { class: "local-record-list" },
-              ...state.student.plans.map(plan =>
+              ...state.student.plans.slice().reverse().map(plan =>
                 recordRow(
-                  (plan.done ? "✓ " : "") + plan.task,
-                  plan.subject + (plan.due ? " · " + plan.due : ""),
-                  "",
+                  plan.title,
+                  plan.due,
+                  plan.note,
                   [
                     actionButton(
                       plan.done ? "reopen" : "markDone",
-                      "toggle",
+                      "toggle-plan",
                       { id: plan.id }
                     ),
+                    actionButton("edit", "edit", {
+                      scope: "student",
+                      tool: "planner",
+                      id: plan.id
+                    }),
                     actionButton("delete", "delete", {
                       scope: "student",
                       tool: "planner",
@@ -2173,7 +2446,8 @@
     content.replaceChildren(wrapper);
   }
 
-  function renderChapters() {
+  /* END OF STUDENT PANEL */
+   function renderChapters() {
     const container = $("#savedChapters");
     if (!container) return;
 
@@ -2571,13 +2845,19 @@
       dialog.removeAttribute("open");
     }
   }
+    function languageText(key) {
+    const dictionaries = {
+      en: TEXT.en,
+      roman: TEXT.roman,
+      ur: UR,
+      pa: TEXT.pa,
+      sd: TEXT.sd,
+      ps: TEXT.ps
+    };
 
-  /* LANGUAGE */
+    const dictionary = dictionaries[state.lang] || TEXT.en;
 
-  function languageText(key) {
-    if (state.lang === "ur") return UR[key] || TEXT.en[key] || key;
-    if (state.lang === "roman") return TEXT.roman[key] || TEXT.en[key] || key;
-    return TEXT.en[key] || key;
+    return dictionary[key] || TEXT.en[key] || key;
   }
 
   function applyLanguage() {
@@ -2621,7 +2901,7 @@
     document.documentElement.lang =
       state.lang === "roman" ? "ur-Latn" : state.lang;
 
-    const rtl = ["ur", "sd", "ps"].includes(state.lang);
+    const rtl = ["ur", "pa", "sd", "ps"].includes(state.lang);
 
     $$(".workspace, .sidebar, .about-dialog").forEach(node => {
       node.setAttribute("dir", rtl ? "rtl" : "ltr");
@@ -2661,7 +2941,9 @@
     const connection = $("#connection span:last-child");
     const status = $("#connectionText");
 
-    if (connection) connection.textContent = t(online ? "online" : "offline");
+    if (connection) {
+      connection.textContent = t(online ? "online" : "offline");
+    }
 
     if (status) {
       status.textContent = !online
