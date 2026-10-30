@@ -1,2268 +1,624 @@
-"use strict";
 
-/* ==========================================
-   ZUBAAN AI - MULTILINGUAL APP
-========================================== */
-
-const STORAGE = {
-  chats: "zubaan_chats_v2",
-  activeChat: "zubaan_active_chat_v2",
-  notes: "zubaan_student_notes_v1",
-  chapters: "zubaan_student_chapters_v1",
-  planner: "zubaan_student_planner_v1",
-  credits: "zubaan_shop_credits_v1",
-  payments: "zubaan_shop_payments_v1",
-  customers: "zubaan_shop_customers_v1",
-  sales: "zubaan_shop_sales_v1",
-  expenses: "zubaan_shop_expenses_v1",
-  stock: "zubaan_shop_stock_v1",
-  language: "zubaan_language_v1"
-};
-
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-
-const state = {
-  mode: "general",
-  chats: [],
-  activeChatId: null,
-  language: "roman",
-  busy: false,
-  recognition: null,
-  currentStudentTool: null,
-  currentShopTool: null
-};
-
-const MODE_TITLES = {
-  general: "General assistant",
-  student: "Student",
-  shopkeeper: "Shopkeeper"
-};
-
-const STUDENT_TOOLS = {
-  mock: "Make a mock test",
-  mcq: "Generate MCQs",
-  summary: "Chapter summaries",
-  flashcards: "Flashcards",
-  notes: "My notes",
-  planner: "Study planner"
-};
-
-const SHOP_TOOLS = {
-  credit: "Udhar ledger",
-  customers: "Customers",
-  sales: "Daily sales",
-  expenses: "Expenses",
-  payments: "Payment history",
-  stock: "Stock notes"
-};
-
-/* ==========================================
-   TRANSLATIONS
-========================================== */
-
-const TRANSLATIONS = {
-  en: {},
-  roman: {
-    "How can I help you today?": "Aaj main aapki kis tarah madad kar sakta hoon?",
-    "Ask anything...": "Yahan apna sawal likhein...",
-    "Message Zubaan AI...": "Zubaan AI ko apna paigham likhein...",
-    "General assistant": "Aam madadgar",
-    "Student": "Talib-e-ilm",
-    "Shopkeeper": "Dukandar",
-    "New chat": "Nayi chat",
-    "New Chat": "Nayi chat",
-    "General": "Aam",
-    "Student Mode": "Talib-e-ilm mode",
-    "Shopkeeper Mode": "Dukandar mode",
-    "Recent conversations": "Pichli guftagu",
-    "Your conversations will appear here.": "Aapki guftagu yahan nazar aayegi.",
-    "Clear history": "History saaf karein",
-    "Language": "Zabaan",
-    "Help": "Madad",
-    "Send": "Bhejein",
-    "Thinking...": "Soch raha hoon...",
-    "Ask anything...": "Kuch bhi poochein...",
-    "Type your message...": "Apna paigham likhein...",
-    "Make a mock test": "Mock test banayein",
-    "Generate MCQs": "MCQs banayein",
-    "Chapter summaries": "Chapters ka khulasa",
-    "Flashcards": "Flashcards",
-    "My notes": "Mere notes",
-    "Study planner": "Parhai ka planner",
-    "Udhar ledger": "Udhar ka record",
-    "Customers": "Customers",
-    "Daily sales": "Rozana sales",
-    "Expenses": "Kharchay",
-    "Payment history": "Payment history",
-    "Stock notes": "Stock notes",
-    "Back": "Wapas",
-    "Note title": "Note ka title",
-    "Your note": "Aapka note",
-    "Save note": "Note save karein",
-    "Subject": "Mazmoon",
-    "Chapter name": "Chapter ka naam",
-    "Summary or important points": "Khulasa ya zaroori points",
-    "Save chapter": "Chapter save karein",
-    "Study task": "Parhai ka kaam",
-    "Due date": "Aakhri tareekh",
-    "Add task": "Task add karein",
-    "Completed": "Mukammal",
-    "Mark done": "Mukammal karein",
-    "Number of questions": "Sawalon ki tadaad",
-    "Question / Term": "Sawal / Lafz",
-    "Answer": "Jawab",
-    "Save flashcard": "Flashcard save karein",
-    "Customer name": "Customer ka naam",
-    "Phone number": "Phone number",
-    "Address / Details": "Pata / Tafseel",
-    "Save customer": "Customer save karein",
-    "Total outstanding udhar": "Kul baqi udhar",
-    "Amount (Rs.)": "Raqam (Rs.)",
-    "Details": "Tafseel",
-    "Add udhar": "Udhar add karein",
-    "Receive payment": "Payment wasool karein",
-    "Select customer / udhar entry": "Customer / udhar entry select karein",
-    "Payment amount (Rs.)": "Wasool ki gayi raqam (Rs.)",
-    "Payment details (optional)": "Payment ki tafseel (optional)",
-    "Chat deleted.": "Chat delete ho gayi.",
-    "Payment cannot be greater than the remaining balance.": "Payment baqi raqam se zyada nahi ho sakti.",
-    "Please enter a valid payment amount.": "Meherbani karke durust payment amount likhein.",
-    "Please select a valid udhar entry.": "Meherbani karke durust udhar entry select karein.",
-    "Total recorded sales": "Kul darj sales",
-    "Sale amount (Rs.)": "Sale ki raqam (Rs.)",
-    "Sale details": "Sale ki tafseel",
-    "Record sale": "Sale darj karein",
-    "Total recorded expenses": "Kul darj kharchay",
-    "Expense description": "Kharchay ki tafseel",
-    "Save expense": "Kharcha save karein",
-    "Item / Product": "Item / Product",
-    "Quantity": "Tadaad",
-    "Save stock note": "Stock note save karein",
-    "Delete": "Delete",
-    "No saved records yet.": "Abhi koi record save nahi hua.",
-    "No study tasks yet.": "Abhi koi study task nahi.",
-    "No flashcards saved yet.": "Abhi koi flashcard save nahi hua.",
-    "No udhar entries yet.": "Abhi koi udhar entry nahi.",
-    "No payments recorded yet.": "Abhi koi payment record nahi hui.",
-    "Storage full. Please remove some old records.": "Storage bhar gayi hai. Kuch purane records delete karein.",
-    "Language preference saved.": "Zabaan save ho gayi.",
-    "Conversation history cleared.": "Chat history saaf ho gayi.",
-    "Note saved on this device.": "Note is device par save ho gaya.",
-    "Chapter saved.": "Chapter save ho gaya.",
-    "Study task added.": "Study task add ho gaya.",
-    "Flashcard saved.": "Flashcard save ho gaya.",
-    "Customer saved on this device.": "Customer is device par save ho gaya.",
-    "Udhar entry saved offline.": "Udhar entry offline save ho gayi.",
-    "Payment recorded.": "Payment record ho gayi.",
-    "Sale recorded.": "Sale record ho gayi.",
-    "Expense saved.": "Kharcha save ho gaya.",
-    "Stock note saved.": "Stock note save ho gaya.",
-    "AI chat needs an internet connection.": "AI chat ke liye internet zaroori hai.",
-    "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.": "AI service abhi connect nahi hai. Aapki chat is device par save hai.",
-    "You are offline. Saved records remain available.": "Aap offline hain. Aapke saved records available hain.",
-    "Internet connection restored.": "Internet connection wapas aa gaya.",
-    "Larger text enabled.": "Bara text on ho gaya.",
-    "Normal text enabled.": "Normal text on ho gaya.",
-    "Listening...": "Sun raha hoon..."
-  },
-  ur: {
-    "How can I help you today?": "آج میں آپ کی کس طرح مدد کر سکتا ہوں؟",
-    "Ask anything...": "اپنا سوال یہاں لکھیں...",
-    "Message Zubaan AI...": "زبان اے آئی کو اپنا پیغام لکھیں...",
-    "General assistant": "عام معاون",
-    "Student": "طالب علم",
-    "Shopkeeper": "دکاندار",
-    "New chat": "نئی گفتگو",
-    "New Chat": "نئی گفتگو",
-    "Recent conversations": "حالیہ گفتگو",
-    "Your conversations will appear here.",
-    "Clear history": "سرگزشت صاف کریں",
-    "Language": "زبان",
-    "Help": "مدد",
-    "Send": "بھیجیں",
-    "Thinking...": "سوچ رہا ہوں...",
-    "Make a mock test": "ماک ٹیسٹ بنائیں",
-    "Generate MCQs": "ایم سی کیوز بنائیں",
-    "Chapter summaries": "ابواب کا خلاصہ",
-    "Flashcards": "فلیش کارڈز",
-    "My notes": "میرے نوٹس",
-    "Study planner": "مطالعے کا منصوبہ",
-    "Udhar ledger": "ادھار کا کھاتہ",
-    "Customers": "گاہک",
-    "Daily sales": "روزانہ کی فروخت",
-    "Expenses": "اخراجات",
-    "Payment history": "ادائیگیوں کی تاریخ",
-    "Stock notes": "اسٹاک کے نوٹس",
-    "Back": "واپس",
-    "Note title": "نوٹ کا عنوان",
-    "Your note": "آپ کا نوٹ",
-    "Save note": "نوٹ محفوظ کریں",
-    "Subject": "مضمون",
-    "Chapter name": "باب کا نام",
-    "Summary or important points": "خلاصہ یا اہم نکات",
-    "Save chapter": "باب محفوظ کریں",
-    "Study task": "مطالعے کا کام",
-    "Due date": "آخری تاریخ",
-    "Add task": "کام شامل کریں",
-    "Completed": "مکمل",
-    "Mark done": "مکمل کریں",
-    "Number of questions": "سوالات کی تعداد",
-    "Question / Term": "سوال / اصطلاح",
-    "Answer": "جواب",
-    "Save flashcard": "فلیش کارڈ محفوظ کریں",
-    "Customer name": "گاہک کا نام",
-    "Phone number": "فون نمبر",
-    "Address / Details": "پتہ / تفصیلات",
-    "Save customer": "گاہک محفوظ کریں",
-    "Total outstanding udhar": "کل باقی ادھار",
-    "Amount (Rs.)": "رقم (روپے)",
-    "Details": "تفصیلات",
-    "Add udhar": "ادھار شامل کریں",
-    "Receive payment": "ادائیگی وصول کریں",
-    "Select customer / udhar entry": "گاہک / ادھار اندراج منتخب کریں",
-    "Payment amount (Rs.)": "وصول شدہ رقم",
-    "Payment details (optional)": "ادائیگی کی تفصیلات (اختیاری)",
-    "Chat deleted.": "گفتگو حذف ہو گئی۔",
-    "Payment cannot be greater than the remaining balance.": "ادائیگی باقی رقم سے زیادہ نہیں ہو سکتی۔",
-    "Please enter a valid payment amount.": "درست ادائیگی کی رقم درج کریں۔",
-    "Please select a valid udhar entry.": "درست ادھار اندراج منتخب کریں۔",
-    "Total recorded sales": "کل درج شدہ فروخت",
-    "Sale amount (Rs.)": "فروخت کی رقم",
-    "Sale details": "فروخت کی تفصیلات",
-    "Record sale": "فروخت درج کریں",
-    "Total recorded expenses": "کل درج شدہ اخراجات",
-    "Expense description": "اخراجات کی تفصیل",
-    "Save expense": "اخراجات محفوظ کریں",
-    "Item / Product": "چیز / پروڈکٹ",
-    "Quantity": "تعداد",
-    "Save stock note": "اسٹاک نوٹ محفوظ کریں",
-    "Delete": "حذف کریں",
-    "No saved records yet.": "ابھی کوئی ریکارڈ محفوظ نہیں۔",
-    "No study tasks yet.": "ابھی کوئی مطالعے کا کام نہیں۔",
-    "No flashcards saved yet.": "ابھی کوئی فلیش کارڈ محفوظ نہیں۔",
-    "No udhar entries yet.": "ابھی کوئی ادھار درج نہیں۔",
-    "No payments recorded yet.": "ابھی کوئی ادائیگی درج نہیں۔",
-    "Language preference saved.": "زبان محفوظ ہو گئی۔",
-    "Conversation history cleared.": "گفتگو کی سرگزشت صاف ہو گئی۔",
-    "Note saved on this device.": "نوٹ اس ڈیوائس پر محفوظ ہو گیا۔",
-    "Chapter saved.": "باب محفوظ ہو گیا۔",
-    "Study task added.": "مطالعے کا کام شامل ہو گیا۔",
-    "Flashcard saved.": "فلیش کارڈ محفوظ ہو گیا۔",
-    "Customer saved on this device.": "گاہک اس ڈیوائس پر محفوظ ہو گیا۔",
-    "Payment recorded.": "ادائیگی درج ہو گئی۔",
-    "Sale recorded.": "فروخت درج ہو گئی۔",
-    "Expense saved.": "اخراجات محفوظ ہو گئے۔",
-    "Stock note saved.": "اسٹاک نوٹ محفوظ ہو گیا۔",
-    "Back": "واپس"
-  },
-  pa: {
-    "How can I help you today?": "اج میں تہاڈی کس طرح مدد کر سکدا ہاں؟",
-    "Ask anything...": "ایتھے اپنا سوال لکھو...",
-    "Message Zubaan AI...": "زبان اے آئی نوں اپنا پیغام لکھو...",
-    "General assistant": "عام مددگار",
-    "Student": "طالب علم",
-    "Shopkeeper": "دکاندار",
-    "New chat": "نئی گل بات",
-    "Recent conversations": "پچھلیاں گلاں",
-    "Clear history": "پرانیاں گلاں صاف کرو",
-    "Language": "زبان",
-    "Help": "مدد",
-    "Send": "بھیجو",
-    "Thinking...": "سوچ رہیا واں...",
-    "Make a mock test": "موک ٹیسٹ بناؤ",
-    "Generate MCQs": "MCQs بناؤ",
-    "Chapter summaries": "باباں دا خلاصہ",
-    "My notes": "میرے نوٹس",
-    "Study planner": "پڑھائی دا منصوبہ",
-    "Customers": "گاہک",
-    "Daily sales": "روز دی وکری",
-    "Expenses": "خرچے",
-    "Payment history": "ادائیگی دا ریکارڈ",
-    "Back": "واپس",
-    "Save note": "نوٹ محفوظ کرو",
-    "Save chapter": "باب محفوظ کرو",
-    "Add task": "کم شامل کرو",
-    "Completed": "مکمل",
-    "Delete": "مٹاؤ"
-  },
-  sd: {
-    "How can I help you today?": "اڄ مان توهان جي ڪهڙي طرح مدد ڪري سگهان ٿو؟",
-    "Ask anything...": "پنهنجو سوال هتي لکو...",
-    "Message Zubaan AI...": "زبان اي آءِ کي پنهنجو پيغام لکو...",
-    "General assistant": "عام مددگار",
-    "Student": "شاگرد",
-    "Shopkeeper": "دڪاندار",
-    "New chat": "نئين ڳالهه ٻولهه",
-    "Recent conversations": "تازيون ڳالهيون",
-    "Clear history": "تاريخ صاف ڪريو",
-    "Language": "ٻولي",
-    "Help": "مدد",
-    "Send": "موڪليو",
-    "Thinking...": "سوچي رهيو آهي...",
-    "My notes": "منهنجا نوٽس",
-    "Customers": "گراهڪ",
-    "Daily sales": "روزاني وڪرو",
-    "Expenses": "خرچ",
-    "Back": "واپس",
-    "Delete": "ختم ڪريو"
-  },
-  ps: {
-    "How can I help you today?": "نن زه نن ستاسو سره څنګه مرسته کولی شم؟",
-    "Ask anything...": "خپله پوښتنه دلته ولیکئ...",
-    "Message Zubaan AI...": "Zubaan AI ته خپل پیغام ولیکئ...",
-    "General assistant": "عمومي مرستیال",
-    "Student": "زده کوونکی",
-    "Shopkeeper": "دوکاندار",
-    "New chat": "نوې خبرې اترې",
-    "Recent conversations": "وروستۍ خبرې",
-    "Clear history": "تاریخ پاک کړئ",
-    "Language": "ژبه",
-    "Help": "مرسته",
-    "Send": "ولېږئ",
-    "Thinking...": "فکر کوم...",
-    "My notes": "زما یادښتونه",
-    "Customers": "پېرودونکي",
-    "Daily sales": "ورځنی پلور",
-    "Expenses": "لګښتونه",
-    "Back": "شاته",
-    "Delete": "ړنګول"
-  }
-};
-
-/* Keep original text so switching languages works both ways.
-   Translation is triggered explicitly; no MutationObserver is used here.
-   This prevents translation from observing and re-triggering its own DOM edits.
-*/
-const originalText = new WeakMap();
-const originalAttributes = new WeakMap();
-
-function translate(value) {
-  const dictionary = TRANSLATIONS[state.language] || {};
-  return dictionary[value] || value;
-}
-
-function translateElement(element) {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
-
-  const attributes = ["placeholder", "title", "aria-label"];
-
-  attributes.forEach(attribute => {
-    if (element.hasAttribute(attribute)) {
-      let originals = originalAttributes.get(element);
-
-      if (!originals) {
-        originals = {};
-        originalAttributes.set(element, originals);
-      }
-
-      if (!(attribute in originals)) {
-        originals[attribute] = element.getAttribute(attribute);
-      }
-
-      const translated = translate(originals[attribute]);
-      if (element.getAttribute(attribute) !== translated) {
-        element.setAttribute(attribute, translated);
-      }
-    }
-  });
-
-  if (element.tagName === "INPUT" && element.type === "submit") {
-    if (!element.dataset.originalValue) {
-      element.dataset.originalValue = element.value;
-    }
-    element.value = translate(element.dataset.originalValue);
-  }
-}
-
-function translatePage() {
-  const dictionary = TRANSLATIONS[state.language] || {};
-
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        const parent = node.parentElement;
-
-        if (!parent) return NodeFilter.FILTER_REJECT;
-
-        if (
-          ["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT"].includes(parent.tagName) ||
-          parent.closest(".chat-message") ||
-          parent.closest(".history-chat-title") ||
-          parent.closest("#toast")
-        ) {
-          return NodeFilter.FILTER_REJECT;
-        }
-
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    }
-  );
-
-  let node;
-
-  while ((node = walker.nextNode())) {
-    if (!originalText.has(node)) {
-      originalText.set(node, node.nodeValue);
-    }
-
-    const original = originalText.get(node);
-    const translated = dictionary[original] || original;
-
-    if (node.nodeValue !== translated) {
-      node.nodeValue = translated;
-    }
-  }
-
-  $$("#question, input, textarea, button, select").forEach(element => {
-    translateElement(element);
-  });
-
-  const modeTitle = $("#currentModeTitle");
-  if (modeTitle && MODE_TITLES[state.mode]) {
-    modeTitle.textContent = translate(MODE_TITLES[state.mode]);
-  }
-
-  const studentTitle = $("#studentToolTitle");
-  if (studentTitle && state.currentStudentTool) {
-    studentTitle.textContent = translate(
-      STUDENT_TOOLS[state.currentStudentTool]
-    );
-  }
-
-  const shopTitle = $("#shopToolTitle");
-  if (shopTitle && state.currentShopTool) {
-    shopTitle.textContent = translate(
-      SHOP_TOOLS[state.currentShopTool]
-    );
-  }
-
-  const welcomeTitle = $("#welcomeTitle");
-  if (welcomeTitle) {
-    welcomeTitle.textContent = translate("How can I help you today?");
-  }
-
-  const question = $("#question");
-  if (question) {
-    question.placeholder = translate("Message Zubaan AI...");
-  }
-
-  const direction = ["ur", "pa", "sd", "ps"].includes(state.language)
-    ? "rtl"
-    : "ltr";
-
-  document.documentElement.dir = direction;
-  document.documentElement.lang = state.language;
-  document.body.dir = direction;
-}
-
-function readStore(key, fallback = []) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function readArray(key) {
-  const value = readStore(key, []);
-  return Array.isArray(value) ? value : [];
-}
-
-function writeStore(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    showToast("Storage full. Please remove some old records.");
-    return false;
-  }
-}
-
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[character]);
-}
-
-function formatDate(value) {
-  try {
-    return new Intl.DateTimeFormat(
-      state.language === "ur" ? "ur-PK" :
-      state.language === "pa" ? "pa-PK" :
-      state.language === "sd" ? "sd-PK" :
-      state.language === "ps" ? "ps-AF" :
-      state.language === "en" ? "en-PK" : "en-PK",
-      { day: "numeric", month: "short", year: "numeric" }
-    ).format(new Date(value));
-  } catch {
-    return new Date(value).toLocaleDateString();
-  }
-}
-
-function formatMoney(value) {
-  return `Rs. ${Number(value || 0).toLocaleString("en-PK")}`;
-}
-/* ==========================================
-   NOTIFICATIONS
-========================================== */
-
-function showToast(message) {
-  let toast = $("#toast");
-
-  // Keep notifications working even if the page template is missing the toast node.
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "toast";
-    toast.className = "toast";
-    toast.setAttribute("role", "status");
-    toast.setAttribute("aria-live", "polite");
-    document.body.appendChild(toast);
-  }
-
-  toast.textContent = translate(message);
-  toast.classList.remove("visible", "show");
-  // Restart the CSS transition when a notification is shown repeatedly.
-  void toast.offsetWidth;
-  toast.classList.add("visible", "show");
-
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => {
-    toast.classList.remove("visible", "show");
-  }, 2600);
-}
-
-/* ==========================================
-   CHAT MANAGEMENT
-========================================== */
-
-function createChat() {
-  const chat = {
-    id: makeId(),
-    title: "New chat",
-    messages: [],
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  };
-
-  state.chats.unshift(chat);
-  state.activeChatId = chat.id;
-
-  saveChats();
-  return chat;
-}
-
-function getActiveChat() {
-  return state.chats.find(chat => chat.id === state.activeChatId) || null;
-}
-
-function saveChats() {
-  writeStore(STORAGE.chats, state.chats);
-  writeStore(STORAGE.activeChat, state.activeChatId || null);
-}
-
-function readActiveChatId() {
-  try {
-    const raw = localStorage.getItem(STORAGE.activeChat);
-    if (!raw) return null;
-
-    // Support both the old raw-string format and the corrected JSON format.
-    try {
-      const parsed = JSON.parse(raw);
-      return typeof parsed === "string" ? parsed : null;
-    } catch {
-      return raw;
-    }
-  } catch {
-    return null;
-  }
-}
-
-function selectChat(id) {
-  const chat = state.chats.find(item => item.id === id);
-  if (!chat) return;
-
-  state.activeChatId = id;
-
-  saveChats();
-
-  renderChatHistory();
-  renderMessages();
-  updateWelcome();
-  closeSidebar();
-}
-
-function deleteChat(id) {
-  state.chats = state.chats.filter(chat => chat.id !== id);
-
-  if (state.activeChatId === id) {
-    state.activeChatId = null;
-
-    if (state.chats.length) {
-      state.activeChatId = state.chats[0].id;
-    } else {
-      createChat();
-    }
-  }
-
-  saveChats();
-  renderChatHistory();
-  renderMessages();
-  updateWelcome();
-
-  showToast("Chat deleted.");
-}
-
-function newChat() {
-  createChat();
-  renderChatHistory();
-  renderMessages();
-  updateWelcome();
-
-  const input = $("#question");
-  if (input) input.focus();
-
-  closeSidebar();
-}
-
-function addMessage(role, content) {
-  let chat = getActiveChat();
-
-  if (!chat) {
-    chat = createChat();
-  }
-
-  const message = {
-    id: makeId(),
-    role,
-    content,
-    createdAt: Date.now()
-  };
-
-  chat.messages.push(message);
-  chat.updatedAt = Date.now();
-
-  if (role === "user" && chat.messages.length === 1) {
-    chat.title = content.slice(0, 38) || "New chat";
-  }
-
-  saveChats();
-  renderChatHistory();
-  renderMessages();
-  updateWelcome();
-
-  return message;
-}
-
-function renderChatHistory() {
-  const container = $("#recentList");
-  if (!container) return;
-
-  const sorted = [...state.chats].sort(
-    (a, b) => b.updatedAt - a.updatedAt
-  );
-
-  if (!sorted.length) {
-    container.innerHTML = `
-      <div class="empty-history">
-        <span class="empty-history-icon">◷</span>
-        <span>Your conversations will appear here.</span>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = sorted.map(chat => `
-    <div class="history-item ${chat.id === state.activeChatId ? "active" : ""}">
-      <button
-        class="history-chat-button"
-        type="button"
-        data-chat-id="${escapeHTML(chat.id)}"
-        title="${escapeHTML(chat.title)}"
-      >
-        <span class="history-chat-icon">▤</span>
-        <span class="history-chat-title">${escapeHTML(chat.title)}</span>
-      </button>
-
-      <button
-        class="history-delete"
-        type="button"
-        data-delete-chat="${escapeHTML(chat.id)}"
-        aria-label="Delete conversation"
-      >×</button>
-    </div>
-  `).join("");
-}
-
-function renderMessages() {
-  const container = $("#generalMessages");
-  if (!container) return;
-
-  const chat = getActiveChat();
-
-  if (!chat || !chat.messages.length) {
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = chat.messages.map(message => `
-    <article class="chat-message ${message.role === "user" ? "user" : "assistant"}">
-      ${escapeHTML(message.content).replace(/\n/g, "<br>")}
-    </article>
-  `).join("");
-
-  container.scrollTop = container.scrollHeight;
-}
-
-function updateWelcome() {
-  const chat = getActiveChat();
-  const welcome = $("#welcomeContainer");
-
-  if (welcome) {
-    welcome.hidden = !!(chat && chat.messages.length);
-  }
-}
-
-function clearHistory() {
-  if (!confirm(
-    state.language === "ur"
-      ? "کیا آپ اس ڈیوائس سے تمام گفتگو حذف کرنا چاہتے ہیں؟"
-      : "Delete all conversations from this device?"
-  )) return;
-
-  state.chats = [];
-  state.activeChatId = null;
-
-  createChat();
-  saveChats();
-  renderChatHistory();
-  renderMessages();
-
-  showToast("Conversation history cleared.");
-}
-
-function setMode(mode) {
-  if (!["general", "student", "shopkeeper"].includes(mode)) return;
-
-  state.mode = mode;
-
-  $$("[data-mode]").forEach(button => {
-    const active = button.dataset.mode === mode;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
-
-  $$("[data-workspace]").forEach(section => {
-    const active = section.dataset.workspace === mode;
-    section.classList.toggle("active", active);
-    section.hidden = !active;
-  });
-
-  const title = $("#currentModeTitle");
-  if (title) title.textContent = translate(MODE_TITLES[mode]);
-
-  closeSidebar();
-
-  if (mode === "general") {
-    renderMessages();
-    updateWelcome();
-  }
-
-  translatePage();
-}
-
-/* ==========================================
-   GENERAL CHAT
-========================================== */
-
-async function sendMessage(event) {
-  event?.preventDefault();
-
-  if (state.busy) return;
-
-  const input = $("#question");
-  if (!input) return;
-
-  const message = input.value.trim();
-  if (!message) return;
-
-  if (!navigator.onLine) {
-    showToast("AI chat needs an internet connection.");
-    return;
-  }
-
-  input.value = "";
-  updateCharacterCount();
-
-  addMessage("user", message);
-
-  state.busy = true;
-  const sendButton = $("#askButton");
-
-  if (sendButton) {
-    sendButton.disabled = true;
-    sendButton.textContent = translate("Thinking...");
-  }
-
-  const chatId = state.activeChatId;
-  const temporary = addMessage("assistant", "Thinking...");
-
-  try {
-    const response = await fetch("/.netlify/functions/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message,
-        language: state.language,
-        mode: state.mode
-      })
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || data.message || "The AI service is currently unavailable."
-      );
-    }
-
-    const reply =
-      data.reply ||
-      data.answer ||
-      data.message ||
-      data.response ||
-      "I could not generate a response. Please try again.";
-
-    replaceTemporaryMessage(chatId, temporary.id, String(reply));
-  } catch (error) {
-    const fallback = error?.message
-      ? `AI request failed: ${error.message}`
-      : "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.";
-
-    replaceTemporaryMessage(chatId, temporary.id, fallback);
-  } finally {
-    state.busy = false;
-
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.innerHTML = `<span>${escapeHTML(translate("Send"))}</span><span>↑</span>`;
-    }
-
-    input.focus();
-  }
-}
-
-function replaceTemporaryMessage(chatId, id, content) {
-  const chat = state.chats.find(item => item.id === chatId);
-  if (!chat) return;
-
-  const message = chat.messages.find(item => item.id === id);
-
-  if (message) {
-    message.content = content;
-    message.createdAt = Date.now();
-  }
-
-  chat.updatedAt = Date.now();
-  saveChats();
-  renderMessages();
-  renderChatHistory();
-}
-
-/* ==========================================
-   STUDENT TOOLS
-========================================== */
-
-function openStudentTool(tool) {
-  const panel = $("#studentToolPanel");
-  const title = $("#studentToolTitle");
-  const content = $("#studentToolContent");
-
-  if (!panel || !title || !content || !STUDENT_TOOLS[tool]) return;
-
-  state.currentStudentTool = tool;
-  title.textContent = translate(STUDENT_TOOLS[tool]);
-  panel.hidden = false;
-
-  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
-    card.classList.toggle("active", card.dataset.studentTool === tool);
-  });
-
-  renderStudentTool(tool);
-  translatePage();
-}
-
-function closeStudentTool() {
-  const panel = $("#studentToolPanel");
-  if (panel) panel.hidden = true;
-
-  state.currentStudentTool = null;
-
-  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
-    card.classList.remove("active");
-  });
-}
-
-function renderStudentTool(tool) {
-  const content = $("#studentToolContent");
-  if (!content) return;
-
-  switch (tool) {
-    case "notes":
-      renderNotes();
-      break;
-    case "summary":
-      renderChapters();
-      break;
-    case "planner":
-      renderPlanner();
-      break;
-    case "flashcards":
-      renderFlashcards();
-      break;
-    case "mock":
-    case "mcq":
-      renderQuizForm(tool);
-      break;
-    default:
-      content.innerHTML = "";
-  }
-}
-        class="history-delete"
-        type="button"
-        data-delete-chat="${escapeHTML(chat.id)}"
-        aria-label="Delete conversation"
-      >×</button>
-    </div>
-  `).join("");
-}
-
-function renderMessages() {
-  const container = $("#generalMessages");
-  if (!container) return;
-
-  const chat = getActiveChat();
-
-  if (!chat || !chat.messages.length) {
-    container.innerHTML = "";
-    return;
-  }
-
-  container.innerHTML = chat.messages.map(message => `
-    <article class="chat-message ${message.role === "user" ? "user" : "assistant"}">
-      ${escapeHTML(message.content).replace(/\n/g, "<br>")}
-    </article>
-  `).join("");
-
-  container.scrollTop = container.scrollHeight;
-}
-
-function updateWelcome() {
-  const chat = getActiveChat();
-  const welcome = $("#welcomeContainer");
-
-  if (welcome) {
-    welcome.hidden = !!(chat && chat.messages.length);
-  }
-}
-
-function clearHistory() {
-  if (!confirm(
-    state.language === "ur"
-      ? "کیا آپ اس ڈیوائس سے تمام گفتگو حذف کرنا چاہتے ہیں؟"
-      : "Delete all conversations from this device?"
-  )) return;
-
-  state.chats = [];
-  state.activeChatId = null;
-
-  createChat();
-  saveChats();
-  renderChatHistory();
-  renderMessages();
-
-  showToast("Conversation history cleared.");
-}
-
-function setMode(mode) {
-  if (!["general", "student", "shopkeeper"].includes(mode)) return;
-
-  state.mode = mode;
-
-  $$("[data-mode]").forEach(button => {
-    const active = button.dataset.mode === mode;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
-
-  $$("[data-workspace]").forEach(section => {
-    const active = section.dataset.workspace === mode;
-    section.classList.toggle("active", active);
-    section.hidden = !active;
-  });
-
-  const title = $("#currentModeTitle");
-  if (title) title.textContent = translate(MODE_TITLES[mode]);
-
-  closeSidebar();
-
-  if (mode === "general") {
-    renderMessages();
-    updateWelcome();
-  }
-
-  translatePage();
-}
-
-/* ==========================================
-   GENERAL CHAT
-========================================== */
-
-async function sendMessage(event) {
-  event?.preventDefault();
-
-  if (state.busy) return;
-
-  const input = $("#question");
-  if (!input) return;
-
-  const message = input.value.trim();
-  if (!message) return;
-
-  if (!navigator.onLine) {
-    showToast("AI chat needs an internet connection.");
-    return;
-  }
-
-  input.value = "";
-  updateCharacterCount();
-
-  addMessage("user", message);
-
-  state.busy = true;
-  const sendButton = $("#askButton");
-
-  if (sendButton) {
-    sendButton.disabled = true;
-    sendButton.textContent = translate("Thinking...");
-  }
-
-  const chatId = state.activeChatId;
-  const temporary = addMessage("assistant", "Thinking...");
-
-  try {
-    const response = await fetch("/.netlify/functions/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message,
-        language: state.language,
-        mode: state.mode
-      })
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || data.message || "The AI service is currently unavailable."
-      );
-    }
-
-    const reply =
-      data.reply ||
-      data.answer ||
-      data.message ||
-      data.response ||
-      "I could not generate a response. Please try again.";
-
-    replaceTemporaryMessage(chatId, temporary.id, String(reply));
-  } catch (error) {
-    const fallback = error?.message
-      ? `AI request failed: ${error.message}`
-      : "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.";
-
-    replaceTemporaryMessage(chatId, temporary.id, fallback);
-  } finally {
-    state.busy = false;
-
-    if (sendButton) {
-      sendButton.disabled = false;
-      sendButton.innerHTML = `<span>${escapeHTML(translate("Send"))}</span><span>↑</span>`;
-    }
-
-    input.focus();
-  }
-}
-
-function replaceTemporaryMessage(chatId, id, content) {
-  const chat = state.chats.find(item => item.id === chatId);
-  if (!chat) return;
-
-  const message = chat.messages.find(item => item.id === id);
-
-  if (message) {
-    message.content = content;
-    message.createdAt = Date.now();
-  }
-
-  chat.updatedAt = Date.now();
-  saveChats();
-  renderMessages();
-  renderChatHistory();
-}
-
-/* ==========================================
-   STUDENT TOOLS
-========================================== */
-
-function openStudentTool(tool) {
-  const panel = $("#studentToolPanel");
-  const title = $("#studentToolTitle");
-  const content = $("#studentToolContent");
-
-  if (!panel || !title || !content || !STUDENT_TOOLS[tool]) return;
-
-  state.currentStudentTool = tool;
-  title.textContent = translate(STUDENT_TOOLS[tool]);
-  panel.hidden = false;
-
-  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
-    card.hidden = true;
-  });
-
-  const heading = $("#studentWorkspace .dashboard-heading");
-  const saved = $(".student-saved-section", $("#studentWorkspace"));
-
-  if (heading) heading.hidden = true;
-  if (saved) saved.hidden = true;
-
-  renderStudentTool(tool, content);
-  translatePage();
-  panel.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function closeStudentTool() {
-  $("#studentToolPanel").hidden = true;
-
-  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
-    card.hidden = false;
-  });
-
-  const heading = $("#studentWorkspace .dashboard-heading");
-  const saved = $(".student-saved-section", $("#studentWorkspace"));
-
-  if (heading) heading.hidden = false;
-  if (saved) saved.hidden = false;
-
-  state.currentStudentTool = null;
-}
-
-function renderStudentTool(tool, content) {
-  if (tool === "notes") return renderNotesTool(content);
-  if (tool === "summary") return renderChaptersTool(content);
-  if (tool === "planner") return renderPlannerTool(content);
-  if (tool === "mock" || tool === "mcq") return renderPracticeTool(tool, content);
-  if (tool === "flashcards") return renderFlashcardsTool(content);
-}
-
-/* Student notes */
-
-function renderNotesTool(container) {
-  const notes = readArray(STORAGE.notes);
-
-  container.innerHTML = `
-    <form class="local-form" id="noteForm">
-      <label for="noteTitle">Note title</label>
-      <input id="noteTitle" maxlength="100" placeholder="Example: Mathematics - Chapter 1" required>
-      <label for="noteBody">Your note</label>
-      <textarea id="noteBody" maxlength="10000" placeholder="Write your notes here..." required></textarea>
-      <button type="submit">Save note</button>
-    </form>
-    <div class="local-record-list" id="noteRecords"></div>
-  `;
-
-  $("#noteForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const title = $("#noteTitle").value.trim();
-    const body = $("#noteBody").value.trim();
-
-    if (!title || !body) return;
-
-    const items = readArray(STORAGE.notes);
-    items.unshift({ id: makeId(), title, body, date: Date.now() });
-
-    writeStore(STORAGE.notes, items);
-    renderNotesTool(container);
-    showToast("Note saved on this device.");
-  });
-
-  renderRecordList(
-    $("#noteRecords"),
-    notes,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.title)}</strong>
-        <small>${formatDate(item.date)}</small>
-        <p>${escapeHTML(item.body)}</p>
-      </div>
-    `,
-    STORAGE.notes,
-    () => renderNotesTool(container)
-  );
-}
-
-/* Chapter summaries */
-
-function renderChaptersTool(container) {
-  const chapters = readArray(STORAGE.chapters);
-
-  container.innerHTML = `
-    <form class="local-form" id="chapterForm">
-      <label for="chapterSubject">Subject</label>
-      <input id="chapterSubject" placeholder="Example: General Science" required>
-      <label for="chapterName">Chapter name</label>
-      <input id="chapterName" placeholder="Example: Chapter 1 - Introduction" required>
-      <label for="chapterContent">Summary or important points</label>
-      <textarea id="chapterContent" placeholder="Write or paste your chapter summary..." required></textarea>
-      <button type="submit">Save chapter</button>
-    </form>
-    <div class="local-record-list" id="chapterRecords"></div>
-  `;
-
-  $("#chapterForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.chapters);
-    items.unshift({
-      id: makeId(),
-      subject: $("#chapterSubject").value.trim(),
-      title: $("#chapterName").value.trim(),
-      content: $("#chapterContent").value.trim(),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.chapters, items);
-    renderChaptersTool(container);
-    renderSavedChapters();
-    showToast("Chapter saved.");
-  });
-
-  renderRecordList(
-    $("#chapterRecords"),
-    chapters,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.title)}</strong>
-        <small>${escapeHTML(item.subject)} · ${formatDate(item.date)}</small>
-        <p>${escapeHTML(item.content)}</p>
-      </div>
-    `,
-    STORAGE.chapters,
-    () => renderChaptersTool(container)
-  );
-}
-
-function renderSavedChapters() {
-  const container = $("#savedChapters");
-  if (!container) return;
-
-  const chapters = readArray(STORAGE.chapters);
-
-  if (!chapters.length) {
-    container.innerHTML = "<p>Your saved chapters will appear here.</p>";
-    return;
-  }
-
-  container.innerHTML = chapters.slice(0, 5).map(item => `
-    <div class="local-record">
-      <div>
-         <strong>${escapeHTML(item.title)}</strong><br>
-        <small>${escapeHTML(item.subject)}</small>
-      </div>
-      <small>${formatDate(item.date)}</small>
-    </div>
-  `).join("");
-}
-
-/* Study planner */
-
-function renderPlannerTool(container) {
-  const tasks = readArray(STORAGE.planner);
-
-  container.innerHTML = `
-    <form class="local-form" id="plannerForm">
-      <label for="taskName">Study task</label>
-      <input id="taskName" placeholder="Example: Revise Chapter 2" required>
-      <label for="taskDate">Due date</label>
-      <input id="taskDate" type="date">
-      <button type="submit">Add task</button>
-    </form>
-    <div class="local-record-list" id="plannerRecords"></div>
-  `;
-
-  $("#plannerForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.planner);
-    items.unshift({
-      id: makeId(),
-      title: $("#taskName").value.trim(),
-      date: $("#taskDate").value,
-      done: false
-    });
-
-    writeStore(STORAGE.planner, items);
-    renderPlannerTool(container);
-    showToast("Study task added.");
-  });
-
-  const records = $("#plannerRecords");
-
-  records.innerHTML = tasks.length ? tasks.map(item => `
-    <div class="local-record">
-      <div>
-        <strong>${escapeHTML(item.title)}</strong><br>
-        <small>${item.date ? escapeHTML(item.date) : "No due date"}</small>
-      </div>
-      <button class="local-action" data-task-done="${escapeHTML(item.id)}" type="button">
-        ${item.done ? "Completed" : "Mark done"}
-      </button>
-    </div>
-  `).join("") : "<p>No study tasks yet.</p>";
-
-  $$("[data-task-done]", records).forEach(button => {
-    button.addEventListener("click", () => {
-      const items = readArray(STORAGE.planner);
-      const task = items.find(item => item.id === button.dataset.taskDone);
-
-      if (task) {
-        task.done = !task.done;
-        writeStore(STORAGE.planner, items);
-        renderPlannerTool(container);
-      }
-    });
-  });
-}
-
-/* ==========================================
-   PRACTICE TESTS AND MCQs
-========================================== */
-
-function renderPracticeTool(tool, container) {
-  const isMock = tool === "mock";
-
-  container.innerHTML = `
-    <div class="local-form">
-      <label for="practiceSubject">Subject</label>
-      <input id="practiceSubject" placeholder="Example: Mathematics">
-
-      <label for="practiceChapter">Chapter / Topic</label>
-      <input id="practiceChapter" placeholder="Example: Chapter 1">
-
-      <label for="practiceCount">Number of questions</label>
-      <input id="practiceCount" type="number" min="1" max="30" value="10">
-
-      <button type="button" id="generatePractice">
-        ${isMock ? "Make a mock test" : "Generate MCQs"}
-      </button>
-
-      <p class="tool-hint">
-        Your request will be sent to Zubaan AI to generate practice questions.
-      </p>
-    </div>
-
-    <div id="practiceResult"></div>
-  `;
-
-  $("#generatePractice").addEventListener("click", async () => {
-    const subject = $("#practiceSubject").value.trim();
-    const chapter = $("#practiceChapter").value.trim();
-    const count = Math.min(
-      30,
-      Math.max(1, Number($("#practiceCount").value) || 10)
-    );
-
-    if (!subject || !chapter) {
-      showToast("Please enter a subject and chapter.");
-      return;
-    }
-
-    const result = $("#practiceResult");
-    const button = $("#generatePractice");
-
-    button.disabled = true;
-    button.textContent = translate("Thinking...");
-    result.innerHTML = `<p>${escapeHTML(translate("Thinking..."))}</p>`;
-
-    try {
-      if (!navigator.onLine) {
-        throw new Error("AI chat needs an internet connection.");
-      }
-
-      const prompt = isMock
-        ? `Create a ${count}-question mock test for ${subject}, ${chapter}. Include questions, options where appropriate, and an answer key at the end.`
-        : `Generate ${count} multiple choice questions (MCQs) for ${subject}, ${chapter}. Include four options and the correct answer for each question.`;
-
-      const response = await fetch("/.netlify/functions/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
-          language: state.language,
-          mode: "student"
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error("The AI service is currently unavailable.");
-      }
-
-      const data = await response.json();
-      const answer = data.reply || data.answer || data.message || "";
-
-      result.innerHTML = `
-        <div class="practice-result">
-          <h3>${escapeHTML(isMock ? "Mock test" : "MCQs")}</h3>
-          <div class="practice-answer">${escapeHTML(answer).replace(/\n/g, "<br>")}</div>
-          <button type="button" class="local-action" id="copyPractice">Copy questions</button>
-        </div>
-      `;
-
-      $("#copyPractice")?.addEventListener("click", () => {
-        GenCopyText(answer);
-      });
-    } catch (error) {
-      result.textContent = error.message || "Something went wrong. Please try again.";
-    } finally {
-      button.disabled = false;
-      button.textContent = translate(isMock ? "Make a mock test" : "Generate MCQs");
-    }
-  });
-}
-
-/* ==========================================
-   FLASHCARDS
-========================================== */
-
-function renderFlashcardsTool(container) {
-  const cards = readArray(STORAGE.notes + "_flashcards");
-
-  container.innerHTML = `
-    <form class="local-form" id="flashcardForm">
-      <label for="flashQuestion">Question / Term</label>
-      <input id="flashQuestion" maxlength="300" required>
-
-      <label for="flashAnswer">Answer</label>
-      <textarea id="flashAnswer" maxlength="2000" required></textarea>
-
-      <button type="submit">Save flashcard</button>
-    </form>
-
-    <div class="local-record-list" id="flashcardRecords"></div>
-  `;
-
-  $("#flashcardForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.notes + "_flashcards");
-
-    items.unshift({
-      id: makeId(),
-      question: $("#flashQuestion").value.trim(),
-      answer: $("#flashAnswer").value.trim(),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.notes + "_flashcards", items);
-    renderFlashcardsTool(container);
-    showToast("Flashcard saved.");
-  });
-
-  renderRecordList(
-    $("#flashcardRecords"),
-    cards,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.question)}</strong>
-        <p>${escapeHTML(item.answer)}</p>
-        <small>${formatDate(item.date)}</small>
-      </div>
-    `,
-    STORAGE.notes + "_flashcards",
-    () => renderFlashcardsTool(container)
-  );
-}
-
-/* ==========================================
-   SHARED RECORD LIST
-========================================== */
-
-function renderRecordList(container, items, renderItem, storageKey, rerender) {
-  if (!container) return;
-
-  if (!items.length) {
-    container.innerHTML = `<p>${escapeHTML(translate("No saved records yet."))}</p>`;
-    return;
-  }
-
-  container.innerHTML = items.map(item => `
-    <article class="local-record">
-      ${renderItem(item)}
-      <button
-        type="button"
-        class="local-delete"
-        data-record-delete="${escapeHTML(item.id)}"
-      >${escapeHTML(translate("Delete"))}</button>
-    </article>
-  `).join("");
-
-  $$("[data-record-delete]", container).forEach(button => {
-    button.addEventListener("click", () => {
-      const updated = readStore(storageKey).filter(
-        item => item.id !== button.dataset.recordDelete
-      );
-
-      writeStore(storageKey, updated);
-      rerender();
-    });
-  });
-}
-    `,
-    STORAGE.customers,
-    () => renderCustomers(container)
-  );
-}
-
-/* Udhar ledger */
-
-function renderCredits(container) {
-  const credits = readArray(STORAGE.credits);
-  const payments = readArray(STORAGE.payments);
-  const total = credits.reduce(
-    (sum, item) => sum + Math.max(0, Number(item.amount || 0) - Number(item.paid || 0)),
-    0
-  );
-
-  const outstanding = credits.filter(
-    item => Number(item.amount || 0) - Number(item.paid || 0) > 0
-  );
-
-  container.innerHTML = `
-    <div class="tool-stat">
-      <span>Total outstanding udhar</span>
-      <strong>${formatMoney(total)}</strong>
-    </div>
-
-    <form class="local-form" id="creditForm">
-      <label for="creditCustomer">Customer name</label>
-      <input id="creditCustomer" maxlength="100" required>
-
-      <label for="creditAmount">Amount (Rs.)</label>
-      <input id="creditAmount" type="number" min="1" step="0.01" required>
-
-      <label for="creditDetails">Details</label>
-      <textarea id="creditDetails" maxlength="1000"></textarea>
-
-      <button type="submit">Add udhar</button>
-    </form>
-
-    <h3>Receive payment</h3>
-    <form class="local-form" id="receivePaymentForm">
-      <label for="paymentCredit">Select customer / udhar entry</label>
-      <select id="paymentCredit" required ${outstanding.length ? "" : "disabled"}>
-        ${
-          outstanding.length
-            ? outstanding.map(item => {
-                const due = Math.max(0, Number(item.amount || 0) - Number(item.paid || 0));
-                return `<option value="${escapeHTML(item.id)}">${escapeHTML(item.customer)} — Due: ${formatMoney(due)}</option>`;
-              }).join("")
-            : `<option value="">No outstanding udhar</option>`
-        }
-      </select>
-
-      <label for="paymentAmount">Payment amount (Rs.)</label>
-      <input id="paymentAmount" type="number" min="0.01" step="0.01"
-             required ${outstanding.length ? "" : "disabled"}>
-
-      <label for="paymentDetails">Payment details (optional)</label>
-      <textarea id="paymentDetails" maxlength="500"
-                ${outstanding.length ? "" : "disabled"}></textarea>
-
-      <button type="submit" ${outstanding.length ? "" : "disabled"}>Receive payment</button>
-    </form>
-
-    <div class="local-record-list" id="creditRecords"></div>
-  `;
-
-  $("#creditForm")?.addEventListener("submit", event => {
-    event.preventDefault();
-
-    const customer = $("#creditCustomer").value.trim();
-    const amount = Number($("#creditAmount").value);
-    if (!customer || !Number.isFinite(amount) || amount <= 0) {
-      showToast("Please enter a valid customer and amount.");
-      return;
-    }
-
-    const items = readArray(STORAGE.credits);
-    items.unshift({
-      id: makeId(),
-      customer,
-      amount,
-      paid: 0,
-      details: $("#creditDetails").value.trim(),
-      date: Date.now()
-    });
-
-    if (writeStore(STORAGE.credits, items)) {
-      renderCredits(container);
-      showToast("Udhar entry saved offline.");
-    }
-  });
-
-  $("#receivePaymentForm")?.addEventListener("submit", event => {
-    event.preventDefault();
-
-    const creditId = $("#paymentCredit").value;
-    const amount = Number($("#paymentAmount").value);
-    const items = readArray(STORAGE.credits);
-    const credit = items.find(item => item.id === creditId);
-
-    if (!credit) {
-      showToast("Please select a valid udhar entry.");
-      return;
-    }
-
-    const due = Math.max(0, Number(credit.amount || 0) - Number(credit.paid || 0));
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      showToast("Please enter a valid payment amount.");
-      return;
-    }
-
-    if (amount > due + 0.000001) {
-      showToast("Payment cannot be greater than the remaining balance.");
-      return;
-    }
-
-    const previousPaid = Number(credit.paid || 0);
-    const previousPayments = readArray(STORAGE.payments);
-    credit.paid = previousPaid + amount;
-
-    const paymentItems = [...previousPayments];
-    paymentItems.unshift({
-      id: makeId(),
-      creditId: credit.id,
-      customer: credit.customer,
-      amount,
-      details: $("#paymentDetails").value.trim(),
-      date: Date.now()
-    });
-
-    // Persist the transaction first. If the ledger write fails, roll it back.
-    const paymentsSaved = writeStore(STORAGE.payments, paymentItems);
-    if (!paymentsSaved) return;
-
-    const creditsSaved = writeStore(STORAGE.credits, items);
-    if (!creditsSaved) {
-      writeStore(STORAGE.payments, previousPayments);
-      credit.paid = previousPaid;
-      return;
-    }
-
-    renderCredits(container);
-    showToast("Payment recorded.");
-  });
-
-  renderRecordList(
-    $("#creditRecords"),
-    credits,
-    item => {
-      const amount = Number(item.amount || 0);
-      const paid = Number(item.paid || 0);
-      const due = Math.max(0, amount - paid);
-
-      return `
-        <div>
-          <strong>${escapeHTML(item.customer)}</strong>
-          <p>${escapeHTML(item.details || "")}</p>
-          <small>
-            Total: ${formatMoney(amount)} ·
-            Paid: ${formatMoney(paid)} ·
-            Due: ${formatMoney(due)}
-          </small>
-        </div>
-      `;
+/**
+ * Zubaan AI — app.js (vanilla JavaScript, no dependencies)
+ *
+ * HTML hooks expected (all adjustable in SELECTORS below):
+ *  #sidebar, #sidebarToggle, #topbar, #chatMessages, #chatForm, #chatInput, #sendBtn,
+ *  #newChatBtn, #clearHistoryBtn, #historyList, #languageSelect (values: en | ur | roman),
+ *  [data-mode="general|student|shopkeeper"], #studentPanel, #studentTools,
+ *  #shopkeeperPanel, #customerForm (inputs: name, phone, balance), #customerList.
+ *  Translatable text: data-i18n, data-i18n-placeholder, data-i18n-title, data-i18n-aria-label.
+ */
+(function () {
+  'use strict';
+  if (window.__zubaanInitialized) return; // prevent duplicate listeners on re-inclusion
+  window.__zubaanInitialized = true;
+
+  /* ============================ 1. CONFIG ============================ */
+  const CONFIG = {
+    // >>> CONFIGURABLE PLACEHOLDER: set to your own backend endpoint. Never put secret keys here;
+    // keep API keys on the server side. <<<
+    API_URL: '',
+    API_HEADERS: { 'Content-Type': 'application/json' }, // add non-secret headers only
+    REQUEST_TIMEOUT_MS: 30000,
+    HISTORY_CONTEXT_LIMIT: 20, // messages of context sent with each request
+    TOAST_DURATION_MS: 3500,
+    TITLE_MAX: 40,
+    STORAGE: {
+      STATE: 'zubaan.v1.state',
+      LANG: 'zubaan.v1.lang',
+      CUSTOMERS: 'zubaan.v1.customers',
     },
-    STORAGE.credits,
-    () => renderCredits(container)
-  );
-}
+  };
 
-/* Daily sales */
+  const MODES = ['general', 'student', 'shopkeeper'];
+  const LANGUAGES = ['en', 'ur', 'roman'];
+  const DEFAULT_LANG = 'en';
 
-function renderSales(container) {
-  const sales = readArray(STORAGE.sales);
-  const total = sales.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const SELECTORS = {
+    sidebar: '#sidebar',
+    sidebarToggle: '#sidebarToggle',
+    header: '#topbar, header',
+    messages: '#chatMessages',
+    chatForm: '#chatForm',
+    chatInput: '#chatInput',
+    sendBtn: '#sendBtn',
+    newChatBtn: '#newChatBtn',
+    clearHistoryBtn: '#clearHistoryBtn',
+    historyList: '#historyList',
+    languageSelect: '#languageSelect',
+    modeButton: '[data-mode]',
+    studentPanel: '#studentPanel',
+    studentTools: '#studentTools',
+    shopPanel: '#shopkeeperPanel',
+    customerForm: '#customerForm',
+    customerList: '#customerList',
+  };
 
-  container.innerHTML = `
-    <div class="tool-stat">
-      <span>Total recorded sales</span>
-      <strong>${formatMoney(total)}</strong>
-    </div>
+  /* ====================== 2. TRANSLATIONS (central) ====================== */
+  const I18N = {
+    en: {
+      appName: 'Zubaan AI', newChat: 'New chat', history: 'History', noHistory: 'No conversations yet',
+      clearHistory: 'Clear history', clearConfirm: 'Delete all conversations in this mode?',
+      send: 'Send', placeholder: 'Type your message…', language: 'Language', delete: 'Delete',
+      modeGeneral: 'General', modeStudent: 'Student', modeShopkeeper: 'Shopkeeper',
+      welcomeGeneral: 'Hello! I am Zubaan AI. Ask me anything.',
+      welcomeStudent: 'Welcome, student! Pick a tool or ask me about your studies.',
+      welcomeShopkeeper: 'Welcome! I can help with your shop, customers and business questions.',
+      thinking: 'Thinking…', untitled: 'New chat', toggleSidebar: 'Toggle sidebar',
+      errEmpty: 'Please type a message first.', errNotConfigured: 'AI backend is not configured (set CONFIG.API_URL).',
+      errRequest: 'Request failed. Please try again.', errInvalid: 'The AI returned an invalid response.',
+      errTimeout: 'The request timed out.', errStorage: 'Could not save data on this device.',
+      toastLang: 'Language changed to English', toastNewChat: 'New chat started',
+      toastCleared: 'History cleared', toastDeleted: 'Conversation deleted',
+      toastReplyElsewhere: 'A reply arrived in another conversation',
+      studentTools: 'Student tools', toolExplain: 'Explain a topic', toolSummarize: 'Summarize text',
+      toolQuiz: 'Practice quiz', toolStudyPlan: 'Study plan', toolSelected: 'Tool selected: {tool}', toolCleared: 'Tool cleared',
+      customers: 'Customers', addCustomer: 'Add customer', customerName: 'Name', customerPhone: 'Phone',
+      customerBalance: 'Balance owed', noCustomers: 'No customers yet', markPaid: 'Mark paid', balance: 'Balance',
+      customerAdded: 'Customer added', customerRemoved: 'Customer removed', customerPaid: 'Marked as paid',
+      customerNameRequired: 'Customer name is required',
+    },
+    ur: {
+      appName: 'زبان اے آئی', newChat: 'نئی گفتگو', history: 'تاریخ', noHistory: 'ابھی کوئی گفتگو نہیں',
+      clearHistory: 'تاریخ صاف کریں', clearConfirm: 'کیا اس موڈ کی تمام گفتگو حذف کریں؟',
+      send: 'بھیجیں', placeholder: 'اپنا پیغام لکھیں…', language: 'زبان', delete: 'حذف کریں',
+      modeGeneral: 'عمومی', modeStudent: 'طالب علم', modeShopkeeper: 'دکاندار',
+      welcomeGeneral: 'سلام! میں زبان اے آئی ہوں۔ مجھ سے کچھ بھی پوچھیں۔',
+      welcomeStudent: 'خوش آمدید! کوئی ٹول منتخب کریں یا اپنی پڑھائی کے بارے میں پوچھیں۔',
+      welcomeShopkeeper: 'خوش آمدید! میں آپ کی دکان، گاہکوں اور کاروبار کے سوالات میں مدد کر سکتا ہوں۔',
+      thinking: 'سوچ رہا ہوں…', untitled: 'نئی گفتگو', toggleSidebar: 'سائیڈ بار کھولیں/بند کریں',
+      errEmpty: 'براہِ کرم پہلے پیغام لکھیں۔', errNotConfigured: 'اے آئی بیک اینڈ ترتیب نہیں دیا گیا (CONFIG.API_URL سیٹ کریں)۔',
+      errRequest: 'درخواست ناکام ہوئی۔ دوبارہ کوشش کریں۔', errInvalid: 'اے آئی کا جواب درست نہیں تھا۔',
+      errTimeout: 'درخواست کا وقت ختم ہو گیا۔', errStorage: 'اس ڈیوائس پر ڈیٹا محفوظ نہیں ہو سکا۔',
+      toastLang: 'زبان اردو میں تبدیل ہو گئی', toastNewChat: 'نئی گفتگو شروع ہو گئی',
+      toastCleared: 'تاریخ صاف ہو گئی', toastDeleted: 'گفتگو حذف ہو گئی',
+      toastReplyElsewhere: 'دوسری گفتگو میں جواب آ گیا ہے',
+      studentTools: 'طالب علم کے ٹولز', toolExplain: 'موضوع سمجھائیں', toolSummarize: 'متن کا خلاصہ',
+      toolQuiz: 'مشقی کوئز', toolStudyPlan: 'مطالعے کا منصوبہ', toolSelected: 'ٹول منتخب: {tool}', toolCleared: 'ٹول ہٹا دیا گیا',
+      customers: 'گاہک', addCustomer: 'گاہک شامل کریں', customerName: 'نام', customerPhone: 'فون',
+      customerBalance: 'واجب الادا رقم', noCustomers: 'ابھی کوئی گاہک نہیں', markPaid: 'ادا شدہ', balance: 'بقایا',
+      customerAdded: 'گاہک شامل ہو گیا', customerRemoved: 'گاہک ہٹا دیا گیا', customerPaid: 'ادا شدہ نشان زد',
+      customerNameRequired: 'گاہک کا نام ضروری ہے',
+    },
+    roman: {
+      appName: 'Zubaan AI', newChat: 'Nayi guftagu', history: 'History', noHistory: 'Abhi koi guftagu nahi',
+      clearHistory: 'History saaf karein', clearConfirm: 'Is mode ki tamam guftagu delete karein?',
+      send: 'Bhejein', placeholder: 'Apna paigham likhein…', language: 'Zubaan', delete: 'Delete',
+      modeGeneral: 'General', modeStudent: 'Student', modeShopkeeper: 'Dukaandaar',
+      welcomeGeneral: 'Salam! Main Zubaan AI hoon. Mujh se kuch bhi poochein.',
+      welcomeStudent: 'Khush aamdeed! Koi tool chunein ya apni parhai ke bare mein poochein.',
+      welcomeShopkeeper: 'Khush aamdeed! Main aap ki dukaan, customers aur karobar ke sawalaat mein madad kar sakta hoon.',
+      thinking: 'Soch raha hoon…', untitled: 'Nayi guftagu', toggleSidebar: 'Sidebar kholein/band karein',
+      errEmpty: 'Pehle paigham likhein.', errNotConfigured: 'AI backend set nahi hai (CONFIG.API_URL set karein).',
+      errRequest: 'Request nakaam hui. Dobara koshish karein.', errInvalid: 'AI ka jawab durust nahi tha.',
+      errTimeout: 'Request ka waqt khatam ho gaya.', errStorage: 'Is device par data save nahi ho saka.',
+      toastLang: 'Zubaan Roman Urdu mein tabdeel ho gayi', toastNewChat: 'Nayi guftagu shuru ho gayi',
+      toastCleared: 'History saaf ho gayi', toastDeleted: 'Guftagu delete ho gayi',
+      toastReplyElsewhere: 'Doosri guftagu mein jawab aa gaya hai',
+      studentTools: 'Student tools', toolExplain: 'Topic samjhayein', toolSummarize: 'Text ka khulasa',
+      toolQuiz: 'Practice quiz', toolStudyPlan: 'Study plan', toolSelected: 'Tool muntakhab: {tool}', toolCleared: 'Tool hata diya gaya',
+      customers: 'Customers', addCustomer: 'Customer shamil karein', customerName: 'Naam', customerPhone: 'Phone',
+      customerBalance: 'Baqaya raqam', noCustomers: 'Abhi koi customer nahi', markPaid: 'Ada shuda', balance: 'Baqaya',
+      customerAdded: 'Customer shamil ho gaya', customerRemoved: 'Customer hata diya gaya', customerPaid: 'Ada shuda nishan zad',
+      customerNameRequired: 'Customer ka naam zaroori hai',
+    },
+  };
 
-    <form class="local-form" id="salesForm">
-      <label for="saleAmount">Sale amount (Rs.)</label>
-      <input id="saleAmount" type="number" min="1" step="0.01" required>
-
-      <label for="saleDetails">Sale details</label>
-      <textarea id="saleDetails"></textarea>
-
-      <button type="submit">Record sale</button>
-    </form>
-
-    <div class="local-record-list" id="salesRecords"></div>
-  `;
-
-  $("#salesForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.sales);
-
-    items.unshift({
-      id: makeId(),
-      amount: Number($("#saleAmount").value),
-      details: $("#saleDetails").value.trim(),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.sales, items);
-    renderSales(container);
-    showToast("Sale recorded.");
-  });
-
-  renderRecordList(
-    $("#salesRecords"),
-    sales,
-    item => `
-      <div>
-        <strong>${formatMoney(item.amount)}</strong>
-        <p>${escapeHTML(item.details || "")}</p>
-        <small>${formatDate(item.date)}</small>
-      </div>
-    `,
-    STORAGE.sales,
-    () => renderSales(container)
-  );
-}
-
-/* Expenses */
-
-function renderExpenses(container) {
-  const expenses = readArray(STORAGE.expenses);
-  const total = expenses.reduce(
-    (sum, item) => sum + Number(item.amount || 0),
-    0
-  );
-
-  container.innerHTML = `
-    <div class="tool-stat">
-      <span>Total recorded expenses</span>
-      <strong>${formatMoney(total)}</strong>
-    </div>
-
-    <form class="local-form" id="expenseForm">
-      <label for="expenseName">Expense description</label>
-      <input id="expenseName" required>
-
-      <label for="expenseAmount">Amount (Rs.)</label>
-      <input id="expenseAmount" type="number" min="1" step="0.01" required>
-
-      <button type="submit">Save expense</button>
-    </form>
-
-    <div class="local-record-list" id="expenseRecords"></div>
-  `;
-
-  $("#expenseForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.expenses);
-
-    items.unshift({
-      id: makeId(),
-      name: $("#expenseName").value.trim(),
-      amount: Number($("#expenseAmount").value),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.expenses, items);
-    renderExpenses(container);
-    showToast("Expense saved.");
-  });
-
-  renderRecordList(
-    $("#expenseRecords"),
-    expenses,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.name)}</strong>
-        <small>${formatMoney(item.amount)} · ${formatDate(item.date)}</small>
-      </div>
-    `,
-    STORAGE.expenses,
-    () => renderExpenses(container)
-  );
-}
-
-/* Payment history */
-
-function renderPayments(container) {
-  const credits = readArray(STORAGE.credits);
-  const payments = readArray(STORAGE.payments);
-
-  // Show historical amounts already marked as paid before transaction-level
-  // payment history was introduced, without duplicating newer transactions.
-  const legacyPayments = credits.flatMap(credit => {
-    const recorded = payments
-      .filter(payment => payment.creditId === credit.id)
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-
-    const legacyAmount = Math.max(0, Number(credit.paid || 0) - recorded);
-    if (!legacyAmount) return [];
-
-    return [{
-      id: `legacy-${credit.id}`,
-      customer: credit.customer,
-      amount: legacyAmount,
-      details: "Earlier recorded payment",
-      date: Number(credit.date) || Date.now()
-    }];
-  });
-
-  const allPayments = [...payments, ...legacyPayments].sort(
-    (a, b) => Number(b.date || 0) - Number(a.date || 0)
-  );
-
-  container.innerHTML = `
-    <div class="local-record-list" id="paymentRecords"></div>
-  `;
-
-  const records = $("#paymentRecords");
-  if (!records) return;
-
-  if (!allPayments.length) {
-    records.innerHTML = `<p>${escapeHTML(translate("No payments recorded yet."))}</p>`;
-    return;
+  /** Translate a key with {placeholders}; falls back to English, then to the key itself. */
+  function t(key, vars) {
+    const dict = I18N[state.language] || I18N[DEFAULT_LANG];
+    let str = dict[key];
+    if (typeof str !== 'string') str = I18N[DEFAULT_LANG][key];
+    if (typeof str !== 'string') str = key;
+    if (vars) str = str.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+    return str;
   }
+  const MODE_LABEL_KEY = { general: 'modeGeneral', student: 'modeStudent', shopkeeper: 'modeShopkeeper' };
+  const WELCOME_KEY = { general: 'welcomeGeneral', student: 'welcomeStudent', shopkeeper: 'welcomeShopkeeper' };
 
-  records.innerHTML = allPayments.map(item => `
-    <article class="local-record">
-      <div>
-        <strong>${escapeHTML(item.customer || "Customer")}</strong>
-        <p>Received: ${formatMoney(item.amount)}</p>
-        <small>${escapeHTML(item.details || "")} · ${formatDate(item.date)}</small>
-      </div>
-    </article>
-  `).join("");
-}
+  /* ====================== 3. STUDENT TOOLS (modular) ====================== */
+  // Add a new tool by appending an entry; the UI and API payload pick it up automatically.
+  const STUDENT_TOOLS = [
+    { id: 'explain', labelKey: 'toolExplain' },
+    { id: 'summarize', labelKey: 'toolSummarize' },
+    { id: 'quiz', labelKey: 'toolQuiz' },
+    { id: 'study_plan', labelKey: 'toolStudyPlan' },
+  ];
 
-/* Stock notes */
-
-function renderStock(container) {
-  const stock = readArray(STORAGE.stock);
-
-  container.innerHTML = `
-    <form class="local-form" id="stockForm">
-      <label for="stockItem">Item / Product</label>
-      <input id="stockItem" required>
-            <label for="stockQuantity">Quantity</label>
-      <input id="stockQuantity" type="number" min="0" step="1" required>
-
-      <label for="stockDetails">Details</label>
-      <textarea id="stockDetails"></textarea>
-
-      <button type="submit">Save stock note</button>
-    </form>
-
-    <div class="local-record-list" id="stockRecords"></div>
-  `;
-
-  $("#stockForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readArray(STORAGE.stock);
-
-    items.unshift({
-      id: makeId(),
-      item: $("#stockItem").value.trim(),
-      quantity: Number($("#stockQuantity").value),
-      details: $("#stockDetails").value.trim(),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.stock, items);
-    renderStock(container);
-    showToast("Stock note saved.");
-  });
-
-  renderRecordList(
-    $("#stockRecords"),
-    stock,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.item)}</strong>
-        <p>Quantity: ${Number(item.quantity)}</p>
-        <small>${escapeHTML(item.details || "")}</small>
-      </div>
-    `,
-    STORAGE.stock,
-    () => renderStock(container)
-  );
-}
-
-/* ==========================================
-   SIDEBAR
-========================================== */
-
-function openSidebar() {
-  document.body.classList.add("sidebar-open");
-}
-
-function closeSidebar() {
-  document.body.classList.remove("sidebar-open");
-}
-
-function setupSidebarDismiss() {
-  document.addEventListener("click", event => {
-    if (!document.body.classList.contains("sidebar-open")) return;
-
-    const sidebar = $("#sidebar") || $(".sidebar");
-    const openButton = $("#openSidebar") || $("#menuBtn");
-    const closeButton = $("#closeSidebar") || $(".mobile-close");
-
-    if (sidebar && sidebar.contains(event.target)) return;
-    if (openButton && openButton.contains(event.target)) return;
-    if (closeButton && closeButton.contains(event.target)) return;
-
-    closeSidebar();
-  }, true);
-
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape") closeSidebar();
-  });
-}
-
-/* ==========================================
-   COPY HELPER
-========================================== */
-
-async function GenCopyText(value) {
-  try {
-    await navigator.clipboard.writeText(String(value));
-    showToast("Copied successfully.");
-  } catch {
-    showToast("Could not copy. Please try again.");
-  }
-}
-
-/* ==========================================
-   VOICE INPUT
-========================================== */
-
-function setupVoice() {
-  const button = $("#voiceButton");
-  if (!button) return;
-
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    button.title = "Voice input is not supported in this browser.";
-    button.addEventListener("click", () => {
-      showToast("Voice input is not supported in this browser.");
-    });
-    return;
-  }
-
-  state.recognition = new SpeechRecognition();
-  state.recognition.continuous = false;
-  state.recognition.interimResults = false;
-
-  const languageMap = {
-    roman: "ur-PK",
-    ur: "ur-PK",
-    en: "en-US",
-    pa: "pa-IN",
-    sd: "ur-PK",
-    ps: "ps-AF"
+  /* ============================ 4. STATE ============================ */
+  const state = {
+    mode: 'general',
+    language: DEFAULT_LANG,
+    currentId: null,
+    conversations: [], // {id, mode, title, createdAt, updatedAt, messages:[{id, role, content, ts}]}
+    sidebarOpen: false,
+    pending: new Set(), // conversation IDs with an in-flight AI request
+    student: { activeTool: null },
+    shopkeeper: { customers: [] }, // {id, name, phone, balance}
   };
 
-  state.recognition.onstart = () => {
-    button.classList.add("recording");
-    showToast("Listening...");
-  };
+  /* ============================ 5. HELPERS ============================ */
+  const $ = (sel, root) => { try { return (root || document).querySelector(sel); } catch (e) { return null; } };
+  const uid = (p) => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const currentConv = () => state.conversations.find((c) => c.id === state.currentId) || null;
+  const isValidMode = (m) => MODES.includes(m);
 
-  state.recognition.onresult = event => {
-    const transcript = event.results[0][0].transcript;
-    const input = $("#question");
-
-    if (input) {
-      input.value = (input.value + " " + transcript).trim();
-      updateCharacterCount();
-      input.focus();
-    }
-  };
-
-  state.recognition.onerror = () => {
-    showToast("Voice input could not start. Please try again.");
-  };
-
-  state.recognition.onend = () => {
-    button.classList.remove("recording");
-  };
-
-  button.addEventListener("click", () => {
+  function loadJSON(key, fallback) {
     try {
-      state.recognition.lang = languageMap[state.language] || "ur-PK";
-      state.recognition.start();
-    } catch {
-      showToast("Voice input is already active.");
-    }
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; } // invalid JSON or storage blocked
+  }
+  let storageWarned = false;
+  function saveJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); }
+    catch (e) { if (!storageWarned) { storageWarned = true; showToast(t('errStorage'), 'warning'); } }
+  }
+  const saveState = () => saveJSON(CONFIG.STORAGE.STATE, {
+    mode: state.mode, currentId: state.currentId, conversations: state.conversations,
   });
-}
+  const saveCustomers = () => saveJSON(CONFIG.STORAGE.CUSTOMERS, state.shopkeeper.customers);
 
-/* ==========================================
-   LANGUAGE SELECTOR
-========================================== */
-
-function setupLanguage() {
-  const select = $("#language");
-  if (!select) return;
-
-  let saved = null;
-
-  try {
-    saved = localStorage.getItem(STORAGE.language);
-  } catch {
-    // Continue with the default language.
+  /** Create an element safely; text is always set via textContent (XSS-safe). */
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
   }
 
-  if (saved && [...select.options].some(option => option.value === saved)) {
-    select.value = saved;
+  /* ========================= 6. TOAST SYSTEM ========================= */
+  let toastTimer = null;
+  function ensureToastEl() {
+    let node = document.getElementById('zubaan-toast');
+    if (!node) {
+      node = el('div', 'toast');
+      node.id = 'zubaan-toast';
+      node.setAttribute('role', 'status');
+      node.setAttribute('aria-live', 'polite');
+      // Minimal inline fallback so it is visible even without CSS; override via CSS if desired.
+      Object.assign(node.style, {
+        position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: '2147483647',
+        padding: '10px 18px', borderRadius: '8px', color: '#fff', font: '14px/1.4 system-ui, sans-serif',
+        maxWidth: '90vw', boxShadow: '0 4px 14px rgba(0,0,0,.3)', display: 'none', textAlign: 'center',
+      });
+      document.body.appendChild(node);
+    }
+    return node;
   }
-
-  state.language = select.value || "roman";
-
-  select.addEventListener("change", () => {
-    state.language = select.value;
-
+  /** showToast(message, type): type = success | error | warning | info. Replaces any visible toast (no overlap). */
+  function showToast(message, type) {
     try {
-      localStorage.setItem(STORAGE.language, state.language);
-    } catch {
-      // Language still changes for this session.
-    }
-
-    translatePage();
-    renderChatHistory();
-    renderMessages();
-    updateWelcome();
-
-    if (state.currentStudentTool) {
-      openStudentTool(state.currentStudentTool);
-    }
-
-    if (state.currentShopTool) {
-      openShopTool(state.currentShopTool);
-    }
-
-    showToast("Language preference saved.");
-  });
-
-  translatePage();
-}
-
-/* ==========================================
-   CHARACTER COUNT
-========================================== */
-
-function updateCharacterCount() {
-  const input = $("#question");
-  const counter = $("#charCount");
-
-  if (input && counter) {
-    counter.textContent = `${input.value.length} / 4000`;
-  }
-}
-
-/* ==========================================
-   ABOUT DIALOG
-========================================== */
-
-function setupAbout() {
-  const dialog = $("#aboutDialog");
-
-  $("#helpButton")?.addEventListener("click", () => {
-    if (dialog?.showModal) dialog.showModal();
-  });
-
-  $("#closeAbout")?.addEventListener("click", () => dialog?.close());
-  $("#aboutDone")?.addEventListener("click", () => dialog?.close());
-}
-
-/* ==========================================
-   EVENTS
-========================================== */
-
-function setupEvents() {
-  $$("[data-mode]").forEach(button => {
-    button.addEventListener("click", () => {
-      setMode(button.dataset.mode);
-    });
-  });
-
-  $$("[data-student-tool]").forEach(button => {
-    button.addEventListener("click", () => {
-      openStudentTool(button.dataset.studentTool);
-    });
-  });
-
-  $$("[data-shop-tool]").forEach(button => {
-    button.addEventListener("click", () => {
-      openShopTool(button.dataset.shopTool);
-    });
-  });
-
-  const questionForm = $("#questionForm");
-  questionForm?.addEventListener("submit", sendMessage);
-
-  const askButton = $("#askButton");
-  if (askButton && !questionForm?.contains(askButton)) {
-    askButton.addEventListener("click", sendMessage);
+      const kind = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+      const colors = { success: '#2e7d32', error: '#c62828', warning: '#ef6c00', info: '#1565c0' };
+      const node = ensureToastEl();
+      clearTimeout(toastTimer);
+      node.className = 'toast toast-' + kind;
+      node.style.background = colors[kind];
+      node.textContent = String(message || '');
+      node.style.display = 'block';
+      toastTimer = setTimeout(() => { node.style.display = 'none'; }, CONFIG.TOAST_DURATION_MS);
+    } catch (e) { console.error('Toast failed', e); }
   }
 
-  $("#question")?.addEventListener("input", updateCharacterCount);
-
-  $("#question")?.addEventListener("keydown", event => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      $("#questionForm")?.requestSubmit();
-    }
-  });
-
-  $("#newChat")?.addEventListener("click", newChat);
-  $("#headerNewChat")?.addEventListener("click", newChat);
-  $("#clearHistory")?.addEventListener("click", clearHistory);
-
-  $("#recentList")?.addEventListener("click", event => {
-    const deleteButton = event.target.closest("[data-delete-chat]");
-
-    if (deleteButton) {
-      event.stopPropagation();
-      deleteChat(deleteButton.dataset.deleteChat);
-      return;
-    }
-
-    const chatButton = event.target.closest("[data-chat-id]");
-    if (chatButton) selectChat(chatButton.dataset.chatId);
-  });
-
-  $("#openSidebar")?.addEventListener("click", openSidebar);
-  $("#menuBtn")?.addEventListener("click", openSidebar);
-  $("#closeSidebar")?.addEventListener("click", closeSidebar);
-  $(".mobile-close")?.addEventListener("click", closeSidebar);
-  setupSidebarDismiss();
-
-  $("#backToStudent")?.addEventListener("click", closeStudentTool);
-  $("#backToShop")?.addEventListener("click", closeShopTool);
-
-  $("#largeText")?.addEventListener("click", () => {
-    const enabled = document.body.classList.toggle("large-text");
-
-    $("#largeText").setAttribute("aria-pressed", String(enabled));
-
-    showToast(
-      enabled ? "Larger text enabled." : "Normal text enabled."
-    );
-  });
-
-  setupAbout();
-}
-
-/* ==========================================
-   INITIALIZATION
-========================================== */
-
-function initialize() {
-  const storedChats = readStore(STORAGE.chats, []);
-
-  state.chats = Array.isArray(storedChats)
-    ? storedChats
-        .filter(chat => chat && typeof chat.id === "string")
-        .map(chat => ({
-          ...chat,
-          title: typeof chat.title === "string" ? chat.title : "New chat",
-          messages: Array.isArray(chat.messages)
-            ? chat.messages
-                .filter(message => message && typeof message === "object")
-                .map(message => ({
-                  ...message,
-                  id: message.id || makeId(),
-                  role: message.role === "user" ? "user" : "assistant",
-                  content: String(message.content ?? ""),
-                  createdAt: Number(message.createdAt) || Date.now()
-                }))
-            : [],
-          createdAt: Number(chat.createdAt) || Date.now(),
-          updatedAt: Number(chat.updatedAt) || Date.now()
-        }))
-    : [];
-
-  state.activeChatId = readActiveChatId();
-
-  if (
-    !state.activeChatId ||
-    !state.chats.some(chat => chat.id === state.activeChatId)
-  ) {
-    state.activeChatId = state.chats[0]?.id || null;
+  /* ======================= 7. CONVERSATION MANAGEMENT ======================= */
+  function createConversation(mode) {
+    const now = Date.now();
+    const conv = { id: uid('c'), mode: isValidMode(mode) ? mode : state.mode, title: '', createdAt: now, updatedAt: now, messages: [] };
+    state.conversations.unshift(conv);
+    state.currentId = conv.id;
+    return conv;
   }
 
-  if (!state.chats.length) createChat();
-  else saveChats();
+  function latestConversationFor(mode) {
+    return state.conversations
+      .filter((c) => c.mode === mode)
+      .sort((a, b) => b.updatedAt - a.updatedAt)[0] || null;
+  }
 
-  setupEvents();
-  setupLanguage();
-  setupVoice();
+  function openConversation(id) {
+    const conv = state.conversations.find((c) => c.id === id);
+    if (!conv) return;
+    state.currentId = conv.id;
+    state.mode = conv.mode;
+    saveState();
+    renderAll();
+  }
 
-  renderChatHistory();
-  renderMessages();
-  renderSavedChapters();
-  updateWelcome();
-  updateCharacterCount();
+  function newChat(silent) {
+    const cur = currentConv();
+    // Reuse an empty chat of the same mode instead of piling up blanks.
+    if (!(cur && cur.mode === state.mode && cur.messages.length === 0)) createConversation(state.mode);
+    saveState();
+    renderAll();
+    if (!silent) showToast(t('toastNewChat'), 'success');
+    const input = $(SELECTORS.chatInput); if (input) input.focus();
+  }
 
-  setMode("general");
-  translatePage();
+  function deleteConversation(id) {
+    const idx = state.conversations.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    state.conversations.splice(idx, 1);
+    state.pending.delete(id);
+    if (state.currentId === id) {
+      const next = latestConversationFor(state.mode);
+      if (next) state.currentId = next.id; else createConversation(state.mode);
+    }
+    saveState(); renderAll();
+    showToast(t('toastDeleted'), 'success');
+  }
 
-  window.addEventListener("online", () => {
-    showToast("Internet connection restored.");
-  });
+  function clearHistory() {
+    if (!window.confirm(t('clearConfirm'))) return;
+    const mode = state.mode;
+    state.conversations = state.conversations.filter((c) => c.mode !== mode);
+    state.conversations.forEach(() => {});
+    [...state.pending].forEach((id) => { if (!state.conversations.some((c) => c.id === id)) state.pending.delete(id); });
+    createConversation(mode);
+    saveState(); renderAll();
+    showToast(t('toastCleared'), 'success');
+  }
 
-  window.addEventListener("offline", () => {
-    showToast("You are offline. Saved records remain available.");
-  });
-}
+  function setMode(mode) {
+    if (!isValidMode(mode) || mode === state.mode) return;
+    state.mode = mode;
+    // Conversations are never deleted on mode switch; open the latest one of that mode (or start one).
+    const conv = latestConversationFor(mode) || createConversation(mode);
+    state.currentId = conv.id;
+    saveState(); renderAll();
+  }
 
-document.addEventListener("DOMContentLoaded", initialize);
+  /* ========================= 8. AI API INTEGRATION ========================= */
+  /** Single centralized request function. Throws Error with a translation key in .message. */
+  async function requestAI(conv, userText) {
+    if (!CONFIG.API_URL) throw new Error('errNotConfigured');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
+    try {
+      const payload = {
+        message: userText,
+        mode: conv.mode,
+        language: state.language, // always the latest selection at request time
+        tool: conv.mode === 'student' ? state.student.activeTool : null,
+        conversationId: conv.id,
+        history: conv.messages.slice(-CONFIG.HISTORY_CONTEXT_LIMIT - 1, -1).map((m) => ({ role: m.role, content: m.content })),
+      };
+      const res = await fetch(CONFIG.API_URL, {
+        method: 'POST', headers: CONFIG.API_HEADERS, body: JSON.stringify(payload), signal: controller.signal,
+      });
+      if (!res.ok) throw new Error('errRequest');
+      let data;
+      try { data = await res.json(); } catch (e) { throw new Error('errInvalid'); }
+      // Adjust to your backend's response shape if needed.
+      const reply = data && (data.reply || data.message || data.response || data.text);
+      if (typeof reply !== 'string' || !reply.trim()) throw new Error('errInvalid');
+      return reply.trim();
+    } catch (err) {
+      if (err && err.name === 'AbortError') throw new Error('errTimeout');
+      if (err && typeof err.message === 'string' && err.message.startsWith('err')) throw err;
+      throw new Error('errRequest');
+    } finally { clearTimeout(timer); }
+  }
+
+  async function sendMessage(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text) { showToast(t('errEmpty'), 'warning'); return; }
+    let conv = currentConv() || createConversation(state.mode);
+    if (state.pending.has(conv.id)) return; // block duplicate submits for this conversation
+
+    const now = Date.now();
+    conv.messages.push({ id: uid('m'), role: 'user', content: text, ts: now });
+    if (!conv.title) conv.title = text.length > CONFIG.TITLE_MAX ? text.slice(0, CONFIG.TITLE_MAX) + '…' : text;
+    conv.updatedAt = now;
+    state.pending.add(conv.id);
+    saveState(); renderAll();
+
+    const convId = conv.id; // keep ID: user may switch chats while waiting
+    try {
+      const reply = await requestAI(conv, text);
+      const target = state.conversations.find((c) => c.id === convId);
+      if (target) { // conversation might have been deleted meanwhile
+        target.messages.push({ id: uid('m'), role: 'assistant', content: reply, ts: Date.now() });
+        target.updatedAt = Date.now();
+        if (state.currentId !== convId) showToast(t('toastReplyElsewhere'), 'info');
+      }
+    } catch (err) {
+      showToast(t(err && err.message ? err.message : 'errRequest'), 'error');
+    } finally {
+      state.pending.delete(convId);
+      saveState(); renderAll();
+    }
+  }
+
+  /* ============================ 9. RENDERING ============================ */
+  function renderMessages() {
+    const box = $(SELECTORS.messages); if (!box) return;
+    const conv = currentConv();
+    box.textContent = '';
+    if (!conv || conv.messages.length === 0) {
+      box.appendChild(el('div', 'message assistant welcome', t(WELCOME_KEY[state.mode])));
+    } else {
+      conv.messages.forEach((m) => {
+        const row = el('div', 'message ' + (m.role === 'user' ? 'user' : 'assistant'));
+        row.dataset.messageId = m.id;
+        String(m.content).split('\n').forEach((line) => row.appendChild(el('p', null, line)));
+        box.appendChild(row);
+      });
+    }
+    if (conv && state.pending.has(conv.id)) {
+      const loader = el('div', 'message assistant loading', t('thinking'));
+      loader.setAttribute('aria-live', 'polite');
+      box.appendChild(loader);
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderHistory() {
+    const list = $(SELECTORS.historyList); if (!list) return;
+    list.textContent = '';
+    const items = state.conversations.filter((c) => c.mode === state.mode).sort((a, b) => b.updatedAt - a.updatedAt);
+    const visible = items.filter((c) => c.messages.length > 0 || c.id === state.currentId);
+    if (!visible.length) { list.appendChild(el('li', 'history-empty', t('noHistory'))); return; }
+    visible.forEach((c) => {
+      const li = el('li', 'history-item' + (c.id === state.currentId ? ' active' : ''));
+      const open = el('button', 'history-open', c.title || t('untitled'));
+      open.type = 'button'; open.dataset.convId = c.id;
+      const del = el('button', 'history-delete', '✕');
+      del.type = 'button'; del.dataset.deleteConv = c.id;
+      del.setAttribute('aria-label', t('delete')); del.title = t('delete');
+      li.append(open, del);
+      list.appendChild(li);
+    });
+  }
+
+  function renderModeUI() {
+    document.querySelectorAll(SELECTORS.modeButton).forEach((b) => {
+      const active = b.dataset.mode === state.mode;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', String(active));
+    });
+    document.body.dataset.mode = state.mode;
+    const sp = $(SELECTORS.studentPanel), kp = $(SELECTORS.shopPanel);
+    if (sp) sp.hidden = state.mode !== 'student';
+    if (kp) kp.hidden = state.mode !== 'shopkeeper';
+  }
+
+  function renderStudentTools() {
+    const box = $(SELECTORS.studentTools); if (!box) return;
+    box.textContent = '';
+    STUDENT_TOOLS.forEach((tool) => {
+      const btn = el('button', 'student-tool' + (state.student.activeTool === tool.id ? ' active' : ''), t(tool.labelKey));
+      btn.type = 'button'; btn.dataset.tool = tool.id;
+      btn.setAttribute('aria-pressed', String(state.student.activeTool === tool.id));
+      box.appendChild(btn);
+    });
+  }
+
+  function renderCustomers() {
+    const list = $(SELECTORS.customerList); if (!list) return;
+    list.textContent = '';
+    const customers = state.shopkeeper.customers;
+    if (!customers.length) { list.appendChild(el('li', 'customer-empty', t('noCustomers'))); return; }
+    customers.forEach((c) => {
+      const li = el('li', 'customer-item');
+      li.appendChild(el('strong', 'customer-name', c.name));
+      if (c.phone) li.appendChild(el('span', 'customer-phone', c.phone));
+      li.appendChild(el('span', 'customer-balance', t('balance') + ': ' + c.balance));
+      if (c.balance > 0) {
+        const paid = el('button', 'customer-paid', t('markPaid'));
+        paid.type = 'button'; paid.dataset.customerAction = 'paid'; paid.dataset.customerId = c.id;
+        li.appendChild(paid);
+      }
+      const del = el('button', 'customer-delete', t('delete'));
+      del.type = 'button'; del.dataset.customerAction = 'delete'; del.dataset.customerId = c.id;
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
+  function renderSidebar() {
+    const sb = $(SELECTORS.sidebar), tg = $(SELECTORS.sidebarToggle);
+    if (sb) { sb.classList.toggle('open', state.sidebarOpen); sb.setAttribute('aria-hidden', String(!state.sidebarOpen)); }
+    if (tg) tg.setAttribute('aria-expanded', String(state.sidebarOpen));
+    document.body.classList.toggle('sidebar-open', state.sidebarOpen);
+  }
+
+  function renderSendState() {
+    const conv = currentConv();
+    const busy = !!(conv && state.pending.has(conv.id));
+    const btn = $(SELECTORS.sendBtn); if (btn) btn.disabled = busy;
+    const form = $(SELECTORS.chatForm); if (form) form.setAttribute('aria-busy', String(busy));
+  }
+
+  /** Apply translations to every data-i18n* element. Never touches conversations. */
+  function applyTranslations() {
+    const dir = state.language === 'ur' ? 'rtl' : 'ltr';
+    document.documentElement.lang = state.language === 'roman' ? 'ur-Latn' : state.language;
+    document.documentElement.dir = dir;
+    document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.dataset.i18n); });
+    [['i18nPlaceholder', 'placeholder'], ['i18nTitle', 'title'], ['i18nAriaLabel', 'aria-label']].forEach(([ds, attr]) => {
+      document.querySelectorAll('[data-' + ds.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()) + ']').forEach((n) => {
+        n.setAttribute(attr, t(n.dataset[ds]));
+      });
+    });
+    const input = $(SELECTORS.chatInput); if (input) input.placeholder = t('placeholder');
+    const sel = $(SELECTORS.languageSelect); if (sel && sel.value !== state.language) sel.value = state.language;
+  }
+
+  function renderAll() {
+    try {
+      applyTranslations(); renderModeUI(); renderSidebar(); renderHistory();
+      renderMessages(); renderStudentTools(); renderCustomers(); renderSendState();
+    } catch (e) { console.error('Render error', e); }
+  }
+
+  /* ===================== 10. LANGUAGE / STUDENT / SHOP ACTIONS ===================== */
+  function setLanguage(lang) {
+    if (!LANGUAGES.includes(lang)) return;
+    state.language = lang;
+    try { localStorage.setItem(CONFIG.STORAGE.LANG, lang); } catch (e) { /* ignore */ }
+    renderAll(); // re-render only; conversation and messages stay untouched
+    showToast(t('toastLang'), 'success');
+  }
+
+  function selectStudentTool(id) {
+    const tool = STUDENT_TOOLS.find((x) => x.id === id);
+    if (!tool) return;
+    if (state.student.activeTool === id) { state.student.activeTool = null; showToast(t('toastCleared' in I18N.en ? 'toolCleared' : 'toolCleared'), 'info'); }
+    else { state.student.activeTool = id; showToast(t('toolSelected', { tool: t(tool.labelKey) }), 'info'); }
+    renderStudentTools();
+    const input = $(SELECTORS.chatInput); if (input) input.focus();
+  }
+
+  function addCustomer(form) {
+    const data = new FormData(form);
+    const name = String(data.get('name') || '').trim();
+    const phone = String(data.get('phone') || '').trim();
+    const balance = Math.max(0, Number(data.get('balance')) || 0);
+    if (!name) { showToast(t('customerNameRequired'), 'warning'); return; }
+    state.shopkeeper.customers.unshift({ id: uid('u'), name, phone, balance });
+    saveCustomers(); renderCustomers(); form.reset();
+    showToast(t('customerAdded'), 'success');
+  }
+
+  function handleCustomerAction(action, id) {
+    const list = state.shopkeeper.customers;
+    const customer = list.find((c) => c.id === id);
+    if (!customer) return;
+    if (action === 'delete') { state.shopkeeper.customers = list.filter((c) => c.id !== id); showToast(t('customerRemoved'), 'success'); }
+    else if (action === 'paid') { customer.balance = 0; showToast(t('customerPaid'), 'success'); }
+    saveCustomers(); renderCustomers();
+  }
+
+  /* ============================ 11. SIDEBAR ============================ */
+  function setSidebar(open) { state.sidebarOpen = !!open; renderSidebar(); }
+
+  /* ======================= 12. EVENT HANDLING (delegated) ======================= */
+  function onDocumentClick(e) {
+    const target = e.target instanceof Element ? e.target : null;
+    if (!target) return;
+
+    // Sidebar toggle
+    if (target.closest(SELECTORS.sidebarToggle)) { setSidebar(!state.sidebarOpen); return; }
+
+    // Outside click closes the sidebar (not for clicks inside it or on the top header)
+    if (state.sidebarOpen && !target.closest(SELECTORS.sidebar) && !target.closest(SELECTORS.header)) setSidebar(false);
+
+    const modeBtn = target.closest(SELECTORS.modeButton);
+    if (modeBtn) { setMode(modeBtn.dataset.mode); return; }
+
+    const del = target.closest('[data-delete-conv]');
+    if (del) { deleteConversation(del.dataset.deleteConv); return; }
+
+    const open = target.closest('[data-conv-id]');
+    if (open) { openConversation(open.dataset.convId); return; }
+
+    const tool = target.closest('[data-tool]');
+    if (tool) { selectStudentTool(tool.dataset.tool); return; }
+
+    const cust = target.closest('[data-customer-action]');
+    if (cust) { handleCustomerAction(cust.dataset.customerAction, cust.dataset.customerId); return; }
+
+    if (target.closest(SELECTORS.newChatBtn)) { newChat(); return; }
+    if (target.closest(SELECTORS.clearHistoryBtn)) { clearHistory(); return; }
+  }
+
+  function onDocumentSubmit(e) {
+    const form = e.target;
+    if (!(form instanceof Element)) return;
+    if (form.matches(SELECTORS.chatForm)) {
+      e.preventDefault();
+      const input = $(SELECTORS.chatInput); if (!input) return;
+      const text = input.value;
+      if (!text.trim()) { showToast(t('errEmpty'), 'warning'); return; }
+      const conv = currentConv();
+      if (conv && state.pending.has(conv.id)) return;
+      input.value = '';
+      sendMessage(text);
+    } else if (form.matches(SELECTORS.customerForm)) {
+      e.preventDefault();
+      addCustomer(form);
+    }
+  }
+
+  function onDocumentChange(e) {
+    if (e.target instanceof Element && e.target.matches(SELECTORS.languageSelect)) setLanguage(e.target.value);
+  }
+
+  function onDocumentKeydown(e) {
+    if (e.key === 'Escape' && state.sidebarOpen) { setSidebar(false); return; }
+    // Enter sends, Shift+Enter inserts a newline (ignore IME composition)
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.target instanceof Element && e.target.matches(SELECTORS.chatInput)) {
+      e.preventDefault();
+      const form = $(SELECTORS.chatForm);
+      if (form && typeof form.requestSubmit === 'function') form.requestSubmit();
+      else form && form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+  }
+
+  /* ============================ 13. INITIALIZATION ============================ */
+  function loadPersistedData() {
+    const lang = (() => { try { return localStorage.getItem(CONFIG.STORAGE.LANG); } catch (e) { return null; } })();
+    state.language = LANGUAGES.includes(lang) ? lang : DEFAULT_LANG;
+
+    const saved = loadJSON(CONFIG.STORAGE.STATE, null);
+    if (saved && typeof saved === 'object' && Array.isArray(saved.conversations)) {
+      state.conversations = saved.conversations
+        .filter((c) => c && typeof c.id === 'string' && isValidMode(c.mode) && Array.isArray(c.messages))
+        .map((c) => ({
+          id: c.id, mode: c.mode, title: typeof c.title === 'string' ? c.title : '',
+          createdAt: Number(c.createdAt) || Date.now(), updatedAt: Number(c.updatedAt) || Date.now(),
+          messages: c.messages
+            .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+            .map((m) => ({ id: typeof m.id === 'string' ? m.id : uid('m'), role: m.role, content: m.content, ts: Number(m.ts) || Date.now() })),
+        }));
+      state.mode = isValidMode(saved.mode) ? saved.mode : 'general';
+      state.currentId = state.conversations.some((c) => c.id === saved.currentId) ? saved.currentId : null;
+    }
+    const customers = loadJSON(CONFIG.STORAGE.CUSTOMERS, []);
+    state.shopkeeper.customers = Array.isArray(customers)
+      ? customers.filter((c) => c && typeof c.id === 'string' && typeof c.name === 'string')
+          .map((c) => ({ id: c.id, name: c.name, phone: String(c.phone || ''), balance: Math.max(0, Number(c.balance) || 0) }))
+      : [];
+
+    // Make sure the current conversation exists and matches the current mode.
+    let conv = currentConv();
+    if (!conv || conv.mode !== state.mode) conv = latestConversationFor(state.mode) || createConversation(state.mode);
+    state.currentId = conv.id;
+  }
+
+  function init() {
+    try { loadPersistedData(); } catch (e) { console.error('Load failed', e); }
+    document.addEventListener('click', onDocumentClick);
+    document.addEventListener('submit', onDocumentSubmit);
+    document.addEventListener('change', onDocumentChange);
+    document.addEventListener('keydown', onDocumentKeydown);
+    ensureToastEl();
+    saveState();
+    renderAll();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
