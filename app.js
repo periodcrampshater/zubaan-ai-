@@ -1,3 +1,4 @@
+
 "use strict";
 
 /* ==========================================
@@ -63,6 +64,9 @@ const SHOP_TOOLS = {
 const TRANSLATIONS = {
   en: {},
   roman: {
+    "How can I help you today?": "Aaj main aapki kis tarah madad kar sakta hoon?",
+    "Ask anything...": "Yahan apna sawal likhein...",
+    "Message Zubaan AI...": "Zubaan AI ko apna paigham likhein...",
     "General assistant": "Aam madadgar",
     "Student": "Talib-e-ilm",
     "Shopkeeper": "Dukandar",
@@ -119,7 +123,7 @@ const TRANSLATIONS = {
     "Add udhar": "Udhar add karein",
     "Receive payment": "Payment wasool karein",
     "Total recorded sales": "Kul darj sales",
-    "Sale amount (Rs.)": "Sale ki raqam",
+    "Sale amount (Rs.)": "Sale ki raqam (Rs.)",
     "Sale details": "Sale ki tafseel",
     "Record sale": "Sale darj karein",
     "Total recorded expenses": "Kul darj kharchay",
@@ -156,6 +160,9 @@ const TRANSLATIONS = {
     "Listening...": "Sun raha hoon..."
   },
   ur: {
+    "How can I help you today?": "آج میں آپ کی کس طرح مدد کر سکتا ہوں؟",
+    "Ask anything...": "اپنا سوال یہاں لکھیں...",
+    "Message Zubaan AI...": "زبان اے آئی کو اپنا پیغام لکھیں...",
     "General assistant": "عام معاون",
     "Student": "طالب علم",
     "Shopkeeper": "دکاندار",
@@ -236,6 +243,9 @@ const TRANSLATIONS = {
     "Back": "واپس"
   },
   pa: {
+    "How can I help you today?": "اج میں تہاڈی کس طرح مدد کر سکدا ہاں؟",
+    "Ask anything...": "ایتھے اپنا سوال لکھو...",
+    "Message Zubaan AI...": "زبان اے آئی نوں اپنا پیغام لکھو...",
     "General assistant": "عام مددگار",
     "Student": "طالب علم",
     "Shopkeeper": "دکاندار",
@@ -263,6 +273,9 @@ const TRANSLATIONS = {
     "Delete": "مٹاؤ"
   },
   sd: {
+    "How can I help you today?": "اڄ مان توهان جي ڪهڙي طرح مدد ڪري سگهان ٿو؟",
+    "Ask anything...": "پنهنجو سوال هتي لکو...",
+    "Message Zubaan AI...": "زبان اي آءِ کي پنهنجو پيغام لکو...",
     "General assistant": "عام مددگار",
     "Student": "شاگرد",
     "Shopkeeper": "دڪاندار",
@@ -281,7 +294,10 @@ const TRANSLATIONS = {
     "Delete": "ختم ڪريو"
   },
   ps: {
-    "General assistant": "عمومی مرستیال",
+    "How can I help you today?": "نن زه نن ستاسو سره څنګه مرسته کولی شم؟",
+    "Ask anything...": "خپله پوښتنه دلته ولیکئ...",
+    "Message Zubaan AI...": "Zubaan AI ته خپل پیغام ولیکئ...",
+    "General assistant": "عمومي مرستیال",
     "Student": "زده کوونکی",
     "Shopkeeper": "دوکاندار",
     "New chat": "نوې خبرې اترې",
@@ -300,7 +316,10 @@ const TRANSLATIONS = {
   }
 };
 
-/* Keep original text so switching languages works both ways. */
+/* Keep original text so switching languages works both ways.
+   Translation is triggered explicitly; no MutationObserver is used here.
+   This prevents translation from observing and re-triggering its own DOM edits.
+*/
 const originalText = new WeakMap();
 const originalAttributes = new WeakMap();
 
@@ -328,7 +347,6 @@ function translateElement(element) {
       }
 
       const translated = translate(originals[attribute]);
-
       if (element.getAttribute(attribute) !== translated) {
         element.setAttribute(attribute, translated);
       }
@@ -339,95 +357,92 @@ function translateElement(element) {
     if (!element.dataset.originalValue) {
       element.dataset.originalValue = element.value;
     }
-
     element.value = translate(element.dataset.originalValue);
   }
 }
 
 function translatePage() {
-  const isUrdu = state.language === "ur";
-
-  document.documentElement.lang = state.language;
-  document.documentElement.dir = isUrdu ? "rtl" : "ltr";
-  document.body.classList.toggle("rtl-language", isUrdu);
+  const dictionary = TRANSLATIONS[state.language] || {};
 
   const walker = document.createTreeWalker(
     document.body,
-    NodeFilter.SHOW_TEXT
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        const parent = node.parentElement;
+
+        if (!parent) return NodeFilter.FILTER_REJECT;
+
+        if (
+          ["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT"].includes(parent.tagName) ||
+          parent.closest(".chat-message") ||
+          parent.closest(".history-chat-title") ||
+          parent.closest("#toast")
+        ) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
   );
 
   let node;
 
   while ((node = walker.nextNode())) {
-    const parent = node.parentElement;
-
-    if (!parent) continue;
-    if (["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) continue;
-    if (parent.closest("#question")) continue;
-    if (parent.closest(".chat-message")) continue;
-    if (parent.closest(".history-chat-title")) continue;
-
     if (!originalText.has(node)) {
       originalText.set(node, node.nodeValue);
     }
 
     const original = originalText.get(node);
-    const trimmed = original.trim();
+    const translated = dictionary[original] || original;
 
-    if (!trimmed) continue;
-
-    const translated = translate(trimmed);
-    const leading = original.match(/^\s*/)?.[0] || "";
-    const trailing = original.match(/\s*$/)?.[0] || "";
-
-    const nextValue = leading + translated + trailing;
-
-    if (node.nodeValue !== nextValue) {
-      node.nodeValue = nextValue;
+    if (node.nodeValue !== translated) {
+      node.nodeValue = translated;
     }
   }
 
-  $$("input, button, select, textarea, [title], [aria-label]").forEach(
-    translateElement
-  );
+  $$("#question, input, textarea, button, select").forEach(element => {
+    translateElement(element);
+  });
 
   const modeTitle = $("#currentModeTitle");
-  const translatedMode = translate(MODE_TITLES[state.mode]);
-
-  if (modeTitle && modeTitle.textContent !== translatedMode) {
-    modeTitle.textContent = translatedMode;
+  if (modeTitle && MODE_TITLES[state.mode]) {
+    modeTitle.textContent = translate(MODE_TITLES[state.mode]);
   }
 
   const studentTitle = $("#studentToolTitle");
-  const translatedStudent = state.currentStudentTool
-    ? translate(STUDENT_TOOLS[state.currentStudentTool])
-    : "";
-
-  if (
-    studentTitle &&
-    state.currentStudentTool &&
-    studentTitle.textContent !== translatedStudent
-  ) {
-    studentTitle.textContent = translatedStudent;
+  if (studentTitle && state.currentStudentTool) {
+    studentTitle.textContent = translate(
+      STUDENT_TOOLS[state.currentStudentTool]
+    );
   }
 
   const shopTitle = $("#shopToolTitle");
-  const translatedShop = state.currentShopTool
-    ? translate(SHOP_TOOLS[state.currentShopTool])
-    : "";
-
-  if (
-    shopTitle &&
-    state.currentShopTool &&
-    shopTitle.textContent !== translatedShop
-  ) {
-    shopTitle.textContent = translatedShop;
+  if (shopTitle && state.currentShopTool) {
+    shopTitle.textContent = translate(
+      SHOP_TOOLS[state.currentShopTool]
+    );
   }
-}
 
-/* ==========================================
-   STORAGE HELPERS
-========================================== */
+  const welcomeTitle = $("#welcomeTitle");
+  if (welcomeTitle) {
+    welcomeTitle.textContent = translate("How can I help you today?");
+  }
+
+  const question = $("#question");
+  if (question) {
+    question.placeholder = translate("Message Zubaan AI...");
+  }
+
+  const direction = ["ur", "pa", "sd", "ps"].includes(state.language)
+    ? "rtl"
+    : "ltr";
+
+  document.documentElement.dir = direction;
+  document.documentElement.lang = state.language;
+  document.body.dir = direction;
+}
 
 function readStore(key, fallback = []) {
   try {
@@ -449,29 +464,41 @@ function writeStore(key, value) {
 }
 
 function makeId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#039;"
-  })[char]);
+  })[character]);
 }
 
 function formatDate(value) {
-  return new Date(value).toLocaleDateString(
-    state.language === "ur" ? "ur-PK" : "en-PK",
-    { day: "numeric", month: "short", year: "numeric" }
-  );
+  try {
+    return new Intl.DateTimeFormat(
+      state.language === "ur" ? "ur-PK" :
+      state.language === "pa" ? "pa-PK" :
+      state.language === "sd" ? "sd-PK" :
+      state.language === "ps" ? "ps-AF" :
+      state.language === "en" ? "en-PK" : "en-PK",
+      { day: "numeric", month: "short", year: "numeric" }
+    ).format(new Date(value));
+  } catch {
+    return new Date(value).toLocaleDateString();
+  }
 }
 
 function formatMoney(value) {
-  return "Rs. " + Number(value || 0).toLocaleString("en-PK");
+  return `Rs. ${Number(value || 0).toLocaleString("en-PK")}`;
 }
+
+/* ==========================================
+   NOTIFICATIONS
+========================================== */
 
 function showToast(message) {
   const toast = $("#toast");
@@ -481,9 +508,10 @@ function showToast(message) {
   toast.classList.add("visible");
 
   clearTimeout(showToast.timer);
+
   showToast.timer = setTimeout(() => {
     toast.classList.remove("visible");
-  }, 2600);
+  }, 1800);
 }
 
 /* ==========================================
@@ -503,20 +531,21 @@ function createChat() {
   state.activeChatId = chat.id;
 
   saveChats();
-  renderChatHistory();
-  renderMessages();
-  updateWelcome();
-
   return chat;
 }
 
 function getActiveChat() {
-  return state.chats.find(chat => chat.id === state.activeChatId);
+  return state.chats.find(chat => chat.id === state.activeChatId) || null;
 }
 
 function saveChats() {
   writeStore(STORAGE.chats, state.chats);
-  writeStore(STORAGE.activeChat, state.activeChatId);
+
+  try {
+    localStorage.setItem(STORAGE.activeChat, state.activeChatId || "");
+  } catch {
+    // Local storage may be unavailable.
+  }
 }
 
 function selectChat(id) {
@@ -524,7 +553,13 @@ function selectChat(id) {
   if (!chat) return;
 
   state.activeChatId = id;
-  saveChats();
+
+  try {
+    localStorage.setItem(STORAGE.activeChat, id);
+  } catch {
+    // Continue without persistence.
+  }
+
   renderChatHistory();
   renderMessages();
   updateWelcome();
@@ -535,30 +570,41 @@ function deleteChat(id) {
   state.chats = state.chats.filter(chat => chat.id !== id);
 
   if (state.activeChatId === id) {
-    state.activeChatId = state.chats[0]?.id || null;
-  }
+    state.activeChatId = null;
 
-  if (!state.activeChatId) createChat();
+    if (state.chats.length) {
+      state.activeChatId = state.chats[0].id;
+    } else {
+      createChat();
+    }
+  }
 
   saveChats();
   renderChatHistory();
   renderMessages();
   updateWelcome();
+
+  showToast("Conversation history cleared.");
 }
 
 function newChat() {
   createChat();
-  setMode("general");
-  closeSidebar();
+  renderChatHistory();
+  renderMessages();
+  updateWelcome();
 
   const input = $("#question");
   if (input) input.focus();
+
+  closeSidebar();
 }
 
 function addMessage(role, content) {
   let chat = getActiveChat();
 
-  if (!chat) chat = createChat();
+  if (!chat) {
+    chat = createChat();
+  }
 
   const message = {
     id: makeId(),
@@ -570,13 +616,14 @@ function addMessage(role, content) {
   chat.messages.push(message);
   chat.updatedAt = Date.now();
 
-  if (chat.title === "New chat" && role === "user") {
-    chat.title = content.slice(0, 42) || "New chat";
+  if (role === "user" && chat.messages.length === 1) {
+    chat.title = content.slice(0, 38) || "New chat";
   }
 
   saveChats();
-  renderMessages();
   renderChatHistory();
+  renderMessages();
+  updateWelcome();
 
   return message;
 }
@@ -585,26 +632,38 @@ function renderChatHistory() {
   const container = $("#recentList");
   if (!container) return;
 
-  if (!state.chats.length) {
-    container.innerHTML = `<div class="empty-history">Your conversations will appear here.</div>`;
-    return;
-  }
-
   const sorted = [...state.chats].sort(
     (a, b) => b.updatedAt - a.updatedAt
   );
 
+  if (!sorted.length) {
+    container.innerHTML = `
+      <div class="empty-history">
+        <span class="empty-history-icon">◷</span>
+        <span>Your conversations will appear here.</span>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = sorted.map(chat => `
     <div class="history-item ${chat.id === state.activeChatId ? "active" : ""}">
-      <button class="history-chat-button" type="button"
+      <button
+        class="history-chat-button"
+        type="button"
         data-chat-id="${escapeHTML(chat.id)}"
-        title="${escapeHTML(chat.title)}">
+        title="${escapeHTML(chat.title)}"
+      >
         <span class="history-chat-icon">▤</span>
         <span class="history-chat-title">${escapeHTML(chat.title)}</span>
       </button>
-      <button class="history-delete" type="button"
+
+      <button
+        class="history-delete"
+        type="button"
         data-delete-chat="${escapeHTML(chat.id)}"
-        aria-label="Delete conversation">×</button>
+        aria-label="Delete conversation"
+      >×</button>
     </div>
   `).join("");
 }
@@ -633,7 +692,9 @@ function updateWelcome() {
   const chat = getActiveChat();
   const welcome = $("#welcomeContainer");
 
-  if (welcome) welcome.hidden = !!(chat && chat.messages.length);
+  if (welcome) {
+    welcome.hidden = !!(chat && chat.messages.length);
+  }
 }
 
 function clearHistory() {
@@ -653,10 +714,6 @@ function clearHistory() {
 
   showToast("Conversation history cleared.");
 }
-
-/* ==========================================
-   MODE MANAGEMENT
-========================================== */
 
 function setMode(mode) {
   if (!["general", "student", "shopkeeper"].includes(mode)) return;
@@ -1017,122 +1074,186 @@ function renderPlannerTool(container) {
   });
 }
 
-/* Practice tools */
+/* ==========================================
+   PRACTICE TESTS AND MCQs
+========================================== */
 
 function renderPracticeTool(tool, container) {
   const isMock = tool === "mock";
 
   container.innerHTML = `
-    <form class="local-form" id="practiceForm">
+    <div class="local-form">
       <label for="practiceSubject">Subject</label>
-      <input id="practiceSubject" placeholder="Enter subject name" required>
-      <label for="practiceChapter">Chapter or topic</label>
-      <input id="practiceChapter" placeholder="Enter chapter or topic" required>
+      <input id="practiceSubject" placeholder="Example: Mathematics">
+
+      <label for="practiceChapter">Chapter / Topic</label>
+      <input id="practiceChapter" placeholder="Example: Chapter 1">
+
       <label for="practiceCount">Number of questions</label>
-      <select id="practiceCount">
-        <option value="5">5 questions</option>
-        <option value="10">10 questions</option>
-        <option value="15">15 questions</option>
-        <option value="20">20 questions</option>
-      </select>
-      <button type="submit">Prepare ${isMock ? "mock test" : "MCQ practice"}</button>
-    </form>
+      <input id="practiceCount" type="number" min="1" max="30" value="10">
+
+      <button type="button" id="generatePractice">
+        ${isMock ? "Make a mock test" : "Generate MCQs"}
+      </button>
+
+      <p class="tool-hint">
+        Your request will be sent to Zubaan AI to generate practice questions.
+      </p>
+    </div>
+
     <div id="practiceResult"></div>
   `;
 
-  $("#practiceForm").addEventListener("submit", event => {
-    event.preventDefault();
-
+  $("#generatePractice").addEventListener("click", async () => {
     const subject = $("#practiceSubject").value.trim();
     const chapter = $("#practiceChapter").value.trim();
-    const count = $("#practiceCount").value;
+    const count = Math.min(
+      30,
+      Math.max(1, Number($("#practiceCount").value) || 10)
+    );
 
-    const prompt = isMock
-      ? `Create a ${count}-question mock test for ${subject}, ${chapter}. Include questions, multiple choice options and an answer key at the end.`
-      : `Create ${count} multiple-choice questions for ${subject}, ${chapter}. Include four options and correct answers.`;
+    if (!subject || !chapter) {
+      showToast("Please enter a subject and chapter.");
+      return;
+    }
 
-    const input = $("#question");
+    const result = $("#practiceResult");
+    const button = $("#generatePractice");
 
-    if (input) {
-      input.value = prompt;
-      setMode("general");
-      input.focus();
-      showToast("Your study prompt is ready. Send it to the AI when connected.");
+    button.disabled = true;
+    button.textContent = translate("Thinking...");
+    result.innerHTML = `<p>${escapeHTML(translate("Thinking..."))}</p>`;
+
+    try {
+      if (!navigator.onLine) {
+        throw new Error("AI chat needs an internet connection.");
+      }
+
+      const prompt = isMock
+        ? `Create a ${count}-question mock test for ${subject}, ${chapter}. Include questions, options where appropriate, and an answer key at the end.`
+        : `Generate ${count} multiple choice questions (MCQs) for ${subject}, ${chapter}. Include four options and the correct answer for each question.`;
+
+      const response = await fetch("/.netlify/functions/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: prompt,
+          language: state.language,
+          mode: "student"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("The AI service is currently unavailable.");
+      }
+
+      const data = await response.json();
+      const answer = data.reply || data.answer || data.message || "";
+
+      result.innerHTML = `
+        <div class="practice-result">
+          <h3>${escapeHTML(isMock ? "Mock test" : "MCQs")}</h3>
+          <div class="practice-answer">${escapeHTML(answer).replace(/\n/g, "<br>")}</div>
+          <button type="button" class="local-action" id="copyPractice">Copy questions</button>
+        </div>
+      `;
+
+      $("#copyPractice")?.addEventListener("click", () => {
+        GenCopyText(answer);
+      });
+    } catch (error) {
+      result.textContent = error.message || "Something went wrong. Please try again.";
+    } finally {
+      button.disabled = false;
+      button.textContent = translate(isMock ? "Make a mock test" : "Generate MCQs");
     }
   });
 }
 
-/* Flashcards */
+/* ==========================================
+   FLASHCARDS
+========================================== */
 
 function renderFlashcardsTool(container) {
-  const cards = readStore("zubaan_flashcards_v1");
+  const cards = readStore(STORAGE.notes + "_flashcards");
 
   container.innerHTML = `
     <form class="local-form" id="flashcardForm">
       <label for="flashQuestion">Question / Term</label>
-      <input id="flashQuestion" placeholder="Example: What is photosynthesis?" required>
+      <input id="flashQuestion" maxlength="300" required>
+
       <label for="flashAnswer">Answer</label>
-      <textarea id="flashAnswer" placeholder="Write the answer..." required></textarea>
+      <textarea id="flashAnswer" maxlength="2000" required></textarea>
+
       <button type="submit">Save flashcard</button>
     </form>
-    <div id="flashcardRecords"></div>
+
+    <div class="local-record-list" id="flashcardRecords"></div>
   `;
 
   $("#flashcardForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore("zubaan_flashcards_v1");
+    const items = readStore(STORAGE.notes + "_flashcards");
+
     items.unshift({
       id: makeId(),
       question: $("#flashQuestion").value.trim(),
-      answer: $("#flashAnswer").value.trim()
+      answer: $("#flashAnswer").value.trim(),
+      date: Date.now()
     });
 
-    writeStore("zubaan_flashcards_v1", items);
+    writeStore(STORAGE.notes + "_flashcards", items);
     renderFlashcardsTool(container);
     showToast("Flashcard saved.");
   });
 
-  const records = $("#flashcardRecords");
-
-  records.innerHTML = cards.length ? cards.map(item => `
-    <details class="local-record">
-      <summary>${escapeHTML(item.question)}</summary>
-      <p>${escapeHTML(item.answer)}</p>
-    </details>
-  `).join("") : "<p>No flashcards saved yet.</p>";
+  renderRecordList(
+    $("#flashcardRecords"),
+    cards,
+    item => `
+      <div>
+        <strong>${escapeHTML(item.question)}</strong>
+        <p>${escapeHTML(item.answer)}</p>
+        <small>${formatDate(item.date)}</small>
+      </div>
+    `,
+    STORAGE.notes + "_flashcards",
+    () => renderFlashcardsTool(container)
+  );
 }
 
-/* Shared record rendering */
+/* ==========================================
+   SHARED RECORD LIST
+========================================== */
 
 function renderRecordList(container, items, renderItem, storageKey, rerender) {
   if (!container) return;
 
   if (!items.length) {
-    container.innerHTML = "<p>No saved records yet.</p>";
+    container.innerHTML = `<p>${escapeHTML(translate("No saved records yet."))}</p>`;
     return;
   }
 
   container.innerHTML = items.map(item => `
-    <div class="local-record">
+    <article class="local-record">
       ${renderItem(item)}
-      <button class="local-delete" data-record-delete="${escapeHTML(item.id)}" type="button">
-        Delete
-      </button>
-    </div>
+      <button
+        type="button"
+        class="local-delete"
+        data-record-delete="${escapeHTML(item.id)}"
+      >${escapeHTML(translate("Delete"))}</button>
+    </article>
   `).join("");
 
   $$("[data-record-delete]", container).forEach(button => {
     button.addEventListener("click", () => {
-      const records = readStore(storageKey).filter(
+      const updated = readStore(storageKey).filter(
         item => item.id !== button.dataset.recordDelete
       );
 
-      writeStore(storageKey, records);
-      renderSavedChapters();
-
-      if (rerender) rerender();
-      else renderRecordList(container, records, renderItem, storageKey);
+      writeStore(storageKey, updated);
+      rerender();
     });
   });
 }
@@ -1178,15 +1299,15 @@ function closeShopTool() {
 }
 
 function renderShopTool(tool, container) {
-  if (tool === "credit") return renderCredits(container);
   if (tool === "customers") return renderCustomers(container);
+  if (tool === "credit") return renderCredits(container);
   if (tool === "sales") return renderSales(container);
   if (tool === "expenses") return renderExpenses(container);
   if (tool === "payments") return renderPayments(container);
   if (tool === "stock") return renderStock(container);
 }
 
-/* Customer records */
+/* Customers */
 
 function renderCustomers(container) {
   const customers = readStore(STORAGE.customers);
@@ -1194,25 +1315,30 @@ function renderCustomers(container) {
   container.innerHTML = `
     <form class="local-form" id="customerForm">
       <label for="customerName">Customer name</label>
-      <input id="customerName" placeholder="Customer name" required>
+      <input id="customerName" maxlength="100" required>
+
       <label for="customerPhone">Phone number</label>
-      <input id="customerPhone" type="tel" placeholder="Phone number">
-      <label for="customerAddress">Address / Details</label>
-      <input id="customerAddress" placeholder="Optional details">
+      <input id="customerPhone" maxlength="30">
+
+      <label for="customerDetails">Address / Details</label>
+      <textarea id="customerDetails" maxlength="1000"></textarea>
+
       <button type="submit">Save customer</button>
     </form>
-    <div id="customerRecords"></div>
+
+    <div class="local-record-list" id="customerRecords"></div>
   `;
 
   $("#customerForm").addEventListener("submit", event => {
     event.preventDefault();
 
     const items = readStore(STORAGE.customers);
+
     items.unshift({
       id: makeId(),
       name: $("#customerName").value.trim(),
       phone: $("#customerPhone").value.trim(),
-      address: $("#customerAddress").value.trim(),
+      details: $("#customerDetails").value.trim(),
       date: Date.now()
     });
 
@@ -1227,8 +1353,8 @@ function renderCustomers(container) {
     item => `
       <div>
         <strong>${escapeHTML(item.name)}</strong>
-        <small>${escapeHTML(item.phone || "No phone number")}</small>
-        <p>${escapeHTML(item.address || "")}</p>
+        <small>${escapeHTML(item.phone || "")}</small>
+        <p>${escapeHTML(item.details || "")}</p>
       </div>
     `,
     STORAGE.customers,
@@ -1240,38 +1366,43 @@ function renderCustomers(container) {
 
 function renderCredits(container) {
   const credits = readStore(STORAGE.credits);
-  const total = credits.reduce((sum, item) => sum + Number(item.remaining || 0), 0);
+  const total = credits.reduce(
+    (sum, item) => sum + Number(item.amount || 0) - Number(item.paid || 0),
+    0
+  );
 
   container.innerHTML = `
-    <div class="credit-summary">
+    <div class="tool-stat">
       <span>Total outstanding udhar</span>
       <strong>${formatMoney(total)}</strong>
     </div>
+
     <form class="local-form" id="creditForm">
-      <label for="creditName">Customer name</label>
-      <input id="creditName" placeholder="Customer name" required>
+      <label for="creditCustomer">Customer name</label>
+      <input id="creditCustomer" required>
+
       <label for="creditAmount">Amount (Rs.)</label>
-      <input id="creditAmount" type="number" min="1" step="0.01" placeholder="Amount" required>
+      <input id="creditAmount" type="number" min="1" step="0.01" required>
+
       <label for="creditDetails">Details</label>
-      <input id="creditDetails" placeholder="Items or transaction details">
+      <textarea id="creditDetails"></textarea>
+
       <button type="submit">Add udhar</button>
     </form>
-    <div id="creditRecords"></div>
+
+    <div class="local-record-list" id="creditRecords"></div>
   `;
 
   $("#creditForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const amount = Number($("#creditAmount").value);
-    if (amount <= 0) return;
-
     const items = readStore(STORAGE.credits);
+
     items.unshift({
       id: makeId(),
-      name: $("#creditName").value.trim(),
-      amount,
+      customer: $("#creditCustomer").value.trim(),
+      amount: Number($("#creditAmount").value),
       paid: 0,
-      remaining: amount,
       details: $("#creditDetails").value.trim(),
       date: Date.now()
     });
@@ -1281,77 +1412,55 @@ function renderCredits(container) {
     showToast("Udhar entry saved offline.");
   });
 
-  const records = $("#creditRecords");
-
-  records.innerHTML = credits.length ? credits.map(item => `
-    <div class="local-record credit-record">
+  renderRecordList(
+    $("#creditRecords"),
+    credits,
+    item => `
       <div>
-        <strong>${escapeHTML(item.name)}</strong>
-        <small>${formatDate(item.date)} · ${escapeHTML(item.details)}</small>
-        <p>Original: ${formatMoney(item.amount)} | Paid: ${formatMoney(item.paid)}</p>
-        <strong>Remaining: ${formatMoney(item.remaining)}</strong>
+        <strong>${escapeHTML(item.customer)}</strong>
+        <p>${escapeHTML(item.details || "")}</p>
+        <small>
+          Total: ${formatMoney(item.amount)} ·
+          Paid: ${formatMoney(item.paid)} ·
+          Due: ${formatMoney(item.amount - item.paid)}
+        </small>
       </div>
-      <div class="credit-actions">
-        <button class="local-action" data-credit-pay="${escapeHTML(item.id)}" type="button">
-          Receive payment
-        </button>
-      </div>
-    </div>
-  `).join("") : "<p>No udhar entries yet.</p>";
-
-  $$("[data-credit-pay]", records).forEach(button => {
-    button.addEventListener("click", () => {
-      const items = readStore(STORAGE.credits);
-      const item = items.find(entry => entry.id === button.dataset.creditPay);
-
-      if (!item || item.remaining <= 0) return;
-
-      const value = Number(prompt(
-        `Remaining balance: ${formatMoney(item.remaining)}\nEnter payment received:`
-      ));
-
-      if (!Number.isFinite(value) || value <= 0) return;
-
-      if (value > item.remaining) {
-        showToast("Payment cannot exceed the remaining balance.");
-        return;
-      }
-
-      item.paid += value;
-      item.remaining -= value;
-
-      writeStore(STORAGE.credits, items);
-      renderCredits(container);
-      showToast("Payment recorded.");
-    });
-  });
+    `,
+    STORAGE.credits,
+    () => renderCredits(container)
+  );
 }
 
 /* Daily sales */
 
 function renderSales(container) {
   const sales = readStore(STORAGE.sales);
-  const total = sales.reduce((sum, item) => sum + Number(item.amount), 0);
+  const total = sales.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   container.innerHTML = `
-    <div class="credit-summary">
+    <div class="tool-stat">
       <span>Total recorded sales</span>
       <strong>${formatMoney(total)}</strong>
     </div>
-    <form class="local-form" id="saleForm">
+
+    <form class="local-form" id="salesForm">
       <label for="saleAmount">Sale amount (Rs.)</label>
       <input id="saleAmount" type="number" min="1" step="0.01" required>
+
       <label for="saleDetails">Sale details</label>
-      <input id="saleDetails" placeholder="Optional details">
+      <textarea id="saleDetails"></textarea>
+
       <button type="submit">Record sale</button>
     </form>
-    <div id="saleRecords"></div>
+
+    <div class="local-record-list" id="salesRecords"></div>
   `;
 
-  $("#saleForm").addEventListener("submit", event => {
+  $("#salesForm").addEventListener("submit", event => {
     event.preventDefault();
 
     const items = readStore(STORAGE.sales);
+
     items.unshift({
       id: makeId(),
       amount: Number($("#saleAmount").value),
@@ -1365,13 +1474,13 @@ function renderSales(container) {
   });
 
   renderRecordList(
-    $("#saleRecords"),
+    $("#salesRecords"),
     sales,
     item => `
       <div>
         <strong>${formatMoney(item.amount)}</strong>
+        <p>${escapeHTML(item.details || "")}</p>
         <small>${formatDate(item.date)}</small>
-        <p>${escapeHTML(item.details)}</p>
       </div>
     `,
     STORAGE.sales,
@@ -1383,27 +1492,35 @@ function renderSales(container) {
 
 function renderExpenses(container) {
   const expenses = readStore(STORAGE.expenses);
-  const total = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
+  const total = expenses.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  );
 
   container.innerHTML = `
-    <div class="credit-summary">
+    <div class="tool-stat">
       <span>Total recorded expenses</span>
       <strong>${formatMoney(total)}</strong>
     </div>
+
     <form class="local-form" id="expenseForm">
       <label for="expenseName">Expense description</label>
-      <input id="expenseName" placeholder="Example: Electricity bill" required>
+      <input id="expenseName" required>
+
       <label for="expenseAmount">Amount (Rs.)</label>
       <input id="expenseAmount" type="number" min="1" step="0.01" required>
+
       <button type="submit">Save expense</button>
     </form>
-    <div id="expenseRecords"></div>
+
+    <div class="local-record-list" id="expenseRecords"></div>
   `;
 
   $("#expenseForm").addEventListener("submit", event => {
     event.preventDefault();
 
     const items = readStore(STORAGE.expenses);
+
     items.unshift({
       id: makeId(),
       name: $("#expenseName").value.trim(),
@@ -1422,8 +1539,7 @@ function renderExpenses(container) {
     item => `
       <div>
         <strong>${escapeHTML(item.name)}</strong>
-        <small>${formatDate(item.date)}</small>
-        <p>${formatMoney(item.amount)}</p>
+        <small>${formatMoney(item.amount)} · ${formatDate(item.date)}</small>
       </div>
     `,
     STORAGE.expenses,
@@ -1435,56 +1551,60 @@ function renderExpenses(container) {
 
 function renderPayments(container) {
   const credits = readStore(STORAGE.credits);
-  const payments = credits.filter(item => Number(item.paid) > 0);
+  const payments = credits.filter(item => Number(item.paid || 0) > 0);
 
   container.innerHTML = `
-    <div class="credit-summary">
-      <span>Total payments received against udhar</span>
-      <strong>${formatMoney(
-        payments.reduce((sum, item) => sum + Number(item.paid), 0)
-      )}</strong>
-    </div>
-    <div id="paymentRecords"></div>
+    <div class="local-record-list" id="paymentRecords"></div>
   `;
 
-  $("#paymentRecords").innerHTML = payments.length
-    ? payments.map(item => `
-      <div class="local-record">
-        <div>
-          <strong>${escapeHTML(item.name)}</strong>
-          <small>${formatDate(item.date)}</small>
-        </div>
-        <strong>${formatMoney(item.paid)}</strong>
+  const records = $("#paymentRecords");
+
+  if (!payments.length) {
+    records.innerHTML = `<p>${escapeHTML(translate("No payments recorded yet."))}</p>`;
+    return;
+  }
+
+  records.innerHTML = payments.map(item => `
+    <article class="local-record">
+      <div>
+        <strong>${escapeHTML(item.customer)}</strong>
+        <p>Paid: ${formatMoney(item.paid)}</p>
+        <small>Remaining: ${formatMoney(item.amount - item.paid)}</small>
       </div>
-    `).join("")
-    : "<p>No payments recorded yet.</p>";
+    </article>
+  `).join("");
 }
 
 /* Stock notes */
 
 function renderStock(container) {
-  const records = readStore(STORAGE.stock);
+  const stock = readStore(STORAGE.stock);
 
   container.innerHTML = `
     <form class="local-form" id="stockForm">
-      <label for="stockName">Item / Product</label>
-      <input id="stockName" placeholder="Product name" required>
+      <label for="stockItem">Item / Product</label>
+      <input id="stockItem" required>
+
       <label for="stockQuantity">Quantity</label>
-      <input id="stockQuantity" type="number" min="0" placeholder="Quantity" required>
-      <label for="stockDetails">Notes</label>
-      <input id="stockDetails" placeholder="Restocking or other notes">
+      <input id="stockQuantity" type="number" min="0" step="1" required>
+
+      <label for="stockDetails">Details</label>
+      <textarea id="stockDetails"></textarea>
+
       <button type="submit">Save stock note</button>
     </form>
-    <div id="stockRecords"></div>
+
+    <div class="local-record-list" id="stockRecords"></div>
   `;
 
   $("#stockForm").addEventListener("submit", event => {
     event.preventDefault();
 
     const items = readStore(STORAGE.stock);
+
     items.unshift({
       id: makeId(),
-      name: $("#stockName").value.trim(),
+      item: $("#stockItem").value.trim(),
       quantity: Number($("#stockQuantity").value),
       details: $("#stockDetails").value.trim(),
       date: Date.now()
@@ -1497,12 +1617,12 @@ function renderStock(container) {
 
   renderRecordList(
     $("#stockRecords"),
-    records,
+    stock,
     item => `
       <div>
-        <strong>${escapeHTML(item.name)}</strong>
-        <small>Quantity: ${item.quantity} · ${formatDate(item.date)}</small>
-        <p>${escapeHTML(item.details)}</p>
+        <strong>${escapeHTML(item.item)}</strong>
+        <p>Quantity: ${Number(item.quantity)}</p>
+        <small>${escapeHTML(item.details || "")}</small>
       </div>
     `,
     STORAGE.stock,
@@ -1520,6 +1640,19 @@ function openSidebar() {
 
 function closeSidebar() {
   document.body.classList.remove("sidebar-open");
+}
+
+/* ==========================================
+   COPY HELPER
+========================================== */
+
+async function GenCopyText(value) {
+  try {
+    await navigator.clipboard.writeText(String(value));
+    showToast("Copied successfully.");
+  } catch {
+    showToast("Could not copy. Please try again.");
+  }
 }
 
 /* ==========================================
@@ -1596,7 +1729,13 @@ function setupLanguage() {
   const select = $("#language");
   if (!select) return;
 
-  const saved = localStorage.getItem(STORAGE.language);
+  let saved = null;
+
+  try {
+    saved = localStorage.getItem(STORAGE.language);
+  } catch {
+    // Continue with the default language.
+  }
 
   if (saved && [...select.options].some(option => option.value === saved)) {
     select.value = saved;
@@ -1609,7 +1748,9 @@ function setupLanguage() {
 
     try {
       localStorage.setItem(STORAGE.language, state.language);
-    } catch {}
+    } catch {
+      // Language still changes for this session.
+    }
 
     translatePage();
 
@@ -1713,8 +1854,12 @@ function setupEvents() {
 
   $("#largeText")?.addEventListener("click", () => {
     const enabled = document.body.classList.toggle("large-text");
+
     $("#largeText").setAttribute("aria-pressed", String(enabled));
-    showToast(enabled ? "Larger text enabled." : "Normal text enabled.");
+
+    showToast(
+      enabled ? "Larger text enabled." : "Normal text enabled."
+    );
   });
 
   setupAbout();
