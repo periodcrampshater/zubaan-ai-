@@ -2,8 +2,7 @@
 "use strict";
 
 /* ==========================================
-   ZUBAAN AI
-   Lightweight application logic
+   ZUBAAN AI - MULTILINGUAL APP
 ========================================== */
 
 const STORAGE = {
@@ -29,7 +28,9 @@ const state = {
   activeChatId: null,
   language: "roman",
   busy: false,
-  recognition: null
+  recognition: null,
+  currentStudentTool: null,
+  currentShopTool: null
 };
 
 const MODE_TITLES = {
@@ -55,6 +56,366 @@ const SHOP_TOOLS = {
   payments: "Payment history",
   stock: "Stock notes"
 };
+
+/* ==========================================
+   TRANSLATIONS
+========================================== */
+
+const TRANSLATIONS = {
+  en: {},
+  roman: {
+    "General assistant": "Aam madadgar",
+    "Student": "Talib-e-ilm",
+    "Shopkeeper": "Dukandar",
+    "New chat": "Nayi chat",
+    "New Chat": "Nayi chat",
+    "General": "Aam",
+    "Student Mode": "Talib-e-ilm mode",
+    "Shopkeeper Mode": "Dukandar mode",
+    "Recent conversations": "Pichli guftagu",
+    "Your conversations will appear here.": "Aapki guftagu yahan nazar aayegi.",
+    "Clear history": "History saaf karein",
+    "Language": "Zabaan",
+    "Help": "Madad",
+    "Send": "Bhejein",
+    "Thinking...": "Soch raha hoon...",
+    "Ask anything...": "Kuch bhi poochein...",
+    "Type your message...": "Apna paigham likhein...",
+    "Make a mock test": "Mock test banayein",
+    "Generate MCQs": "MCQs banayein",
+    "Chapter summaries": "Chapters ka khulasa",
+    "Flashcards": "Flashcards",
+    "My notes": "Mere notes",
+    "Study planner": "Parhai ka planner",
+    "Udhar ledger": "Udhar ka record",
+    "Customers": "Customers",
+    "Daily sales": "Rozana sales",
+    "Expenses": "Kharchay",
+    "Payment history": "Payment history",
+    "Stock notes": "Stock notes",
+    "Back": "Wapas",
+    "Note title": "Note ka title",
+    "Your note": "Aapka note",
+    "Save note": "Note save karein",
+    "Subject": "Mazmoon",
+    "Chapter name": "Chapter ka naam",
+    "Summary or important points": "Khulasa ya zaroori points",
+    "Save chapter": "Chapter save karein",
+    "Study task": "Parhai ka kaam",
+    "Due date": "Aakhri tareekh",
+    "Add task": "Task add karein",
+    "Completed": "Mukammal",
+    "Mark done": "Mukammal karein",
+    "Number of questions": "Sawalon ki tadaad",
+    "Question / Term": "Sawal / Lafz",
+    "Answer": "Jawab",
+    "Save flashcard": "Flashcard save karein",
+    "Customer name": "Customer ka naam",
+    "Phone number": "Phone number",
+    "Address / Details": "Pata / Tafseel",
+    "Save customer": "Customer save karein",
+    "Total outstanding udhar": "Kul baqi udhar",
+    "Amount (Rs.)": "Raqam (Rs.)",
+    "Details": "Tafseel",
+    "Add udhar": "Udhar add karein",
+    "Receive payment": "Payment wasool karein",
+    "Total recorded sales": "Kul darj sales",
+    "Sale amount (Rs.)": "Sale ki raqam (Rs.)",
+    "Sale details": "Sale ki tafseel",
+    "Record sale": "Sale darj karein",
+    "Total recorded expenses": "Kul darj kharchay",
+    "Expense description": "Kharchay ki tafseel",
+    "Save expense": "Kharcha save karein",
+    "Item / Product": "Item / Product",
+    "Quantity": "Tadaad",
+    "Save stock note": "Stock note save karein",
+    "Delete": "Delete",
+    "No saved records yet.": "Abhi koi record save nahi hua.",
+    "No study tasks yet.": "Abhi koi study task nahi.",
+    "No flashcards saved yet.": "Abhi koi flashcard save nahi hua.",
+    "No udhar entries yet.": "Abhi koi udhar entry nahi.",
+    "No payments recorded yet.": "Abhi koi payment record nahi hui.",
+    "Storage full. Please remove some old records.": "Storage bhar gayi hai. Kuch purane records delete karein.",
+    "Language preference saved.": "Zabaan save ho gayi.",
+    "Conversation history cleared.": "Chat history saaf ho gayi.",
+    "Note saved on this device.": "Note is device par save ho gaya.",
+    "Chapter saved.": "Chapter save ho gaya.",
+    "Study task added.": "Study task add ho gaya.",
+    "Flashcard saved.": "Flashcard save ho gaya.",
+    "Customer saved on this device.": "Customer is device par save ho gaya.",
+    "Udhar entry saved offline.": "Udhar entry offline save ho gayi.",
+    "Payment recorded.": "Payment record ho gayi.",
+    "Sale recorded.": "Sale record ho gayi.",
+    "Expense saved.": "Kharcha save ho gaya.",
+    "Stock note saved.": "Stock note save ho gaya.",
+    "AI chat needs an internet connection.": "AI chat ke liye internet zaroori hai.",
+    "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.": "AI service abhi connect nahi hai. Aapki chat is device par save hai.",
+    "You are offline. Saved records remain available.": "Aap offline hain. Aapke saved records available hain.",
+    "Internet connection restored.": "Internet connection wapas aa gaya.",
+    "Larger text enabled.": "Bara text on ho gaya.",
+    "Normal text enabled.": "Normal text on ho gaya.",
+    "Listening...": "Sun raha hoon..."
+  },
+  ur: {
+    "General assistant": "عام معاون",
+    "Student": "طالب علم",
+    "Shopkeeper": "دکاندار",
+    "New chat": "نئی گفتگو",
+    "New Chat": "نئی گفتگو",
+    "Recent conversations": "حالیہ گفتگو",
+    "Your conversations will appear here.": "آپ کی گفتگو یہاں نظر آئے گی۔",
+    "Clear history": "سرگزشت صاف کریں",
+    "Language": "زبان",
+    "Help": "مدد",
+    "Send": "بھیجیں",
+    "Thinking...": "سوچ رہا ہوں...",
+    "Make a mock test": "ماک ٹیسٹ بنائیں",
+    "Generate MCQs": "ایم سی کیوز بنائیں",
+    "Chapter summaries": "ابواب کا خلاصہ",
+    "Flashcards": "فلیش کارڈز",
+    "My notes": "میرے نوٹس",
+    "Study planner": "مطالعے کا منصوبہ",
+    "Udhar ledger": "ادھار کا کھاتہ",
+    "Customers": "گاہک",
+    "Daily sales": "روزانہ کی فروخت",
+    "Expenses": "اخراجات",
+    "Payment history": "ادائیگیوں کی تاریخ",
+    "Stock notes": "اسٹاک کے نوٹس",
+    "Back": "واپس",
+    "Note title": "نوٹ کا عنوان",
+    "Your note": "آپ کا نوٹ",
+    "Save note": "نوٹ محفوظ کریں",
+    "Subject": "مضمون",
+    "Chapter name": "باب کا نام",
+    "Summary or important points": "خلاصہ یا اہم نکات",
+    "Save chapter": "باب محفوظ کریں",
+    "Study task": "مطالعے کا کام",
+    "Due date": "آخری تاریخ",
+    "Add task": "کام شامل کریں",
+    "Completed": "مکمل",
+    "Mark done": "مکمل کریں",
+    "Number of questions": "سوالات کی تعداد",
+    "Question / Term": "سوال / اصطلاح",
+    "Answer": "جواب",
+    "Save flashcard": "فلیش کارڈ محفوظ کریں",
+    "Customer name": "گاہک کا نام",
+    "Phone number": "فون نمبر",
+    "Address / Details": "پتہ / تفصیلات",
+    "Save customer": "گاہک محفوظ کریں",
+    "Total outstanding udhar": "کل باقی ادھار",
+    "Amount (Rs.)": "رقم (روپے)",
+    "Details": "تفصیلات",
+    "Add udhar": "ادھار شامل کریں",
+    "Receive payment": "ادائیگی وصول کریں",
+    "Total recorded sales": "کل درج شدہ فروخت",
+    "Sale amount (Rs.)": "فروخت کی رقم",
+    "Sale details": "فروخت کی تفصیلات",
+    "Record sale": "فروخت درج کریں",
+    "Total recorded expenses": "کل درج شدہ اخراجات",
+    "Expense description": "اخراجات کی تفصیل",
+    "Save expense": "اخراجات محفوظ کریں",
+    "Item / Product": "چیز / پروڈکٹ",
+    "Quantity": "تعداد",
+    "Save stock note": "اسٹاک نوٹ محفوظ کریں",
+    "Delete": "حذف کریں",
+    "No saved records yet.": "ابھی کوئی ریکارڈ محفوظ نہیں۔",
+    "No study tasks yet.": "ابھی کوئی مطالعے کا کام نہیں۔",
+    "No flashcards saved yet.": "ابھی کوئی فلیش کارڈ محفوظ نہیں۔",
+    "No udhar entries yet.": "ابھی کوئی ادھار درج نہیں۔",
+    "No payments recorded yet.": "ابھی کوئی ادائیگی درج نہیں۔",
+    "Language preference saved.": "زبان محفوظ ہو گئی۔",
+    "Conversation history cleared.": "گفتگو کی سرگزشت صاف ہو گئی۔",
+    "Note saved on this device.": "نوٹ اس ڈیوائس پر محفوظ ہو گیا۔",
+    "Chapter saved.": "باب محفوظ ہو گیا۔",
+    "Study task added.": "مطالعے کا کام شامل ہو گیا۔",
+    "Flashcard saved.": "فلیش کارڈ محفوظ ہو گیا۔",
+    "Customer saved on this device.": "گاہک اس ڈیوائس پر محفوظ ہو گیا۔",
+    "Payment recorded.": "ادائیگی درج ہو گئی۔",
+    "Sale recorded.": "فروخت درج ہو گئی۔",
+    "Expense saved.": "اخراجات محفوظ ہو گئے۔",
+    "Stock note saved.": "اسٹاک نوٹ محفوظ ہو گیا۔",
+    "Back": "واپس"
+  },
+  pa: {
+    "General assistant": "عام مددگار",
+    "Student": "طالب علم",
+    "Shopkeeper": "دکاندار",
+    "New chat": "نئی گل بات",
+    "Recent conversations": "پچھلیاں گلاں",
+    "Clear history": "پرانیاں گلاں صاف کرو",
+    "Language": "زبان",
+    "Help": "مدد",
+    "Send": "بھیجو",
+    "Thinking...": "سوچ رہیا واں...",
+    "Make a mock test": "موک ٹیسٹ بناؤ",
+    "Generate MCQs": "MCQs بناؤ",
+    "Chapter summaries": "باباں دا خلاصہ",
+    "My notes": "میرے نوٹس",
+    "Study planner": "پڑھائی دا منصوبہ",
+    "Customers": "گاہک",
+    "Daily sales": "روز دی وکری",
+    "Expenses": "خرچے",
+    "Payment history": "ادائیگی دا ریکارڈ",
+    "Back": "واپس",
+    "Save note": "نوٹ محفوظ کرو",
+    "Save chapter": "باب محفوظ کرو",
+    "Add task": "کم شامل کرو",
+    "Completed": "مکمل",
+    "Delete": "مٹاؤ"
+  },
+  sd: {
+    "General assistant": "عام مددگار",
+    "Student": "شاگرد",
+    "Shopkeeper": "دڪاندار",
+    "New chat": "نئين ڳالهه ٻولهه",
+    "Recent conversations": "تازيون ڳالهيون",
+    "Clear history": "تاريخ صاف ڪريو",
+    "Language": "ٻولي",
+    "Help": "مدد",
+    "Send": "موڪليو",
+    "Thinking...": "سوچي رهيو آهي...",
+    "My notes": "منهنجا نوٽس",
+    "Customers": "گراهڪ",
+    "Daily sales": "روزاني وڪرو",
+    "Expenses": "خرچ",
+    "Back": "واپس",
+    "Delete": "ختم ڪريو"
+  },
+  ps: {
+    "General assistant": "عمومي مرستیال",
+    "Student": "زده کوونکی",
+    "Shopkeeper": "دوکاندار",
+    "New chat": "نوې خبرې اترې",
+    "Recent conversations": "وروستۍ خبرې",
+    "Clear history": "تاریخ پاک کړئ",
+    "Language": "ژبه",
+    "Help": "مرسته",
+    "Send": "ولېږئ",
+    "Thinking...": "فکر کوم...",
+    "My notes": "زما یادښتونه",
+    "Customers": "پېرودونکي",
+    "Daily sales": "ورځنی پلور",
+    "Expenses": "لګښتونه",
+    "Back": "شاته",
+    "Delete": "ړنګول"
+  }
+};
+
+/* Keep original text so switching languages works both ways. */
+const originalText = new WeakMap();
+const originalAttributes = new WeakMap();
+
+function translate(value) {
+  const dictionary = TRANSLATIONS[state.language] || {};
+  return dictionary[value] || value;
+}
+
+function translateElement(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+
+  const attributes = ["placeholder", "title", "aria-label"];
+
+  attributes.forEach(attribute => {
+    if (element.hasAttribute(attribute)) {
+      let originals = originalAttributes.get(element);
+
+      if (!originals) {
+        originals = {};
+        originalAttributes.set(element, originals);
+      }
+
+      if (!(attribute in originals)) {
+        originals[attribute] = element.getAttribute(attribute);
+      }
+
+      element.setAttribute(attribute, translate(originals[attribute]));
+    }
+  });
+
+  if (element.tagName === "INPUT" && element.type === "submit") {
+    if (!element.dataset.originalValue) {
+      element.dataset.originalValue = element.value;
+    }
+    element.value = translate(element.dataset.originalValue);
+  }
+}
+
+function translatePage() {
+  const isUrdu = state.language === "ur";
+  document.documentElement.lang = state.language;
+  document.documentElement.dir = isUrdu ? "rtl" : "ltr";
+  document.body.classList.toggle("rtl-language", isUrdu);
+
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT
+  );
+
+  let node;
+
+  while ((node = walker.nextNode())) {
+    const parent = node.parentElement;
+
+    if (!parent) continue;
+    if (["SCRIPT", "STYLE", "TEXTAREA"].includes(parent.tagName)) continue;
+    if (parent.closest("#question")) continue;
+    if (parent.closest(".chat-message")) continue;
+    if (parent.closest(".history-chat-title")) continue;
+
+    if (!originalText.has(node)) {
+      originalText.set(node, node.nodeValue);
+    }
+
+    const original = originalText.get(node);
+    const trimmed = original.trim();
+
+    if (!trimmed) continue;
+
+    const translated = translate(trimmed);
+    const leading = original.match(/^\s*/)?.[0] || "";
+    const trailing = original.match(/\s*$/)?.[0] || "";
+
+    node.nodeValue = leading + translated + trailing;
+  }
+
+  $$("input, button, select, textarea, [title], [aria-label]").forEach(
+    translateElement
+  );
+
+  const modeTitle = $("#currentModeTitle");
+  if (modeTitle) {
+    modeTitle.textContent = translate(MODE_TITLES[state.mode]);
+  }
+
+  const studentTitle = $("#studentToolTitle");
+  if (studentTitle && state.currentStudentTool) {
+    studentTitle.textContent = translate(
+      STUDENT_TOOLS[state.currentStudentTool]
+    );
+  }
+
+  const shopTitle = $("#shopToolTitle");
+  if (shopTitle && state.currentShopTool) {
+    shopTitle.textContent = translate(
+      SHOP_TOOLS[state.currentShopTool]
+    );
+  }
+}
+
+let translationObserver = null;
+
+function startTranslationObserver() {
+  if (translationObserver) translationObserver.disconnect();
+
+  translationObserver = new MutationObserver(() => {
+    translatePage();
+  });
+
+  translationObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
 
 /* ==========================================
    STORAGE HELPERS
@@ -94,11 +455,10 @@ function escapeHTML(value) {
 }
 
 function formatDate(value) {
-  return new Date(value).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric"
-  });
+  return new Date(value).toLocaleDateString(
+    state.language === "ur" ? "ur-PK" : "en-PK",
+    { day: "numeric", month: "short", year: "numeric" }
+  );
 }
 
 function formatMoney(value) {
@@ -109,7 +469,7 @@ function showToast(message) {
   const toast = $("#toast");
   if (!toast) return;
 
-  toast.textContent = message;
+  toast.textContent = translate(message);
   toast.classList.add("visible");
 
   clearTimeout(showToast.timer);
@@ -190,9 +550,7 @@ function newChat() {
 function addMessage(role, content) {
   let chat = getActiveChat();
 
-  if (!chat) {
-    chat = createChat();
-  }
+  if (!chat) chat = createChat();
 
   const message = {
     id: makeId(),
@@ -220,9 +578,7 @@ function renderChatHistory() {
   if (!container) return;
 
   if (!state.chats.length) {
-    container.innerHTML = `
-      <div class="empty-history">Your conversations will appear here.</div>
-    `;
+    container.innerHTML = `<div class="empty-history">Your conversations will appear here.</div>`;
     return;
   }
 
@@ -232,15 +588,13 @@ function renderChatHistory() {
 
   container.innerHTML = sorted.map(chat => `
     <div class="history-item ${chat.id === state.activeChatId ? "active" : ""}">
-      <button class="history-chat-button"
-        type="button"
+      <button class="history-chat-button" type="button"
         data-chat-id="${escapeHTML(chat.id)}"
         title="${escapeHTML(chat.title)}">
         <span class="history-chat-icon">▤</span>
         <span class="history-chat-title">${escapeHTML(chat.title)}</span>
       </button>
-      <button class="history-delete"
-        type="button"
+      <button class="history-delete" type="button"
         data-delete-chat="${escapeHTML(chat.id)}"
         aria-label="Delete conversation">×</button>
     </div>
@@ -271,13 +625,15 @@ function updateWelcome() {
   const chat = getActiveChat();
   const welcome = $("#welcomeContainer");
 
-  if (welcome) {
-    welcome.hidden = !!(chat && chat.messages.length);
-  }
+  if (welcome) welcome.hidden = !!(chat && chat.messages.length);
 }
 
 function clearHistory() {
-  if (!confirm("Delete all conversations from this device?")) return;
+  if (!confirm(
+    state.language === "ur"
+      ? "کیا آپ اس ڈیوائس سے تمام گفتگو حذف کرنا چاہتے ہیں؟"
+      : "Delete all conversations from this device?"
+  )) return;
 
   state.chats = [];
   state.activeChatId = null;
@@ -312,7 +668,7 @@ function setMode(mode) {
   });
 
   const title = $("#currentModeTitle");
-  if (title) title.textContent = MODE_TITLES[mode];
+  if (title) title.textContent = translate(MODE_TITLES[mode]);
 
   closeSidebar();
 
@@ -320,6 +676,8 @@ function setMode(mode) {
     renderMessages();
     updateWelcome();
   }
+
+  translatePage();
 }
 
 /* ==========================================
@@ -349,19 +707,19 @@ async function sendMessage(event) {
 
   state.busy = true;
   const sendButton = $("#askButton");
+
   if (sendButton) {
     sendButton.disabled = true;
-    sendButton.textContent = "Thinking...";
+    sendButton.textContent = translate("Thinking...");
   }
 
+  const chatId = state.activeChatId;
   const temporary = addMessage("assistant", "Thinking...");
 
   try {
     const response = await fetch("/.netlify/functions/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
         language: state.language,
@@ -381,9 +739,10 @@ async function sendMessage(event) {
       data.message ||
       "I could not generate a response. Please try again.";
 
-    replaceTemporaryMessage(temporary.id, reply);
-  } catch (error) {
+    replaceTemporaryMessage(chatId, temporary.id, reply);
+  } catch {
     replaceTemporaryMessage(
+      chatId,
       temporary.id,
       "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured."
     );
@@ -392,18 +751,19 @@ async function sendMessage(event) {
 
     if (sendButton) {
       sendButton.disabled = false;
-      sendButton.innerHTML = '<span>Send</span><span>↑</span>';
+      sendButton.innerHTML = `<span>${escapeHTML(translate("Send"))}</span><span>↑</span>`;
     }
 
     input.focus();
   }
 }
 
-function replaceTemporaryMessage(id, content) {
-  const chat = getActiveChat();
+function replaceTemporaryMessage(chatId, id, content) {
+  const chat = state.chats.find(item => item.id === chatId);
   if (!chat) return;
 
   const message = chat.messages.find(item => item.id === id);
+
   if (message) {
     message.content = content;
     message.createdAt = Date.now();
@@ -426,7 +786,8 @@ function openStudentTool(tool) {
 
   if (!panel || !title || !content || !STUDENT_TOOLS[tool]) return;
 
-  title.textContent = STUDENT_TOOLS[tool];
+  state.currentStudentTool = tool;
+  title.textContent = translate(STUDENT_TOOLS[tool]);
   panel.hidden = false;
 
   $$(".feature-card", $("#studentWorkspace")).forEach(card => {
@@ -440,6 +801,7 @@ function openStudentTool(tool) {
   if (saved) saved.hidden = true;
 
   renderStudentTool(tool, content);
+  translatePage();
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -455,32 +817,16 @@ function closeStudentTool() {
 
   if (heading) heading.hidden = false;
   if (saved) saved.hidden = false;
+
+  state.currentStudentTool = null;
 }
 
 function renderStudentTool(tool, content) {
-  if (tool === "notes") {
-    renderNotesTool(content);
-    return;
-  }
-
-  if (tool === "summary") {
-    renderChaptersTool(content);
-    return;
-  }
-
-  if (tool === "planner") {
-    renderPlannerTool(content);
-    return;
-  }
-
-  if (tool === "mock" || tool === "mcq") {
-    renderPracticeTool(tool, content);
-    return;
-  }
-
-  if (tool === "flashcards") {
-    renderFlashcardsTool(content);
-  }
+  if (tool === "notes") return renderNotesTool(content);
+  if (tool === "summary") return renderChaptersTool(content);
+  if (tool === "planner") return renderPlannerTool(content);
+  if (tool === "mock" || tool === "mcq") return renderPracticeTool(tool, content);
+  if (tool === "flashcards") return renderFlashcardsTool(content);
 }
 
 /* Student notes */
@@ -508,17 +854,9 @@ function renderNotesTool(container) {
     if (!title || !body) return;
 
     const items = readStore(STORAGE.notes);
-    items.unshift({
-      id: makeId(),
-      title,
-      body,
-      date: Date.now()
-    });
+    items.unshift({ id: makeId(), title, body, date: Date.now() });
 
     writeStore(STORAGE.notes, items);
-    $("#noteTitle").value = "";
-    $("#noteBody").value = "";
-
     renderNotesTool(container);
     showToast("Note saved on this device.");
   });
@@ -533,11 +871,12 @@ function renderNotesTool(container) {
         <p>${escapeHTML(item.body)}</p>
       </div>
     `,
-    STORAGE.notes
+    STORAGE.notes,
+    () => renderNotesTool(container)
   );
 }
 
-/* Chapter summaries and saved chapters */
+/* Chapter summaries */
 
 function renderChaptersTool(container) {
   const chapters = readStore(STORAGE.chapters);
@@ -583,7 +922,8 @@ function renderChaptersTool(container) {
         <p>${escapeHTML(item.content)}</p>
       </div>
     `,
-    STORAGE.chapters
+    STORAGE.chapters,
+    () => renderChaptersTool(container)
   );
 }
 
@@ -601,8 +941,7 @@ function renderSavedChapters() {
   container.innerHTML = chapters.slice(0, 5).map(item => `
     <div class="local-record">
       <div>
-        <strong>${escapeHTML(item.title)}</strong>
-        <br>
+        <strong>${escapeHTML(item.title)}</strong><br>
         <small>${escapeHTML(item.subject)}</small>
       </div>
       <small>${formatDate(item.date)}</small>
@@ -647,8 +986,7 @@ function renderPlannerTool(container) {
   records.innerHTML = tasks.length ? tasks.map(item => `
     <div class="local-record">
       <div>
-        <strong>${escapeHTML(item.title)}</strong>
-        <br>
+        <strong>${escapeHTML(item.title)}</strong><br>
         <small>${item.date ? escapeHTML(item.date) : "No due date"}</small>
       </div>
       <button class="local-action" data-task-done="${escapeHTML(item.id)}" type="button">
@@ -706,6 +1044,7 @@ function renderPracticeTool(tool, container) {
       : `Create ${count} multiple-choice questions for ${subject}, ${chapter}. Include four options and correct answers.`;
 
     const input = $("#question");
+
     if (input) {
       input.value = prompt;
       setMode("general");
@@ -758,7 +1097,7 @@ function renderFlashcardsTool(container) {
 
 /* Shared record rendering */
 
-function renderRecordList(container, items, renderItem, storageKey) {
+function renderRecordList(container, items, renderItem, storageKey, rerender) {
   if (!container) return;
 
   if (!items.length) {
@@ -784,8 +1123,7 @@ function renderRecordList(container, items, renderItem, storageKey) {
       writeStore(storageKey, records);
       renderSavedChapters();
 
-      const tool = state.currentStudentTool;
-      if (tool) renderStudentTool(tool, container.closest("#studentToolContent"));
+      if (rerender) rerender();
       else renderRecordList(container, records, renderItem, storageKey);
     });
   });
@@ -803,7 +1141,7 @@ function openShopTool(tool) {
   if (!panel || !title || !content || !SHOP_TOOLS[tool]) return;
 
   state.currentShopTool = tool;
-  title.textContent = SHOP_TOOLS[tool];
+  title.textContent = translate(SHOP_TOOLS[tool]);
   panel.hidden = false;
 
   $$(".feature-card", $("#shopkeeperWorkspace")).forEach(card => {
@@ -814,6 +1152,7 @@ function openShopTool(tool) {
   if (heading) heading.hidden = true;
 
   renderShopTool(tool, content);
+  translatePage();
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -826,6 +1165,8 @@ function closeShopTool() {
 
   const heading = $("#shopkeeperWorkspace .dashboard-heading");
   if (heading) heading.hidden = false;
+
+  state.currentShopTool = null;
 }
 
 function renderShopTool(tool, container) {
@@ -882,7 +1223,8 @@ function renderCustomers(container) {
         <p>${escapeHTML(item.address || "")}</p>
       </div>
     `,
-    STORAGE.customers
+    STORAGE.customers,
+    () => renderCustomers(container)
   );
 }
 
@@ -1024,7 +1366,8 @@ function renderSales(container) {
         <p>${escapeHTML(item.details)}</p>
       </div>
     `,
-    STORAGE.sales
+    STORAGE.sales,
+    () => renderSales(container)
   );
 }
 
@@ -1075,7 +1418,8 @@ function renderExpenses(container) {
         <p>${formatMoney(item.amount)}</p>
       </div>
     `,
-    STORAGE.expenses
+    STORAGE.expenses,
+    () => renderExpenses(container)
   );
 }
 
@@ -1153,7 +1497,8 @@ function renderStock(container) {
         <p>${escapeHTML(item.details)}</p>
       </div>
     `,
-    STORAGE.stock
+    STORAGE.stock,
+    () => renderStock(container)
   );
 }
 
@@ -1236,7 +1581,7 @@ function setupVoice() {
 }
 
 /* ==========================================
-   LANGUAGE
+   LANGUAGE SELECTOR
 ========================================== */
 
 function setupLanguage() {
@@ -1249,7 +1594,7 @@ function setupLanguage() {
     select.value = saved;
   }
 
-  state.language = select.value;
+  state.language = select.value || "roman";
 
   select.addEventListener("change", () => {
     state.language = select.value;
@@ -1258,8 +1603,21 @@ function setupLanguage() {
       localStorage.setItem(STORAGE.language, state.language);
     } catch {}
 
+    translatePage();
+
+    if (state.currentStudentTool) {
+      openStudentTool(state.currentStudentTool);
+    }
+
+    if (state.currentShopTool) {
+      openShopTool(state.currentShopTool);
+    }
+
     showToast("Language preference saved.");
   });
+
+  translatePage();
+  startTranslationObserver();
 }
 
 /* ==========================================
@@ -1303,7 +1661,6 @@ function setupEvents() {
 
   $$("[data-student-tool]").forEach(button => {
     button.addEventListener("click", () => {
-      state.currentStudentTool = button.dataset.studentTool;
       openStudentTool(button.dataset.studentTool);
     });
   });
@@ -1315,7 +1672,6 @@ function setupEvents() {
   });
 
   $("#questionForm")?.addEventListener("submit", sendMessage);
-
   $("#question")?.addEventListener("input", updateCharacterCount);
 
   $("#question")?.addEventListener("keydown", event => {
@@ -1327,11 +1683,11 @@ function setupEvents() {
 
   $("#newChat")?.addEventListener("click", newChat);
   $("#headerNewChat")?.addEventListener("click", newChat);
-
   $("#clearHistory")?.addEventListener("click", clearHistory);
 
   $("#recentList")?.addEventListener("click", event => {
     const deleteButton = event.target.closest("[data-delete-chat]");
+
     if (deleteButton) {
       event.stopPropagation();
       deleteChat(deleteButton.dataset.deleteChat);
@@ -1344,15 +1700,6 @@ function setupEvents() {
 
   $("#openSidebar")?.addEventListener("click", openSidebar);
   $("#closeSidebar")?.addEventListener("click", closeSidebar);
-
-  document.addEventListener("click", event => {
-    if (
-      document.body.classList.contains("sidebar-open") &&
-      event.target === document.body
-    ) {
-      closeSidebar();
-    }
-  });
 
   $("#backToStudent")?.addEventListener("click", closeStudentTool);
   $("#backToShop")?.addEventListener("click", closeShopTool);
@@ -1381,12 +1728,10 @@ function initialize() {
     state.activeChatId = state.chats[0]?.id || null;
   }
 
-  if (!state.chats.length) {
-    createChat();
-  }
+  if (!state.chats.length) createChat();
 
-  setupLanguage();
   setupEvents();
+  setupLanguage();
   setupVoice();
 
   renderChatHistory();
@@ -1396,6 +1741,7 @@ function initialize() {
   updateCharacterCount();
 
   setMode("general");
+  translatePage();
 
   window.addEventListener("online", () => {
     showToast("Internet connection restored.");
