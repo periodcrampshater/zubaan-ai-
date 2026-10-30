@@ -1,4 +1,3 @@
-
 "use strict";
 
 /* ==========================================
@@ -12,6 +11,7 @@ const STORAGE = {
   chapters: "zubaan_student_chapters_v1",
   planner: "zubaan_student_planner_v1",
   credits: "zubaan_shop_credits_v1",
+  payments: "zubaan_shop_payments_v1",
   customers: "zubaan_shop_customers_v1",
   sales: "zubaan_shop_sales_v1",
   expenses: "zubaan_shop_expenses_v1",
@@ -122,6 +122,13 @@ const TRANSLATIONS = {
     "Details": "Tafseel",
     "Add udhar": "Udhar add karein",
     "Receive payment": "Payment wasool karein",
+    "Select customer / udhar entry": "Customer / udhar entry select karein",
+    "Payment amount (Rs.)": "Wasool ki gayi raqam (Rs.)",
+    "Payment details (optional)": "Payment ki tafseel (optional)",
+    "Chat deleted.": "Chat delete ho gayi.",
+    "Payment cannot be greater than the remaining balance.": "Payment baqi raqam se zyada nahi ho sakti.",
+    "Please enter a valid payment amount.": "Meherbani karke durust payment amount likhein.",
+    "Please select a valid udhar entry.": "Meherbani karke durust udhar entry select karein.",
     "Total recorded sales": "Kul darj sales",
     "Sale amount (Rs.)": "Sale ki raqam (Rs.)",
     "Sale details": "Sale ki tafseel",
@@ -169,7 +176,7 @@ const TRANSLATIONS = {
     "New chat": "نئی گفتگو",
     "New Chat": "نئی گفتگو",
     "Recent conversations": "حالیہ گفتگو",
-    "Your conversations will appear here.": "آپ کی گفتگو یہاں نظر آئے گی۔",
+    "Your conversations will appear here.",
     "Clear history": "سرگزشت صاف کریں",
     "Language": "زبان",
     "Help": "مدد",
@@ -213,6 +220,13 @@ const TRANSLATIONS = {
     "Details": "تفصیلات",
     "Add udhar": "ادھار شامل کریں",
     "Receive payment": "ادائیگی وصول کریں",
+    "Select customer / udhar entry": "گاہک / ادھار اندراج منتخب کریں",
+    "Payment amount (Rs.)": "وصول شدہ رقم",
+    "Payment details (optional)": "ادائیگی کی تفصیلات (اختیاری)",
+    "Chat deleted.": "گفتگو حذف ہو گئی۔",
+    "Payment cannot be greater than the remaining balance.": "ادائیگی باقی رقم سے زیادہ نہیں ہو سکتی۔",
+    "Please enter a valid payment amount.": "درست ادائیگی کی رقم درج کریں۔",
+    "Please select a valid udhar entry.": "درست ادھار اندراج منتخب کریں۔",
     "Total recorded sales": "کل درج شدہ فروخت",
     "Sale amount (Rs.)": "فروخت کی رقم",
     "Sale details": "فروخت کی تفصیلات",
@@ -453,6 +467,11 @@ function readStore(key, fallback = []) {
   }
 }
 
+function readArray(key) {
+  const value = readStore(key, []);
+  return Array.isArray(value) ? value : [];
+}
+
 function writeStore(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -495,23 +514,33 @@ function formatDate(value) {
 function formatMoney(value) {
   return `Rs. ${Number(value || 0).toLocaleString("en-PK")}`;
 }
-
 /* ==========================================
    NOTIFICATIONS
 ========================================== */
 
 function showToast(message) {
-  const toast = $("#toast");
-  if (!toast) return;
+  let toast = $("#toast");
+
+  // Keep notifications working even if the page template is missing the toast node.
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    document.body.appendChild(toast);
+  }
 
   toast.textContent = translate(message);
-  toast.classList.add("visible");
+  toast.classList.remove("visible", "show");
+  // Restart the CSS transition when a notification is shown repeatedly.
+  void toast.offsetWidth;
+  toast.classList.add("visible", "show");
 
   clearTimeout(showToast.timer);
-
   showToast.timer = setTimeout(() => {
-    toast.classList.remove("visible");
-  }, 1800);
+    toast.classList.remove("visible", "show");
+  }, 2600);
 }
 
 /* ==========================================
@@ -540,11 +569,23 @@ function getActiveChat() {
 
 function saveChats() {
   writeStore(STORAGE.chats, state.chats);
+  writeStore(STORAGE.activeChat, state.activeChatId || null);
+}
 
+function readActiveChatId() {
   try {
-    localStorage.setItem(STORAGE.activeChat, state.activeChatId || "");
+    const raw = localStorage.getItem(STORAGE.activeChat);
+    if (!raw) return null;
+
+    // Support both the old raw-string format and the corrected JSON format.
+    try {
+      const parsed = JSON.parse(raw);
+      return typeof parsed === "string" ? parsed : null;
+    } catch {
+      return raw;
+    }
   } catch {
-    // Local storage may be unavailable.
+    return null;
   }
 }
 
@@ -554,11 +595,7 @@ function selectChat(id) {
 
   state.activeChatId = id;
 
-  try {
-    localStorage.setItem(STORAGE.activeChat, id);
-  } catch {
-    // Continue without persistence.
-  }
+  saveChats();
 
   renderChatHistory();
   renderMessages();
@@ -584,7 +621,7 @@ function deleteChat(id) {
   renderMessages();
   updateWelcome();
 
-  showToast("Conversation history cleared.");
+  showToast("Chat deleted.");
 }
 
 function newChat() {
@@ -792,25 +829,271 @@ async function sendMessage(event) {
       })
     });
 
-    if (!response.ok) {
-      throw new Error("The AI service is currently unavailable.");
-    }
+    const data = await response.json().catch(() => ({}));
 
-    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || "The AI service is currently unavailable."
+      );
+    }
 
     const reply =
       data.reply ||
       data.answer ||
       data.message ||
+      data.response ||
       "I could not generate a response. Please try again.";
 
-    replaceTemporaryMessage(chatId, temporary.id, reply);
-  } catch {
-    replaceTemporaryMessage(
-      chatId,
-      temporary.id,
-      "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured."
-    );
+    replaceTemporaryMessage(chatId, temporary.id, String(reply));
+  } catch (error) {
+    const fallback = error?.message
+      ? `AI request failed: ${error.message}`
+      : "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.";
+
+    replaceTemporaryMessage(chatId, temporary.id, fallback);
+  } finally {
+    state.busy = false;
+
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.innerHTML = `<span>${escapeHTML(translate("Send"))}</span><span>↑</span>`;
+    }
+
+    input.focus();
+  }
+}
+
+function replaceTemporaryMessage(chatId, id, content) {
+  const chat = state.chats.find(item => item.id === chatId);
+  if (!chat) return;
+
+  const message = chat.messages.find(item => item.id === id);
+
+  if (message) {
+    message.content = content;
+    message.createdAt = Date.now();
+  }
+
+  chat.updatedAt = Date.now();
+  saveChats();
+  renderMessages();
+  renderChatHistory();
+}
+
+/* ==========================================
+   STUDENT TOOLS
+========================================== */
+
+function openStudentTool(tool) {
+  const panel = $("#studentToolPanel");
+  const title = $("#studentToolTitle");
+  const content = $("#studentToolContent");
+
+  if (!panel || !title || !content || !STUDENT_TOOLS[tool]) return;
+
+  state.currentStudentTool = tool;
+  title.textContent = translate(STUDENT_TOOLS[tool]);
+  panel.hidden = false;
+
+  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
+    card.classList.toggle("active", card.dataset.studentTool === tool);
+  });
+
+  renderStudentTool(tool);
+  translatePage();
+}
+
+function closeStudentTool() {
+  const panel = $("#studentToolPanel");
+  if (panel) panel.hidden = true;
+
+  state.currentStudentTool = null;
+
+  $$(".feature-card", $("#studentWorkspace")).forEach(card => {
+    card.classList.remove("active");
+  });
+}
+
+function renderStudentTool(tool) {
+  const content = $("#studentToolContent");
+  if (!content) return;
+
+  switch (tool) {
+    case "notes":
+      renderNotes();
+      break;
+    case "summary":
+      renderChapters();
+      break;
+    case "planner":
+      renderPlanner();
+      break;
+    case "flashcards":
+      renderFlashcards();
+      break;
+    case "mock":
+    case "mcq":
+      renderQuizForm(tool);
+      break;
+    default:
+      content.innerHTML = "";
+  }
+}
+        class="history-delete"
+        type="button"
+        data-delete-chat="${escapeHTML(chat.id)}"
+        aria-label="Delete conversation"
+      >×</button>
+    </div>
+  `).join("");
+}
+
+function renderMessages() {
+  const container = $("#generalMessages");
+  if (!container) return;
+
+  const chat = getActiveChat();
+
+  if (!chat || !chat.messages.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = chat.messages.map(message => `
+    <article class="chat-message ${message.role === "user" ? "user" : "assistant"}">
+      ${escapeHTML(message.content).replace(/\n/g, "<br>")}
+    </article>
+  `).join("");
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function updateWelcome() {
+  const chat = getActiveChat();
+  const welcome = $("#welcomeContainer");
+
+  if (welcome) {
+    welcome.hidden = !!(chat && chat.messages.length);
+  }
+}
+
+function clearHistory() {
+  if (!confirm(
+    state.language === "ur"
+      ? "کیا آپ اس ڈیوائس سے تمام گفتگو حذف کرنا چاہتے ہیں؟"
+      : "Delete all conversations from this device?"
+  )) return;
+
+  state.chats = [];
+  state.activeChatId = null;
+
+  createChat();
+  saveChats();
+  renderChatHistory();
+  renderMessages();
+
+  showToast("Conversation history cleared.");
+}
+
+function setMode(mode) {
+  if (!["general", "student", "shopkeeper"].includes(mode)) return;
+
+  state.mode = mode;
+
+  $$("[data-mode]").forEach(button => {
+    const active = button.dataset.mode === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  $$("[data-workspace]").forEach(section => {
+    const active = section.dataset.workspace === mode;
+    section.classList.toggle("active", active);
+    section.hidden = !active;
+  });
+
+  const title = $("#currentModeTitle");
+  if (title) title.textContent = translate(MODE_TITLES[mode]);
+
+  closeSidebar();
+
+  if (mode === "general") {
+    renderMessages();
+    updateWelcome();
+  }
+
+  translatePage();
+}
+
+/* ==========================================
+   GENERAL CHAT
+========================================== */
+
+async function sendMessage(event) {
+  event?.preventDefault();
+
+  if (state.busy) return;
+
+  const input = $("#question");
+  if (!input) return;
+
+  const message = input.value.trim();
+  if (!message) return;
+
+  if (!navigator.onLine) {
+    showToast("AI chat needs an internet connection.");
+    return;
+  }
+
+  input.value = "";
+  updateCharacterCount();
+
+  addMessage("user", message);
+
+  state.busy = true;
+  const sendButton = $("#askButton");
+
+  if (sendButton) {
+    sendButton.disabled = true;
+    sendButton.textContent = translate("Thinking...");
+  }
+
+  const chatId = state.activeChatId;
+  const temporary = addMessage("assistant", "Thinking...");
+
+  try {
+    const response = await fetch("/.netlify/functions/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        language: state.language,
+        mode: state.mode
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || data.message || "The AI service is currently unavailable."
+      );
+    }
+
+    const reply =
+      data.reply ||
+      data.answer ||
+      data.message ||
+      data.response ||
+      "I could not generate a response. Please try again.";
+
+    replaceTemporaryMessage(chatId, temporary.id, String(reply));
+  } catch (error) {
+    const fallback = error?.message
+      ? `AI request failed: ${error.message}`
+      : "AI service is not connected yet. Your conversation is saved on this device. Please try again after the AI service is configured.";
+
+    replaceTemporaryMessage(chatId, temporary.id, fallback);
   } finally {
     state.busy = false;
 
@@ -897,7 +1180,7 @@ function renderStudentTool(tool, content) {
 /* Student notes */
 
 function renderNotesTool(container) {
-  const notes = readStore(STORAGE.notes);
+  const notes = readArray(STORAGE.notes);
 
   container.innerHTML = `
     <form class="local-form" id="noteForm">
@@ -918,7 +1201,7 @@ function renderNotesTool(container) {
 
     if (!title || !body) return;
 
-    const items = readStore(STORAGE.notes);
+    const items = readArray(STORAGE.notes);
     items.unshift({ id: makeId(), title, body, date: Date.now() });
 
     writeStore(STORAGE.notes, items);
@@ -944,7 +1227,7 @@ function renderNotesTool(container) {
 /* Chapter summaries */
 
 function renderChaptersTool(container) {
-  const chapters = readStore(STORAGE.chapters);
+  const chapters = readArray(STORAGE.chapters);
 
   container.innerHTML = `
     <form class="local-form" id="chapterForm">
@@ -962,7 +1245,7 @@ function renderChaptersTool(container) {
   $("#chapterForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.chapters);
+    const items = readArray(STORAGE.chapters);
     items.unshift({
       id: makeId(),
       subject: $("#chapterSubject").value.trim(),
@@ -996,7 +1279,7 @@ function renderSavedChapters() {
   const container = $("#savedChapters");
   if (!container) return;
 
-  const chapters = readStore(STORAGE.chapters);
+  const chapters = readArray(STORAGE.chapters);
 
   if (!chapters.length) {
     container.innerHTML = "<p>Your saved chapters will appear here.</p>";
@@ -1006,7 +1289,7 @@ function renderSavedChapters() {
   container.innerHTML = chapters.slice(0, 5).map(item => `
     <div class="local-record">
       <div>
-        <strong>${escapeHTML(item.title)}</strong><br>
+         <strong>${escapeHTML(item.title)}</strong><br>
         <small>${escapeHTML(item.subject)}</small>
       </div>
       <small>${formatDate(item.date)}</small>
@@ -1017,7 +1300,7 @@ function renderSavedChapters() {
 /* Study planner */
 
 function renderPlannerTool(container) {
-  const tasks = readStore(STORAGE.planner);
+  const tasks = readArray(STORAGE.planner);
 
   container.innerHTML = `
     <form class="local-form" id="plannerForm">
@@ -1033,7 +1316,7 @@ function renderPlannerTool(container) {
   $("#plannerForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.planner);
+    const items = readArray(STORAGE.planner);
     items.unshift({
       id: makeId(),
       title: $("#taskName").value.trim(),
@@ -1062,7 +1345,7 @@ function renderPlannerTool(container) {
 
   $$("[data-task-done]", records).forEach(button => {
     button.addEventListener("click", () => {
-      const items = readStore(STORAGE.planner);
+      const items = readArray(STORAGE.planner);
       const task = items.find(item => item.id === button.dataset.taskDone);
 
       if (task) {
@@ -1175,7 +1458,7 @@ function renderPracticeTool(tool, container) {
 ========================================== */
 
 function renderFlashcardsTool(container) {
-  const cards = readStore(STORAGE.notes + "_flashcards");
+  const cards = readArray(STORAGE.notes + "_flashcards");
 
   container.innerHTML = `
     <form class="local-form" id="flashcardForm">
@@ -1194,7 +1477,7 @@ function renderFlashcardsTool(container) {
   $("#flashcardForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.notes + "_flashcards");
+    const items = readArray(STORAGE.notes + "_flashcards");
 
     items.unshift({
       id: makeId(),
@@ -1257,105 +1540,6 @@ function renderRecordList(container, items, renderItem, storageKey, rerender) {
     });
   });
 }
-
-/* ==========================================
-   SHOPKEEPER TOOLS
-========================================== */
-
-function openShopTool(tool) {
-  const panel = $("#shopToolPanel");
-  const title = $("#shopToolTitle");
-  const content = $("#shopToolContent");
-
-  if (!panel || !title || !content || !SHOP_TOOLS[tool]) return;
-
-  state.currentShopTool = tool;
-  title.textContent = translate(SHOP_TOOLS[tool]);
-  panel.hidden = false;
-
-  $$(".feature-card", $("#shopkeeperWorkspace")).forEach(card => {
-    card.hidden = true;
-  });
-
-  const heading = $("#shopkeeperWorkspace .dashboard-heading");
-  if (heading) heading.hidden = true;
-
-  renderShopTool(tool, content);
-  translatePage();
-  panel.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function closeShopTool() {
-  $("#shopToolPanel").hidden = true;
-
-  $$(".feature-card", $("#shopkeeperWorkspace")).forEach(card => {
-    card.hidden = false;
-  });
-
-  const heading = $("#shopkeeperWorkspace .dashboard-heading");
-  if (heading) heading.hidden = false;
-
-  state.currentShopTool = null;
-}
-
-function renderShopTool(tool, container) {
-  if (tool === "customers") return renderCustomers(container);
-  if (tool === "credit") return renderCredits(container);
-  if (tool === "sales") return renderSales(container);
-  if (tool === "expenses") return renderExpenses(container);
-  if (tool === "payments") return renderPayments(container);
-  if (tool === "stock") return renderStock(container);
-}
-
-/* Customers */
-
-function renderCustomers(container) {
-  const customers = readStore(STORAGE.customers);
-
-  container.innerHTML = `
-    <form class="local-form" id="customerForm">
-      <label for="customerName">Customer name</label>
-      <input id="customerName" maxlength="100" required>
-
-      <label for="customerPhone">Phone number</label>
-      <input id="customerPhone" maxlength="30">
-
-      <label for="customerDetails">Address / Details</label>
-      <textarea id="customerDetails" maxlength="1000"></textarea>
-
-      <button type="submit">Save customer</button>
-    </form>
-
-    <div class="local-record-list" id="customerRecords"></div>
-  `;
-
-  $("#customerForm").addEventListener("submit", event => {
-    event.preventDefault();
-
-    const items = readStore(STORAGE.customers);
-
-    items.unshift({
-      id: makeId(),
-      name: $("#customerName").value.trim(),
-      phone: $("#customerPhone").value.trim(),
-      details: $("#customerDetails").value.trim(),
-      date: Date.now()
-    });
-
-    writeStore(STORAGE.customers, items);
-    renderCustomers(container);
-    showToast("Customer saved on this device.");
-  });
-
-  renderRecordList(
-    $("#customerRecords"),
-    customers,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.name)}</strong>
-        <small>${escapeHTML(item.phone || "")}</small>
-        <p>${escapeHTML(item.details || "")}</p>
-      </div>
     `,
     STORAGE.customers,
     () => renderCustomers(container)
@@ -1365,10 +1549,15 @@ function renderCustomers(container) {
 /* Udhar ledger */
 
 function renderCredits(container) {
-  const credits = readStore(STORAGE.credits);
+  const credits = readArray(STORAGE.credits);
+  const payments = readArray(STORAGE.payments);
   const total = credits.reduce(
-    (sum, item) => sum + Number(item.amount || 0) - Number(item.paid || 0),
+    (sum, item) => sum + Math.max(0, Number(item.amount || 0) - Number(item.paid || 0)),
     0
+  );
+
+  const outstanding = credits.filter(
+    item => Number(item.amount || 0) - Number(item.paid || 0) > 0
   );
 
   container.innerHTML = `
@@ -1379,53 +1568,145 @@ function renderCredits(container) {
 
     <form class="local-form" id="creditForm">
       <label for="creditCustomer">Customer name</label>
-      <input id="creditCustomer" required>
+      <input id="creditCustomer" maxlength="100" required>
 
       <label for="creditAmount">Amount (Rs.)</label>
       <input id="creditAmount" type="number" min="1" step="0.01" required>
 
       <label for="creditDetails">Details</label>
-      <textarea id="creditDetails"></textarea>
+      <textarea id="creditDetails" maxlength="1000"></textarea>
 
       <button type="submit">Add udhar</button>
+    </form>
+
+    <h3>Receive payment</h3>
+    <form class="local-form" id="receivePaymentForm">
+      <label for="paymentCredit">Select customer / udhar entry</label>
+      <select id="paymentCredit" required ${outstanding.length ? "" : "disabled"}>
+        ${
+          outstanding.length
+            ? outstanding.map(item => {
+                const due = Math.max(0, Number(item.amount || 0) - Number(item.paid || 0));
+                return `<option value="${escapeHTML(item.id)}">${escapeHTML(item.customer)} — Due: ${formatMoney(due)}</option>`;
+              }).join("")
+            : `<option value="">No outstanding udhar</option>`
+        }
+      </select>
+
+      <label for="paymentAmount">Payment amount (Rs.)</label>
+      <input id="paymentAmount" type="number" min="0.01" step="0.01"
+             required ${outstanding.length ? "" : "disabled"}>
+
+      <label for="paymentDetails">Payment details (optional)</label>
+      <textarea id="paymentDetails" maxlength="500"
+                ${outstanding.length ? "" : "disabled"}></textarea>
+
+      <button type="submit" ${outstanding.length ? "" : "disabled"}>Receive payment</button>
     </form>
 
     <div class="local-record-list" id="creditRecords"></div>
   `;
 
-  $("#creditForm").addEventListener("submit", event => {
+  $("#creditForm")?.addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.credits);
+    const customer = $("#creditCustomer").value.trim();
+    const amount = Number($("#creditAmount").value);
+    if (!customer || !Number.isFinite(amount) || amount <= 0) {
+      showToast("Please enter a valid customer and amount.");
+      return;
+    }
 
+    const items = readArray(STORAGE.credits);
     items.unshift({
       id: makeId(),
-      customer: $("#creditCustomer").value.trim(),
-      amount: Number($("#creditAmount").value),
+      customer,
+      amount,
       paid: 0,
       details: $("#creditDetails").value.trim(),
       date: Date.now()
     });
 
-    writeStore(STORAGE.credits, items);
+    if (writeStore(STORAGE.credits, items)) {
+      renderCredits(container);
+      showToast("Udhar entry saved offline.");
+    }
+  });
+
+  $("#receivePaymentForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const creditId = $("#paymentCredit").value;
+    const amount = Number($("#paymentAmount").value);
+    const items = readArray(STORAGE.credits);
+    const credit = items.find(item => item.id === creditId);
+
+    if (!credit) {
+      showToast("Please select a valid udhar entry.");
+      return;
+    }
+
+    const due = Math.max(0, Number(credit.amount || 0) - Number(credit.paid || 0));
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showToast("Please enter a valid payment amount.");
+      return;
+    }
+
+    if (amount > due + 0.000001) {
+      showToast("Payment cannot be greater than the remaining balance.");
+      return;
+    }
+
+    const previousPaid = Number(credit.paid || 0);
+    const previousPayments = readArray(STORAGE.payments);
+    credit.paid = previousPaid + amount;
+
+    const paymentItems = [...previousPayments];
+    paymentItems.unshift({
+      id: makeId(),
+      creditId: credit.id,
+      customer: credit.customer,
+      amount,
+      details: $("#paymentDetails").value.trim(),
+      date: Date.now()
+    });
+
+    // Persist the transaction first. If the ledger write fails, roll it back.
+    const paymentsSaved = writeStore(STORAGE.payments, paymentItems);
+    if (!paymentsSaved) return;
+
+    const creditsSaved = writeStore(STORAGE.credits, items);
+    if (!creditsSaved) {
+      writeStore(STORAGE.payments, previousPayments);
+      credit.paid = previousPaid;
+      return;
+    }
+
     renderCredits(container);
-    showToast("Udhar entry saved offline.");
+    showToast("Payment recorded.");
   });
 
   renderRecordList(
     $("#creditRecords"),
     credits,
-    item => `
-      <div>
-        <strong>${escapeHTML(item.customer)}</strong>
-        <p>${escapeHTML(item.details || "")}</p>
-        <small>
-          Total: ${formatMoney(item.amount)} ·
-          Paid: ${formatMoney(item.paid)} ·
-          Due: ${formatMoney(item.amount - item.paid)}
-        </small>
-      </div>
-    `,
+    item => {
+      const amount = Number(item.amount || 0);
+      const paid = Number(item.paid || 0);
+      const due = Math.max(0, amount - paid);
+
+      return `
+        <div>
+          <strong>${escapeHTML(item.customer)}</strong>
+          <p>${escapeHTML(item.details || "")}</p>
+          <small>
+            Total: ${formatMoney(amount)} ·
+            Paid: ${formatMoney(paid)} ·
+            Due: ${formatMoney(due)}
+          </small>
+        </div>
+      `;
+    },
     STORAGE.credits,
     () => renderCredits(container)
   );
@@ -1434,7 +1715,7 @@ function renderCredits(container) {
 /* Daily sales */
 
 function renderSales(container) {
-  const sales = readStore(STORAGE.sales);
+  const sales = readArray(STORAGE.sales);
   const total = sales.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   container.innerHTML = `
@@ -1459,7 +1740,7 @@ function renderSales(container) {
   $("#salesForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.sales);
+    const items = readArray(STORAGE.sales);
 
     items.unshift({
       id: makeId(),
@@ -1491,7 +1772,7 @@ function renderSales(container) {
 /* Expenses */
 
 function renderExpenses(container) {
-  const expenses = readStore(STORAGE.expenses);
+  const expenses = readArray(STORAGE.expenses);
   const total = expenses.reduce(
     (sum, item) => sum + Number(item.amount || 0),
     0
@@ -1519,7 +1800,7 @@ function renderExpenses(container) {
   $("#expenseForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.expenses);
+    const items = readArray(STORAGE.expenses);
 
     items.unshift({
       id: makeId(),
@@ -1550,26 +1831,50 @@ function renderExpenses(container) {
 /* Payment history */
 
 function renderPayments(container) {
-  const credits = readStore(STORAGE.credits);
-  const payments = credits.filter(item => Number(item.paid || 0) > 0);
+  const credits = readArray(STORAGE.credits);
+  const payments = readArray(STORAGE.payments);
+
+  // Show historical amounts already marked as paid before transaction-level
+  // payment history was introduced, without duplicating newer transactions.
+  const legacyPayments = credits.flatMap(credit => {
+    const recorded = payments
+      .filter(payment => payment.creditId === credit.id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+    const legacyAmount = Math.max(0, Number(credit.paid || 0) - recorded);
+    if (!legacyAmount) return [];
+
+    return [{
+      id: `legacy-${credit.id}`,
+      customer: credit.customer,
+      amount: legacyAmount,
+      details: "Earlier recorded payment",
+      date: Number(credit.date) || Date.now()
+    }];
+  });
+
+  const allPayments = [...payments, ...legacyPayments].sort(
+    (a, b) => Number(b.date || 0) - Number(a.date || 0)
+  );
 
   container.innerHTML = `
     <div class="local-record-list" id="paymentRecords"></div>
   `;
 
   const records = $("#paymentRecords");
+  if (!records) return;
 
-  if (!payments.length) {
+  if (!allPayments.length) {
     records.innerHTML = `<p>${escapeHTML(translate("No payments recorded yet."))}</p>`;
     return;
   }
 
-  records.innerHTML = payments.map(item => `
+  records.innerHTML = allPayments.map(item => `
     <article class="local-record">
       <div>
-        <strong>${escapeHTML(item.customer)}</strong>
-        <p>Paid: ${formatMoney(item.paid)}</p>
-        <small>Remaining: ${formatMoney(item.amount - item.paid)}</small>
+        <strong>${escapeHTML(item.customer || "Customer")}</strong>
+        <p>Received: ${formatMoney(item.amount)}</p>
+        <small>${escapeHTML(item.details || "")} · ${formatDate(item.date)}</small>
       </div>
     </article>
   `).join("");
@@ -1578,14 +1883,13 @@ function renderPayments(container) {
 /* Stock notes */
 
 function renderStock(container) {
-  const stock = readStore(STORAGE.stock);
+  const stock = readArray(STORAGE.stock);
 
   container.innerHTML = `
     <form class="local-form" id="stockForm">
       <label for="stockItem">Item / Product</label>
       <input id="stockItem" required>
-
-      <label for="stockQuantity">Quantity</label>
+            <label for="stockQuantity">Quantity</label>
       <input id="stockQuantity" type="number" min="0" step="1" required>
 
       <label for="stockDetails">Details</label>
@@ -1600,7 +1904,7 @@ function renderStock(container) {
   $("#stockForm").addEventListener("submit", event => {
     event.preventDefault();
 
-    const items = readStore(STORAGE.stock);
+    const items = readArray(STORAGE.stock);
 
     items.unshift({
       id: makeId(),
@@ -1640,6 +1944,26 @@ function openSidebar() {
 
 function closeSidebar() {
   document.body.classList.remove("sidebar-open");
+}
+
+function setupSidebarDismiss() {
+  document.addEventListener("click", event => {
+    if (!document.body.classList.contains("sidebar-open")) return;
+
+    const sidebar = $("#sidebar") || $(".sidebar");
+    const openButton = $("#openSidebar") || $("#menuBtn");
+    const closeButton = $("#closeSidebar") || $(".mobile-close");
+
+    if (sidebar && sidebar.contains(event.target)) return;
+    if (openButton && openButton.contains(event.target)) return;
+    if (closeButton && closeButton.contains(event.target)) return;
+
+    closeSidebar();
+  }, true);
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeSidebar();
+  });
 }
 
 /* ==========================================
@@ -1753,6 +2077,9 @@ function setupLanguage() {
     }
 
     translatePage();
+    renderChatHistory();
+    renderMessages();
+    updateWelcome();
 
     if (state.currentStudentTool) {
       openStudentTool(state.currentStudentTool);
@@ -1819,7 +2146,14 @@ function setupEvents() {
     });
   });
 
-  $("#questionForm")?.addEventListener("submit", sendMessage);
+  const questionForm = $("#questionForm");
+  questionForm?.addEventListener("submit", sendMessage);
+
+  const askButton = $("#askButton");
+  if (askButton && !questionForm?.contains(askButton)) {
+    askButton.addEventListener("click", sendMessage);
+  }
+
   $("#question")?.addEventListener("input", updateCharacterCount);
 
   $("#question")?.addEventListener("keydown", event => {
@@ -1847,7 +2181,10 @@ function setupEvents() {
   });
 
   $("#openSidebar")?.addEventListener("click", openSidebar);
+  $("#menuBtn")?.addEventListener("click", openSidebar);
   $("#closeSidebar")?.addEventListener("click", closeSidebar);
+  $(".mobile-close")?.addEventListener("click", closeSidebar);
+  setupSidebarDismiss();
 
   $("#backToStudent")?.addEventListener("click", closeStudentTool);
   $("#backToShop")?.addEventListener("click", closeShopTool);
@@ -1870,8 +2207,31 @@ function setupEvents() {
 ========================================== */
 
 function initialize() {
-  state.chats = readStore(STORAGE.chats);
-  state.activeChatId = readStore(STORAGE.activeChat, null);
+  const storedChats = readStore(STORAGE.chats, []);
+
+  state.chats = Array.isArray(storedChats)
+    ? storedChats
+        .filter(chat => chat && typeof chat.id === "string")
+        .map(chat => ({
+          ...chat,
+          title: typeof chat.title === "string" ? chat.title : "New chat",
+          messages: Array.isArray(chat.messages)
+            ? chat.messages
+                .filter(message => message && typeof message === "object")
+                .map(message => ({
+                  ...message,
+                  id: message.id || makeId(),
+                  role: message.role === "user" ? "user" : "assistant",
+                  content: String(message.content ?? ""),
+                  createdAt: Number(message.createdAt) || Date.now()
+                }))
+            : [],
+          createdAt: Number(chat.createdAt) || Date.now(),
+          updatedAt: Number(chat.updatedAt) || Date.now()
+        }))
+    : [];
+
+  state.activeChatId = readActiveChatId();
 
   if (
     !state.activeChatId ||
@@ -1881,6 +2241,7 @@ function initialize() {
   }
 
   if (!state.chats.length) createChat();
+  else saveChats();
 
   setupEvents();
   setupLanguage();
