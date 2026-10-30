@@ -1,21 +1,31 @@
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* =========================================
+   1. ROOT & GLOBAL STYLES
+========================================= */
 
 :root {
   color-scheme: dark;
+
   --bg: #0d120e;
   --sidebar: #111812;
   --panel: #141a15;
   --panel-hover: #19231a;
+
   --text: #f2f5ef;
   --muted: #9ba79c;
   --muted-soft: #748075;
+
   --line: #29342b;
+
   --green: #a7d4ae;
   --green-light: #c2e4c7;
   --green-dark: #25452d;
+
   --danger: #d98d83;
+
   --radius: 12px;
+
   font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
 }
 
@@ -27,6 +37,7 @@ html {
   min-width: 320px;
   min-height: 100%;
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -57,6 +68,12 @@ button:disabled {
   opacity: .55;
 }
 
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -75,7 +92,9 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
-/* APP LAYOUT */
+/* =========================================
+   2. APP LAYOUT
+========================================= */
 
 .app-layout {
   display: flex;
@@ -83,18 +102,25 @@ a:focus-visible {
   min-height: 100vh;
 }
 
-/* SIDEBAR */
+/* =========================================
+   3. SIDEBAR
+========================================= */
 
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
+
   display: flex;
   flex-direction: column;
+
   width: 260px;
+  height: 100vh;
   height: 100dvh;
+
   padding: 20px 15px 15px;
   overflow-y: auto;
+
   border-right: 1px solid var(--line);
   background: var(--sidebar);
 }
@@ -103,6 +129,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   min-height: 44px;
   margin-bottom: 25px;
   padding: 0 5px;
@@ -118,13 +145,17 @@ a:focus-visible {
 .brand-mark {
   display: grid;
   place-items: center;
+
   width: 39px;
   height: 39px;
   flex: 0 0 39px;
+
   border: 1px solid rgba(167, 212, 174, .3);
   border-radius: 10px;
+
   background: #203b25;
   color: var(--green-light);
+
   font: 24px Georgia, serif;
 }
 
@@ -133,23 +164,34 @@ a:focus-visible {
   letter-spacing: -.04em;
 }
 
+/* NEW CHAT */
+
 .new-chat-button {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 11px;
+
   width: 100%;
   min-height: 42px;
+
   padding: 0 11px;
   margin: 0 0 24px;
+
   border: 1px solid rgba(167, 212, 174, .13);
   border-radius: 8px;
+
   background: rgba(167, 212, 174, .045);
   color: #dce8dc;
+
   font-size: 12px;
   font-weight: 600;
   text-align: left;
-  transition: background .18s ease, border-color .18s ease, color .18s ease;
+
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease;
 }
 
 .new-chat-button:hover {
@@ -165,14 +207,19 @@ a:focus-visible {
 .new-chat-button > span:first-child {
   display: grid;
   place-items: center;
+
   width: 19px;
   height: 19px;
+
   border: 1px solid rgba(167, 212, 174, .25);
   border-radius: 6px;
+
   color: var(--green-light);
   font-size: 15px;
   line-height: 1;
 }
+
+/* SIDEBAR NAVIGATION */
 
 .sidebar-section {
   display: flex;
@@ -183,6 +230,7 @@ a:focus-visible {
 .sidebar-label {
   display: block;
   padding: 0 9px;
+
   color: var(--muted-soft);
   font-size: 9px;
   font-weight: 700;
@@ -197,16 +245,25 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
+
   width: 100%;
   min-height: 42px;
+
   padding: 0 11px;
+
   border: 1px solid transparent;
   border-radius: 8px;
+
   background: transparent;
   color: var(--muted);
+
   font-size: 12px;
   text-align: left;
-  transition: background .15s ease, color .15s ease;
+
+  transition:
+    background .15s ease,
+    color .15s ease,
+    border-color .15s ease;
 }
 
 .sidebar-link:hover {
@@ -223,17 +280,23 @@ a:focus-visible {
 .nav-icon {
   display: grid;
   place-items: center;
+
   width: 19px;
   flex: 0 0 19px;
+
   color: var(--green);
   font-size: 16px;
 }
 
+/* CHAT HISTORY */
+
 .chat-history-section {
   display: flex;
   flex-direction: column;
+
   min-height: 100px;
   flex: 1;
+
   margin-top: 31px;
 }
 
@@ -241,13 +304,16 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   margin-bottom: 10px;
 }
 
 .text-button {
   padding: 4px 8px;
+
   border: 0;
   background: transparent;
+
   color: var(--muted-soft);
   font-size: 10px;
 }
@@ -262,16 +328,23 @@ a:focus-visible {
   gap: 4px;
   min-width: 0;
 }
+
 .history-item {
   display: flex;
   align-items: center;
   gap: 4px;
+
   width: 100%;
   min-width: 0;
+
   padding: 3px;
+
   border: 1px solid transparent;
   border-radius: 7px;
-  transition: background .15s ease, border-color .15s ease;
+
+  transition:
+    background .15s ease,
+    border-color .15s ease;
 }
 
 .history-item:hover {
@@ -287,14 +360,19 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 9px;
+
   flex: 1;
   min-width: 0;
   min-height: 34px;
+
   padding: 0 7px;
+
   border: 0;
   border-radius: 5px;
+
   background: transparent;
   color: var(--muted);
+
   font-size: 11px;
   text-align: left;
 }
@@ -320,15 +398,22 @@ a:focus-visible {
 .history-delete {
   display: grid;
   place-items: center;
+
   width: 27px;
   height: 27px;
   flex: 0 0 27px;
+
   border: 0;
   border-radius: 5px;
+
   background: transparent;
   color: var(--muted-soft);
+
   opacity: 0;
-  transition: opacity .15s ease, background .15s ease;
+
+  transition:
+    opacity .15s ease,
+    background .15s ease;
 }
 
 .history-item:hover .history-delete {
@@ -339,6 +424,7 @@ a:focus-visible {
   background: rgba(217, 141, 131, .12);
   color: var(--danger);
 }
+
 .empty-history {
   padding: 12px 9px;
   color: var(--muted-soft);
@@ -346,10 +432,13 @@ a:focus-visible {
   line-height: 1.6;
 }
 
+/* SIDEBAR BOTTOM */
+
 .sidebar-bottom {
   display: flex;
   flex-direction: column;
   gap: 8px;
+
   padding-top: 15px;
   border-top: 1px solid var(--line);
 }
@@ -358,7 +447,9 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
+
   padding: 5px 9px 10px;
+
   color: var(--muted);
   font-size: 10px;
 }
@@ -367,6 +458,7 @@ a:focus-visible {
   width: 7px;
   height: 7px;
   flex: 0 0 7px;
+
   border-radius: 50%;
   background: #83bd8b;
 }
@@ -375,17 +467,22 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 7px;
+
   padding: 5px 0;
 }
 
 .sidebar-tools select {
   width: 100%;
   min-height: 38px;
+
   padding: 0 10px;
+
   border: 1px solid var(--line);
   border-radius: 7px;
+
   background: var(--panel);
   color: var(--text);
+
   font-size: 11px;
 }
 
@@ -393,14 +490,18 @@ a:focus-visible {
   display: none !important;
 }
 
-/* MAIN AREA */
+/* =========================================
+   4. MAIN AREA & HEADER
+========================================= */
 
 .main-area {
   display: flex;
   flex-direction: column;
+
   width: calc(100% - 260px);
   min-width: 0;
   min-height: 100vh;
+
   margin-left: 260px;
 }
 
@@ -408,13 +509,17 @@ a:focus-visible {
   position: sticky;
   top: 0;
   z-index: 10;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   min-height: 65px;
   padding: 0 30px;
+
   border-bottom: 1px solid var(--line);
   background: rgba(13, 18, 14, .96);
+  backdrop-filter: blur(12px);
 }
 
 .header-left,
@@ -438,6 +543,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 7px;
+
   color: var(--muted);
   font-size: 10px;
 }
@@ -445,10 +551,13 @@ a:focus-visible {
 .header-new-chat {
   min-height: 35px;
   padding: 0 11px;
+
   border: 1px solid var(--line);
   border-radius: 7px;
+
   background: transparent;
   color: var(--muted);
+
   font-size: 11px;
 }
 
@@ -460,13 +569,17 @@ a:focus-visible {
 .icon-button {
   display: grid;
   place-items: center;
+
   width: 36px;
   height: 36px;
   padding: 0;
+
   border: 1px solid var(--line);
   border-radius: 8px;
+
   background: transparent;
   color: var(--muted);
+
   font-size: 17px;
 }
 
@@ -479,8 +592,9 @@ a:focus-visible {
 .mobile-brand {
   display: none;
 }
-
-/* WORKSPACES */
+/* =========================================
+   5. WORKSPACES
+========================================= */
 
 .workspace {
   display: none;
@@ -522,8 +636,20 @@ a:focus-visible {
   line-height: 1.7;
 }
 
-/* CHAT */
+/* =========================================
+   6. SHARED CHAT
+========================================= */
 
+.shared-chat-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 300px;
+  flex: 1;
+  padding-top: 15px;
+}
+
+.conversation,
 .conversation-area {
   display: flex;
   width: min(100% - 40px, 800px);
@@ -531,6 +657,7 @@ a:focus-visible {
   margin: 0 auto;
 }
 
+.messages,
 .message-list {
   display: flex;
   flex-direction: column;
@@ -542,8 +669,10 @@ a:focus-visible {
 .chat-message {
   max-width: 88%;
   padding: 13px 16px;
+
   border: 1px solid var(--line);
   border-radius: 12px;
+
   font-size: 13px;
   line-height: 1.8;
   overflow-wrap: anywhere;
@@ -568,80 +697,85 @@ a:focus-visible {
   margin-bottom: 0;
 }
 
-/* COMPOSER */
+/* =========================================
+   7. CHAT COMPOSER
+========================================= */
 
-.composer-area {
-  position: sticky;
-  bottom: 0;
+.question-form {
   width: min(100% - 40px, 800px);
   margin: 0 auto;
-  padding: 15px 0 16px;
-  background: linear-gradient(to bottom, transparent, var(--bg) 15%);
 }
 
-.chat-composer {
+.composer {
   padding: 12px;
+
   border: 1px solid #354438;
   border-radius: 13px;
+
   background: #111812;
+
   transition: border-color .15s ease;
 }
 
-.chat-composer:focus-within {
+.composer:focus-within {
   border-color: #739b78;
 }
 
-.chat-composer textarea {
+.composer textarea {
   display: block;
+
   width: 100%;
   min-height: 48px;
   max-height: 180px;
+
   padding: 7px 5px;
   resize: vertical;
+
   border: 0;
   outline: 0;
+
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+
+  font-size: 16px;
   line-height: 1.6;
 }
 
-.chat-composer textarea::placeholder {
+.composer textarea::placeholder {
   color: #758176;
 }
 
-.composer-footer {
+.composer-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 10px;
+
   padding-top: 8px;
   border-top: 1px solid rgba(41, 52, 43, .7);
 }
 
-.composer-info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+.composer-hint,
+.char-count {
   color: var(--muted-soft);
   font-size: 10px;
 }
 
-.composer-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.composer-hint {
+  margin-right: auto;
 }
 
 .voice-button,
 .send-button {
   display: grid;
   place-items: center;
+
   min-width: 36px;
   height: 36px;
+
   border: 1px solid var(--line);
   border-radius: 8px;
+
   background: transparent;
   color: var(--muted);
 }
@@ -651,13 +785,21 @@ a:focus-visible {
   color: var(--green-light);
 }
 
+.voice-button.recording {
+  border-color: var(--danger);
+  background: rgba(217, 141, 131, .12);
+  color: var(--danger);
+}
+
 .send-button {
   display: flex;
   gap: 9px;
   padding: 0 13px;
+
   border-color: #55785a;
   background: #294b30;
   color: #f0f7ef;
+
   font-size: 11px;
   font-weight: 700;
 }
@@ -666,14 +808,16 @@ a:focus-visible {
   background: #355b3c;
 }
 
-.composer-disclaimer {
-  margin: 9px 0 0;
+.disclaimer {
+  margin: 9px 0 16px;
   color: var(--muted-soft);
   font-size: 9px;
   text-align: center;
 }
 
-/* DASHBOARDS */
+/* =========================================
+   8. DASHBOARDS
+========================================= */
 
 .dashboard-container {
   width: min(100% - 50px, 1000px);
@@ -701,38 +845,52 @@ a:focus-visible {
 
 .feature-card {
   position: relative;
+
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+
   min-width: 0;
   min-height: 175px;
   padding: 19px;
+
   border: 1px solid var(--line);
   border-radius: 11px;
+
   background: var(--panel);
   text-align: left;
-  transition: border-color .15s ease, background .15s ease;
+
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    transform .15s ease;
 }
 
 .feature-card:hover {
   border-color: #536d56;
   background: var(--panel-hover);
+  transform: translateY(-2px);
 }
 
 .feature-card:active {
   background: #1c281e;
+  transform: translateY(0);
 }
 
 .feature-icon {
   display: grid;
   place-items: center;
+
   width: 37px;
   height: 37px;
   margin-bottom: 17px;
+
   border: 1px solid rgba(167, 212, 174, .19);
   border-radius: 9px;
+
   background: rgba(91, 139, 98, .12);
   color: var(--green-light);
+
   font-size: 17px;
 }
 
@@ -745,6 +903,7 @@ a:focus-visible {
 .feature-description {
   margin-top: 5px;
   padding-right: 10px;
+
   color: var(--muted);
   font-size: 11px;
   line-height: 1.65;
@@ -754,9 +913,117 @@ a:focus-visible {
   position: absolute;
   top: 19px;
   right: 17px;
+
   color: var(--muted-soft);
   font-size: 14px;
 }
+
+/* =========================================
+   9. PDF UPLOAD SECTION
+========================================= */
+
+.pdf-import-section {
+  margin-bottom: 30px;
+  padding: 21px;
+
+  border: 1px solid rgba(167, 212, 174, .2);
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(91, 139, 98, .10),
+      rgba(20, 26, 21, .9)
+    );
+}
+
+.pdf-import-heading {
+  margin-bottom: 17px;
+}
+
+.pdf-import-heading h2 {
+  margin: 7px 0;
+  font: 700 19px Manrope, sans-serif;
+}
+
+.pdf-import-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.pdf-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.pdf-upload-form label {
+  display: block;
+  margin-bottom: 6px;
+
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pdf-upload-form input,
+.pdf-upload-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 11px 12px;
+
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  background: #0f1510;
+  color: var(--text);
+
+  font-size: 16px;
+}
+
+.pdf-upload-form input[type="file"] {
+  min-height: auto;
+  padding: 12px;
+}
+
+.pdf-upload-form textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+
+.pdf-upload-form button {
+  align-self: flex-start;
+
+  min-height: 40px;
+  padding: 0 16px;
+
+  border: 1px solid #55785a;
+  border-radius: 8px;
+
+  background: #294b30;
+  color: #f0f7ef;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pdf-upload-form button:hover {
+  background: #355b3c;
+}
+
+.pdf-upload-status {
+  min-height: 18px;
+  margin: 0;
+
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* =========================================
+   10. SAVED CHAPTERS
+========================================= */
 
 .student-saved-section {
   margin-top: 44px;
@@ -774,8 +1041,10 @@ a:focus-visible {
 .saved-content {
   min-height: 65px;
   padding: 17px;
+
   border: 1px dashed #344137;
   border-radius: 9px;
+
   color: var(--muted);
   font-size: 12px;
 }
@@ -784,14 +1053,18 @@ a:focus-visible {
   margin: 0;
 }
 
-/* TOOL PANELS */
+/* =========================================
+   11. TOOL PANELS
+========================================= */
 
 .student-tool-panel,
 .shop-tool-panel {
   margin-top: 28px;
   padding: 20px;
+
   border: 1px solid var(--line);
   border-radius: 12px;
+
   background: var(--panel);
 }
 
@@ -799,6 +1072,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 15px;
+
   margin-bottom: 20px;
 }
 
@@ -810,10 +1084,13 @@ a:focus-visible {
 .back-button {
   min-height: 34px;
   padding: 0 10px;
+
   border: 1px solid var(--line);
   border-radius: 7px;
+
   background: transparent;
   color: var(--muted);
+
   font-size: 11px;
 }
 
@@ -822,7 +1099,9 @@ a:focus-visible {
   border-color: #536d56;
 }
 
-/* FORM ELEMENTS */
+/* =========================================
+   12. FORM ELEMENTS
+========================================= */
 
 .local-form {
   display: flex;
@@ -841,11 +1120,14 @@ a:focus-visible {
   width: 100%;
   min-height: 42px;
   padding: 10px 12px;
+
   border: 1px solid var(--line);
   border-radius: 8px;
+
   background: #0f1510;
   color: var(--text);
-  font-size: 12px;
+
+  font-size: 16px;
 }
 
 .local-form input:focus,
@@ -863,12 +1145,16 @@ a:focus-visible {
 .local-form button,
 .local-action {
   align-self: flex-start;
+
   min-height: 39px;
   padding: 0 14px;
+
   border: 1px solid #55785a;
   border-radius: 8px;
+
   background: #294b30;
   color: #f0f7ef;
+
   font-size: 11px;
   font-weight: 600;
 }
@@ -883,9 +1169,12 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 15px;
+
   padding: 12px;
+
   border-bottom: 1px solid var(--line);
   color: var(--text);
+
   font-size: 12px;
 }
 
@@ -899,37 +1188,66 @@ a:focus-visible {
 
 .local-delete {
   padding: 5px 9px;
+
   border: 1px solid rgba(217, 141, 131, .25);
   border-radius: 6px;
+
   background: transparent;
   color: var(--danger);
+
   font-size: 10px;
 }
 
 .local-delete:hover {
   background: rgba(217, 141, 131, .08);
 }
+/* =========================================
+   13. FOOTER
+========================================= */
 
-/* FOOTER */
-
+.app-footer,
 .main-footer {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+
   margin-top: auto;
   padding: 17px 30px;
+
   border-top: 1px solid var(--line);
   color: var(--muted-soft);
+
   font-size: 10px;
 }
 
-/* ABOUT DIALOG */
+.app-footer p {
+  margin: 0;
+}
+
+.footer-link {
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.footer-link:hover {
+  color: var(--green-light);
+}
+
+/* =========================================
+   14. ABOUT DIALOG
+========================================= */
 
 .about-dialog {
   width: min(440px, calc(100% - 30px));
   padding: 25px;
+
   border: 1px solid #3a4b3c;
   border-radius: 13px;
+
   background: #151d16;
   color: var(--text);
 }
@@ -938,14 +1256,16 @@ a:focus-visible {
   background: rgba(0, 0, 0, .72);
 }
 
+.dialog-header,
 .dialog-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .about-dialog h2 {
-  margin: 22px 0 8px;
+  margin: 0;
   font: 700 24px Manrope, sans-serif;
 }
 
@@ -955,13 +1275,37 @@ a:focus-visible {
   line-height: 1.8;
 }
 
+.dialog-close {
+  display: grid;
+  place-items: center;
+
+  width: 34px;
+  height: 34px;
+
+  border: 1px solid var(--line);
+  border-radius: 7px;
+
+  background: transparent;
+  color: var(--muted);
+
+  font-size: 20px;
+}
+
+.dialog-close:hover {
+  color: var(--text);
+  border-color: #536d56;
+}
+
 .primary-action {
   min-height: 40px;
   padding: 0 15px;
+
   border: 1px solid #55785a;
   border-radius: 8px;
+
   background: #294b30;
   color: #f0f7ef;
+
   font-size: 11px;
   font-weight: 700;
 }
@@ -970,25 +1314,37 @@ a:focus-visible {
   background: #355b3c;
 }
 
-/* TOAST */
+/* =========================================
+   15. TOAST NOTIFICATIONS
+========================================= */
 
 .toast {
   position: fixed;
   right: 20px;
   bottom: 20px;
   z-index: 50;
+
   max-width: min(350px, calc(100% - 40px));
   padding: 12px 15px;
+
   border: 1px solid #49634d;
   border-radius: 8px;
+
   background: #1b2a1e;
   color: var(--text);
+
   font-size: 11px;
+
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+
   transform: translateY(7px);
-  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    visibility .18s ease;
 }
 
 .toast.visible {
@@ -997,7 +1353,9 @@ a:focus-visible {
   transform: translateY(0);
 }
 
-/* LARGER TEXT */
+/* =========================================
+   16. LARGER TEXT ACCESSIBILITY
+========================================= */
 
 body.large-text {
   font-size: 17px;
@@ -1010,7 +1368,9 @@ body.large-text .welcome-container p {
   font-size: 14px;
 }
 
-/* TABLET */
+/* =========================================
+   17. TABLET RESPONSIVE
+========================================= */
 
 @media (max-width: 1050px) {
   .sidebar {
@@ -1031,14 +1391,21 @@ body.large-text .welcome-container p {
   }
 }
 
-/* MOBILE */
+/* =========================================
+   18. MOBILE RESPONSIVE
+========================================= */
 
 @media (max-width: 760px) {
   .sidebar {
     width: min(290px, 85vw);
+
     transform: translateX(-105%);
     visibility: hidden;
-    transition: transform .2s ease, visibility .2s ease;
+
+    transition:
+      transform .2s ease,
+      visibility .2s ease;
+
     box-shadow: 12px 0 35px rgba(0, 0, 0, .25);
   }
 
@@ -1049,9 +1416,11 @@ body.large-text .welcome-container p {
 
   body.sidebar-open::after {
     content: "";
+
     position: fixed;
     inset: 0;
     z-index: 20;
+
     background: rgba(0, 0, 0, .58);
   }
 
@@ -1065,6 +1434,9 @@ body.large-text .welcome-container p {
   }
 
   .main-header {
+    position: sticky;
+    top: 0;
+
     min-height: 59px;
     padding: 0 15px;
   }
@@ -1073,26 +1445,38 @@ body.large-text .welcome-container p {
     display: grid;
   }
 
+  /* MOBILE BRAND POSITION FIX */
+
   .mobile-brand {
     display: flex;
     align-items: center;
     gap: 8px;
+
+    min-height: 40px;
+    margin: 0;
+
     font: 700 14px Manrope, sans-serif;
   }
 
   .mobile-brand .brand-mark {
+    display: grid;
+    place-items: center;
+
     width: 31px;
     height: 31px;
     flex-basis: 31px;
+
+    margin: 0;
     font-size: 19px;
+  }
+
+  .header-left {
+    align-items: center;
+    gap: 9px;
   }
 
   .desktop-page-title {
     display: none;
-  }
-
-  .header-left {
-    gap: 9px;
   }
 
   .header-actions {
@@ -1122,8 +1506,9 @@ body.large-text .welcome-container p {
     font-size: clamp(27px, 7vw, 35px);
   }
 
+  .conversation,
   .conversation-area,
-  .composer-area {
+  .question-form {
     width: calc(100% - 28px);
   }
 
@@ -1158,12 +1543,23 @@ body.large-text .welcome-container p {
     margin-bottom: 13px;
   }
 
+  .pdf-import-section {
+    padding: 16px;
+  }
+
+  .shared-chat-area {
+    min-height: 260px;
+  }
+
+  .app-footer,
   .main-footer {
     padding: 14px 16px;
   }
 }
 
-/* SMALL MOBILE */
+/* =========================================
+   19. SMALL MOBILE
+========================================= */
 
 @media (max-width: 430px) {
   .header-new-chat {
@@ -1194,14 +1590,19 @@ body.large-text .welcome-container p {
     font-size: 28px;
   }
 
-  .composer-info {
-    gap: 5px;
+  .composer-actions {
+    gap: 7px;
   }
 
-  .composer-disclaimer {
+  .composer-hint {
+    font-size: 9px;
+  }
+
+  .disclaimer {
     font-size: 8px;
   }
 
+  .app-footer,
   .main-footer {
     flex-wrap: wrap;
   }
@@ -1210,9 +1611,19 @@ body.large-text .welcome-container p {
   .shop-tool-panel {
     padding: 14px;
   }
+
+  .tool-panel-header {
+    gap: 9px;
+  }
+
+  .tool-panel-header h2 {
+    font-size: 16px;
+  }
 }
 
-/* VERY SMALL SCREENS */
+/* =========================================
+   20. VERY SMALL SCREENS
+========================================= */
 
 @media (max-width: 350px) {
   .main-header {
@@ -1223,16 +1634,46 @@ body.large-text .welcome-container p {
     font-size: 12px;
   }
 
-  .composer-controls {
+  .composer-actions {
     gap: 5px;
   }
 
   .send-button {
     padding: 0 9px;
   }
+
+  .composer-hint {
+    display: none;
+  }
 }
 
-/* ACCESSIBILITY */
+/* =========================================
+   21. MOBILE INPUT & KEYBOARD FIX
+========================================= */
+
+@media (max-width: 760px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  .composer textarea {
+    font-size: 16px !important;
+  }
+
+  .sidebar {
+    overscroll-behavior: contain;
+  }
+
+  .shared-chat-area {
+    scroll-margin-bottom: 20px;
+  }
+}
+
+/* =========================================
+   22. ACCESSIBILITY & REDUCED MOTION
+========================================= */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1244,6 +1685,7 @@ body.large-text .welcome-container p {
     animation-iteration-count: 1 !important;
   }
 }
+
 @media (hover: none) {
   .history-delete {
     opacity: 1;
