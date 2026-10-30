@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -21,15 +20,31 @@
       </span>
     </a>
 
+    <nav class="mode-navigation" aria-label="Assistant modes">
+      <button class="mode-nav-link active" type="button" data-mode="general" aria-pressed="true">
+        <span id="modeGeneral">Aam madad</span>
+      </button>
+      <button class="mode-nav-link" type="button" data-mode="student" aria-pressed="false">
+        <span id="modeStudent">Student</span>
+      </button>
+      <button class="mode-nav-link" type="button" data-mode="shopkeeper" aria-pressed="false">
+        <span id="modeShopkeeper">Dukandaar</span>
+      </button>
+      <button class="mode-nav-link" type="button" data-mode="farmer" aria-pressed="false">
+        <span id="modeFarmer">Kisan</span>
+      </button>
+      <button class="mode-nav-link" type="button" data-mode="debate" aria-pressed="false">
+        <span id="modeDebate">Debate</span>
+      </button>
+    </nav>
+
     <div class="topbar-right">
       <span class="connection" id="connection">
         <span class="connection-dot"></span>
         <span id="connectionText">Connection check</span>
       </span>
 
-      <label class="sr-only" for="language" id="languageLabel">
-        Apni zubaan chunein
-      </label>
+      <label class="sr-only" for="language" id="languageLabel">Apni zubaan chunein</label>
       <select id="language" aria-label="Choose language">
         <option value="roman">Roman Urdu</option>
         <option value="ur">اردو</option>
@@ -128,9 +143,7 @@
       </div>
 
       <form class="question-form" id="questionForm">
-        <label class="sr-only" for="question" id="questionLabel">
-          Apna sawal likhein
-        </label>
+        <label class="sr-only" for="question" id="questionLabel">Apna sawal likhein</label>
 
         <div class="composer-wrap">
           <span class="composer-symbol" aria-hidden="true">✎</span>
@@ -172,83 +185,10 @@
       </div>
     </section>
 
-    <section class="workspaces-section" id="workspaces"
-      aria-labelledby="workspacesTitle">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">
-            <span class="eyebrow-line"></span>
-            <span id="stepLabel">APNA KAAM CHUNEIN</span>
-          </div>
-          <h2 id="workspacesTitle">Aap kis kaam ke liye aaye hain?</h2>
-          <p id="workspacesIntro">
-            Sirf apna kaam chunein. Zubaan AI usi hisaab se madad karega.
-          </p>
-        </div>
-
-        <span class="section-count">
-          <strong>05</strong>
-          <span id="workspaceCountLabel">MADAD KE TAREEQE</span>
-        </span>
-      </div>
-
-      <div class="workspace-grid">
-        <button class="workspace-card active" type="button"
-          data-mode="general" aria-pressed="true">
-          <span class="workspace-icon icon-general">✳</span>
-          <span class="workspace-card-copy">
-            <strong id="modeGeneral">Aam madad</strong>
-            <small id="modeGeneralSub">Rozmarra ke sawal aur maloomat</small>
-          </span>
-          <span class="workspace-arrow">↗</span>
-        </button>
-
-        <button class="workspace-card" type="button"
-          data-mode="student" aria-pressed="false">
-          <span class="workspace-icon icon-student">▤</span>
-          <span class="workspace-card-copy">
-            <strong id="modeStudent">Student</strong>
-            <small id="modeStudentSub">Homework, maths aur concepts seekhein</small>
-          </span>
-          <span class="workspace-arrow">↗</span>
-        </button>
-
-        <button class="workspace-card" type="button"
-          data-mode="shopkeeper" aria-pressed="false">
-          <span class="workspace-icon icon-shop">▦</span>
-          <span class="workspace-card-copy">
-            <strong id="modeShopkeeper">Dukandaar</strong>
-            <small id="modeShopkeeperSub">Sales, hisaab, stock aur udhaar</small>
-          </span>
-          <span class="workspace-arrow">↗</span>
-        </button>
-
-        <button class="workspace-card" type="button"
-          data-mode="farmer" aria-pressed="false">
-          <span class="workspace-icon icon-farmer">♧</span>
-          <span class="workspace-card-copy">
-            <strong id="modeFarmer">Kisan</strong>
-            <small id="modeFarmerSub">Fasal, pani aur kheti-baari</small>
-          </span>
-          <span class="workspace-arrow">↗</span>
-        </button>
-
-        <button class="workspace-card" type="button"
-          data-mode="debate" aria-pressed="false">
-          <span class="workspace-icon icon-debate">◉</span>
-          <span class="workspace-card-copy">
-            <strong id="modeDebate">Debate</strong>
-            <small id="modeDebateSub">Politics, daleel aur evidence</small>
-          </span>
-          <span class="workspace-arrow">↗</span>
-        </button>
-      </div>
-
-      <div class="selected-mode-note" id="modeStatus" aria-live="polite">
-        <span class="selected-dot"></span>
-        <span id="modeStatusText">Aam madad select hai. Apna sawal pooch sakte hain.</span>
-      </div>
-    </section>
+    <div class="selected-mode-note" id="modeStatus" aria-live="polite">
+      <span class="selected-dot"></span>
+      <span id="modeStatusText">Aam madad select hai. Apna sawal pooch sakte hain.</span>
+    </div>
 
     <section class="suggestions-section" aria-labelledby="suggestionsTitle">
       <div class="section-heading compact-heading">
