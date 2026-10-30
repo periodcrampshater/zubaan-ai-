@@ -1,4 +1,3 @@
-
 "use strict";
 
 /* ==========================================
@@ -120,7 +119,7 @@ const TRANSLATIONS = {
     "Add udhar": "Udhar add karein",
     "Receive payment": "Payment wasool karein",
     "Total recorded sales": "Kul darj sales",
-    "Sale amount (Rs.)": "Sale ki raqam (Rs.)",
+    "Sale amount (Rs.)": "Sale ki raqam",
     "Sale details": "Sale ki tafseel",
     "Record sale": "Sale darj karein",
     "Total recorded expenses": "Kul darj kharchay",
@@ -282,7 +281,7 @@ const TRANSLATIONS = {
     "Delete": "ختم ڪريو"
   },
   ps: {
-    "General assistant": "عمومي مرستیال",
+    "General assistant": "عمومی مرستیال",
     "Student": "زده کوونکی",
     "Shopkeeper": "دوکاندار",
     "New chat": "نوې خبرې اترې",
@@ -328,7 +327,11 @@ function translateElement(element) {
         originals[attribute] = element.getAttribute(attribute);
       }
 
-      element.setAttribute(attribute, translate(originals[attribute]));
+      const translated = translate(originals[attribute]);
+
+      if (element.getAttribute(attribute) !== translated) {
+        element.setAttribute(attribute, translated);
+      }
     }
   });
 
@@ -336,12 +339,14 @@ function translateElement(element) {
     if (!element.dataset.originalValue) {
       element.dataset.originalValue = element.value;
     }
+
     element.value = translate(element.dataset.originalValue);
   }
 }
 
 function translatePage() {
   const isUrdu = state.language === "ur";
+
   document.documentElement.lang = state.language;
   document.documentElement.dir = isUrdu ? "rtl" : "ltr";
   document.body.classList.toggle("rtl-language", isUrdu);
@@ -375,7 +380,11 @@ function translatePage() {
     const leading = original.match(/^\s*/)?.[0] || "";
     const trailing = original.match(/\s*$/)?.[0] || "";
 
-    node.nodeValue = leading + translated + trailing;
+    const nextValue = leading + translated + trailing;
+
+    if (node.nodeValue !== nextValue) {
+      node.nodeValue = nextValue;
+    }
   }
 
   $$("input, button, select, textarea, [title], [aria-label]").forEach(
@@ -383,38 +392,37 @@ function translatePage() {
   );
 
   const modeTitle = $("#currentModeTitle");
-  if (modeTitle) {
-    modeTitle.textContent = translate(MODE_TITLES[state.mode]);
+  const translatedMode = translate(MODE_TITLES[state.mode]);
+
+  if (modeTitle && modeTitle.textContent !== translatedMode) {
+    modeTitle.textContent = translatedMode;
   }
 
   const studentTitle = $("#studentToolTitle");
-  if (studentTitle && state.currentStudentTool) {
-    studentTitle.textContent = translate(
-      STUDENT_TOOLS[state.currentStudentTool]
-    );
+  const translatedStudent = state.currentStudentTool
+    ? translate(STUDENT_TOOLS[state.currentStudentTool])
+    : "";
+
+  if (
+    studentTitle &&
+    state.currentStudentTool &&
+    studentTitle.textContent !== translatedStudent
+  ) {
+    studentTitle.textContent = translatedStudent;
   }
 
   const shopTitle = $("#shopToolTitle");
-  if (shopTitle && state.currentShopTool) {
-    shopTitle.textContent = translate(
-      SHOP_TOOLS[state.currentShopTool]
-    );
+  const translatedShop = state.currentShopTool
+    ? translate(SHOP_TOOLS[state.currentShopTool])
+    : "";
+
+  if (
+    shopTitle &&
+    state.currentShopTool &&
+    shopTitle.textContent !== translatedShop
+  ) {
+    shopTitle.textContent = translatedShop;
   }
-}
-
-let translationObserver = null;
-
-function startTranslationObserver() {
-  if (translationObserver) translationObserver.disconnect();
-
-  translationObserver = new MutationObserver(() => {
-    translatePage();
-  });
-
-  translationObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
 }
 
 /* ==========================================
@@ -1617,7 +1625,6 @@ function setupLanguage() {
   });
 
   translatePage();
-  startTranslationObserver();
 }
 
 /* ==========================================
