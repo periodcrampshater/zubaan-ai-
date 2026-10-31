@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101610">
-  <meta name="description" content="Zubaan AI - A lightweight assistant for everyday life, students and shopkeepers.">
+  <meta name="theme-color" content="#0d120e">
+  <meta name="description" content="Zubaan AI - Your everyday assistant for learning, work and small businesses.">
+
   <title>Zubaan AI</title>
+
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg">
   <link rel="stylesheet" href="style.css">
@@ -16,12 +18,21 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
+
       <div class="sidebar-header">
         <a href="#" class="brand">
           <span class="brand-mark">ز</span>
           <span class="brand-name">Zubaan AI</span>
         </a>
-        <button class="icon-button mobile-close" id="closeSidebar" aria-label="Close sidebar">×</button>
+
+        <button
+          class="icon-button mobile-close"
+          id="closeSidebar"
+          type="button"
+          aria-label="Close sidebar"
+        >
+          ×
+        </button>
       </div>
 
       <button class="new-chat-button" id="newChat" type="button">
@@ -32,42 +43,70 @@
       <div class="sidebar-section">
         <span class="sidebar-label">YOUR WORKSPACE</span>
 
-        <button class="sidebar-link active" data-mode="general" type="button">
+        <button
+          class="sidebar-link active"
+          data-mode="general"
+          type="button"
+        >
           <span class="nav-icon">◈</span>
           <span>General assistant</span>
         </button>
 
-        <button class="sidebar-link" data-mode="student" type="button">
+        <button
+          class="sidebar-link"
+          data-mode="student"
+          type="button"
+        >
           <span class="nav-icon">▤</span>
           <span>Student</span>
         </button>
 
-        <button class="sidebar-link" data-mode="shopkeeper" type="button">
+        <button
+          class="sidebar-link"
+          data-mode="shopkeeper"
+          type="button"
+        >
           <span class="nav-icon">▦</span>
           <span>Shopkeeper</span>
         </button>
       </div>
 
+      <!-- CHAT HISTORY -->
       <div class="chat-history-section">
+
         <div class="history-heading">
           <span class="sidebar-label">RECENT CHATS</span>
-          <button id="clearHistory" class="text-button" type="button">Clear</button>
+
+          <button
+            id="clearHistory"
+            class="text-button"
+            type="button"
+          >
+            Clear
+          </button>
         </div>
+
         <div id="recentList" class="recent-list">
           <div class="empty-history" id="emptyHistoryText">
             Your conversations will appear here.
           </div>
         </div>
+
       </div>
 
+      <!-- SIDEBAR BOTTOM -->
       <div class="sidebar-bottom">
+
         <div class="sidebar-status">
           <span class="status-dot"></span>
           <span id="connectionText">Ready to help</span>
         </div>
 
         <div class="sidebar-tools">
-          <label class="sidebar-label" for="language">LANGUAGE</label>
+          <label class="sidebar-label" for="language">
+            LANGUAGE
+          </label>
+
           <select id="language">
             <option value="roman">Roman Urdu</option>
             <option value="ur">اردو</option>
@@ -78,24 +117,41 @@
           </select>
         </div>
 
-        <button class="sidebar-link" id="largeText" type="button">
+        <button
+          class="sidebar-link"
+          id="largeText"
+          type="button"
+        >
           <span class="nav-icon">Aa</span>
           <span>Larger text</span>
         </button>
 
-        <button class="sidebar-link" id="helpButton" type="button">
+        <button
+          class="sidebar-link"
+          id="helpButton"
+          type="button"
+        >
           <span class="nav-icon">ⓘ</span>
           <span>About Zubaan AI</span>
         </button>
+
       </div>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-area">
 
+      <!-- HEADER -->
       <header class="main-header">
+
         <div class="header-left">
-          <button class="icon-button menu-button" id="openSidebar" type="button" aria-label="Open menu">
+
+          <button
+            class="icon-button menu-button"
+            id="openSidebar"
+            type="button"
+            aria-label="Open menu"
+          >
             ☰
           </button>
 
@@ -105,62 +161,125 @@
           </div>
 
           <div class="desktop-page-title">
-            <span id="currentModeTitle">General assistant</span>
+            <span id="currentModeTitle">
+              General assistant
+            </span>
           </div>
+
         </div>
 
         <div class="header-actions">
+
           <span class="connection-indicator" id="connection">
             <span class="status-dot"></span>
             <span>Online</span>
           </span>
-          <button class="header-new-chat" id="headerNewChat" type="button">
+
+          <button
+            class="header-new-chat"
+            id="headerNewChat"
+            type="button"
+          >
             ＋ New chat
           </button>
+
         </div>
       </header>
 
-      <!-- GENERAL MODE -->
-      <section class="workspace active" id="generalWorkspace" data-workspace="general">
+      <!-- GENERAL ASSISTANT WORKSPACE -->
+      <section
+        class="workspace active"
+        id="generalWorkspace"
+        data-workspace="general"
+      >
+
         <div class="welcome-container" id="welcomeContainer">
-          <div class="welcome-eyebrow">YOUR EVERYDAY ASSISTANT</div>
-          <h1 id="welcomeTitle">How can I help you today?</h1>
+
+          <div class="welcome-eyebrow">
+            YOUR EVERYDAY ASSISTANT
+          </div>
+
+          <h1 id="welcomeTitle">
+            How can I help you today?
+          </h1>
+
           <p id="welcomeIntro">
             Ask anything. Get clear answers in the language you understand.
           </p>
+
         </div>
+
       </section>
 
-      <!-- STUDENT MODE -->
-      <section class="workspace" id="studentWorkspace" data-workspace="student" hidden>
+      <!-- STUDENT WORKSPACE -->
+      <section
+        class="workspace"
+        id="studentWorkspace"
+        data-workspace="student"
+        hidden
+      >
+
         <div class="dashboard-container">
+
           <div class="dashboard-heading">
-            <span class="welcome-eyebrow">YOUR LEARNING SPACE</span>
+
+            <span class="welcome-eyebrow">
+              YOUR LEARNING SPACE
+            </span>
+
             <h1>Study smarter.</h1>
-            <p>Your study tools, notes and chapters in one place.</p>
+
+            <p>
+              Your study tools, notes and chapters in one place.
+            </p>
+
           </div>
 
           <!-- PDF BOOK IMPORT -->
-          <section class="pdf-import-section" aria-labelledby="pdfImportTitle">
+          <section
+            class="pdf-import-section"
+            aria-labelledby="pdfImportTitle"
+          >
+
             <div class="section-heading">
+
               <div>
-                <span class="welcome-eyebrow">BOOK IMPORT</span>
-                <h2 id="pdfImportTitle">Add a book PDF</h2>
-                <p>Upload a textbook and tell Zubaan AI which chapters you want to save.</p>
+                <span class="welcome-eyebrow">
+                  BOOK IMPORT
+                </span>
+
+                <h2 id="pdfImportTitle">
+                  Add a book PDF
+                </h2>
+
+                <p>
+                  Upload a textbook and tell Zubaan AI which chapters you want to save.
+                </p>
               </div>
+
             </div>
 
-            <form id="pdfUploadForm" class="pdf-upload-form">
-              <label for="pdfBookTitle">Book name (optional)</label>
+            <form
+              id="pdfUploadForm"
+              class="pdf-upload-form"
+            >
+
+              <label for="pdfBookTitle">
+                Book name (optional)
+              </label>
+
               <input
                 id="pdfBookTitle"
                 name="bookTitle"
                 type="text"
                 maxlength="120"
-                placeholder="e.g. General Science — Class 9"
+                placeholder="e.g. General Science - Class 9"
               >
 
-              <label for="bookPdfInput">Choose PDF</label>
+              <label for="bookPdfInput">
+                Choose PDF
+              </label>
+
               <input
                 id="bookPdfInput"
                 name="bookPdf"
@@ -169,7 +288,10 @@
                 required
               >
 
-              <label for="pdfChapterInstructions">Which chapters should be saved?</label>
+              <label for="pdfChapterInstructions">
+                Which chapters should be saved?
+              </label>
+
               <textarea
                 id="pdfChapterInstructions"
                 name="chapterInstructions"
@@ -178,57 +300,104 @@
                 placeholder="e.g. Save chapters 1, 2 and 5, or save all chapters."
               ></textarea>
 
-              <button class="primary-action" id="pdfUploadButton" type="submit">
+              <button
+                class="primary-action"
+                id="pdfUploadButton"
+                type="submit"
+              >
                 Upload and process PDF
               </button>
 
-              <p id="pdfUploadStatus" class="pdf-upload-status" role="status" aria-live="polite">
+              <p
+                id="pdfUploadStatus"
+                class="pdf-upload-status"
+                role="status"
+                aria-live="polite"
+              >
                 PDF processing will be available after the upload feature is connected.
               </p>
+
             </form>
           </section>
 
+          <!-- STUDENT FEATURES -->
           <div class="feature-grid">
 
-            <button class="feature-card" type="button" data-student-tool="mock">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="mock"
+            >
               <span class="feature-icon">▤</span>
               <span class="feature-title">Make a mock test</span>
-              <span class="feature-description">Create practice tests from your subjects and chapters.</span>
+              <span class="feature-description">
+                Create practice tests from your subjects and chapters.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-student-tool="mcq">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="mcq"
+            >
               <span class="feature-icon">☷</span>
               <span class="feature-title">Generate MCQs</span>
-              <span class="feature-description">Practice multiple-choice questions and check your answers.</span>
+              <span class="feature-description">
+                Practice multiple-choice questions and check your answers.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-student-tool="summary">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="summary"
+            >
               <span class="feature-icon">▧</span>
               <span class="feature-title">Chapter summaries</span>
-              <span class="feature-description">Save and revise important chapter topics.</span>
+              <span class="feature-description">
+                Save and revise important chapter topics.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-student-tool="flashcards">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="flashcards"
+            >
               <span class="feature-icon">▱</span>
               <span class="feature-title">Flashcards</span>
-              <span class="feature-description">Remember definitions, formulas and key concepts.</span>
+              <span class="feature-description">
+                Remember definitions, formulas and key concepts.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-student-tool="notes">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="notes"
+            >
               <span class="feature-icon">✎</span>
               <span class="feature-title">My notes</span>
-              <span class="feature-description">Create and keep your personal study notes.</span>
+              <span class="feature-description">
+                Create and keep your personal study notes.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-student-tool="planner">
+            <button
+              class="feature-card"
+              type="button"
+              data-student-tool="planner"
+            >
               <span class="feature-icon">▦</span>
               <span class="feature-title">Study planner</span>
-              <span class="feature-description">Organise subjects, chapters and revision tasks.</span>
+              <span class="feature-description">
+                Organise subjects, chapters and revision tasks.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
@@ -236,9 +405,13 @@
 
           <!-- SAVED CHAPTERS -->
           <div class="student-saved-section">
+
             <div class="section-heading">
               <div>
-                <span class="welcome-eyebrow">YOUR MATERIAL</span>
+                <span class="welcome-eyebrow">
+                  YOUR MATERIAL
+                </span>
+
                 <h2>Saved chapters</h2>
               </div>
             </div>
@@ -246,92 +419,202 @@
             <div class="saved-content" id="savedChapters">
               <p>Your saved chapters will appear here.</p>
             </div>
+
           </div>
 
           <!-- STUDENT TOOL PANEL -->
-          <div class="student-tool-panel" id="studentToolPanel" hidden>
+          <div
+            class="student-tool-panel"
+            id="studentToolPanel"
+            hidden
+          >
+
             <div class="tool-panel-header">
-              <button type="button" class="back-button" id="backToStudent">← Back</button>
-              <h2 id="studentToolTitle">Study tool</h2>
+
+              <button
+                type="button"
+                class="back-button"
+                id="backToStudent"
+              >
+                ← Back
+              </button>
+
+              <h2 id="studentToolTitle">
+                Study tool
+              </h2>
+
             </div>
+
             <div id="studentToolContent"></div>
+
           </div>
+
         </div>
       </section>
-            <!-- SHOPKEEPER MODE -->
-      <section class="workspace" id="shopkeeperWorkspace" data-workspace="shopkeeper" hidden>
+            <!-- SHOPKEEPER WORKSPACE -->
+      <section
+        class="workspace"
+        id="shopkeeperWorkspace"
+        data-workspace="shopkeeper"
+        hidden
+      >
+
         <div class="dashboard-container">
+
           <div class="dashboard-heading">
-            <span class="welcome-eyebrow">YOUR BUSINESS SPACE</span>
+
+            <span class="welcome-eyebrow">
+              YOUR BUSINESS SPACE
+            </span>
+
             <h1>Manage your shop.</h1>
-            <p>Keep track of daily records and customer payments.</p>
+
+            <p>
+              Keep track of daily records and customer payments.
+            </p>
+
           </div>
 
+          <!-- SHOPKEEPER FEATURES -->
           <div class="feature-grid shop-feature-grid">
 
-            <button class="feature-card" type="button" data-shop-tool="credit">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="credit"
+            >
               <span class="feature-icon">◷</span>
               <span class="feature-title">Udhar ledger</span>
-              <span class="feature-description">Track customer credit and pending payments.</span>
+              <span class="feature-description">
+                Track customer credit and pending payments.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-shop-tool="customers">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="customers"
+            >
               <span class="feature-icon">♙</span>
               <span class="feature-title">Customers</span>
-              <span class="feature-description">Save customer details and their transaction history.</span>
+              <span class="feature-description">
+                Save customer details and their transaction history.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-shop-tool="sales">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="sales"
+            >
               <span class="feature-icon">▥</span>
               <span class="feature-title">Daily sales</span>
-              <span class="feature-description">Record daily sales and payments.</span>
+              <span class="feature-description">
+                Record daily sales and payments.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-shop-tool="expenses">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="expenses"
+            >
               <span class="feature-icon">−</span>
               <span class="feature-title">Expenses</span>
-              <span class="feature-description">Keep a record of your business expenses.</span>
+              <span class="feature-description">
+                Keep a record of your business expenses.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-shop-tool="payments">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="payments"
+            >
               <span class="feature-icon">✓</span>
               <span class="feature-title">Payment history</span>
-              <span class="feature-description">Review received payments and outstanding balances.</span>
+              <span class="feature-description">
+                Review received payments and outstanding balances.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
-            <button class="feature-card" type="button" data-shop-tool="stock">
+            <button
+              class="feature-card"
+              type="button"
+              data-shop-tool="stock"
+            >
               <span class="feature-icon">▦</span>
               <span class="feature-title">Stock notes</span>
-              <span class="feature-description">Keep quick records of stock and restocking needs.</span>
+              <span class="feature-description">
+                Keep quick records of stock and restocking needs.
+              </span>
               <span class="feature-arrow">↗</span>
             </button>
 
           </div>
 
-          <!-- SHOP TOOL PANEL -->
-          <div class="shop-tool-panel" id="shopToolPanel" hidden>
+          <!-- SHOPKEEPER TOOL PANEL -->
+          <div
+            class="shop-tool-panel"
+            id="shopToolPanel"
+            hidden
+          >
+
             <div class="tool-panel-header">
-              <button type="button" class="back-button" id="backToShop">← Back</button>
-              <h2 id="shopToolTitle">Shop tool</h2>
+
+              <button
+                type="button"
+                class="back-button"
+                id="backToShop"
+              >
+                ← Back
+              </button>
+
+              <h2 id="shopToolTitle">
+                Shop tool
+              </h2>
+
             </div>
+
             <div id="shopToolContent"></div>
+
           </div>
+
         </div>
       </section>
 
       <!-- SHARED CHAT: AVAILABLE IN ALL MODES -->
-      <section class="shared-chat-area" id="sharedChatArea">
-        <div class="conversation" id="generalConversation">
-          <div class="messages" id="generalMessages" aria-live="polite"></div>
+      <section
+        class="shared-chat-area"
+        id="sharedChatArea"
+      >
+
+        <div
+          class="conversation"
+          id="generalConversation"
+        >
+
+          <div
+            class="messages"
+            id="generalMessages"
+            aria-live="polite"
+          ></div>
+
         </div>
 
-        <form class="question-form" id="questionForm">
+        <!-- CHAT COMPOSER -->
+        <form
+          class="question-form"
+          id="questionForm"
+        >
+
           <div class="composer">
+
             <textarea
               id="question"
               name="question"
@@ -342,8 +625,20 @@
             ></textarea>
 
             <div class="composer-actions">
-              <span class="composer-hint" id="composerHint">Press Enter to send</span>
-              <span class="char-count" id="charCount">0</span>
+
+              <span
+                class="composer-hint"
+                id="composerHint"
+              >
+                Press Enter to send
+              </span>
+
+              <span
+                class="char-count"
+                id="charCount"
+              >
+                0
+              </span>
 
               <button
                 class="voice-button"
@@ -355,40 +650,52 @@
                 <span aria-hidden="true">🎙</span>
               </button>
 
-              <button class="send-button" type="submit" id="askButton">
+              <button
+                class="send-button"
+                type="submit"
+                id="askButton"
+              >
                 Send
               </button>
+
             </div>
           </div>
 
           <p class="disclaimer">
             AI can make mistakes. Please verify important information.
           </p>
+
         </form>
+
       </section>
 
-      <!-- FOOTER -->
-      <footer class="app-footer">
-        <div class="footer-left">
-          <span>Islah Foundation</span>
-        </div>
-
-        <div class="footer-center">
-          <span>Pakistan Zinda Baad <span class="footer-heart">💚</span></span>
-        </div>
-
-        <div class="footer-right">
-          <span>Made by a Pakistani for Pakistan</span>
-        </div>
-      </footer>
-
     </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+
+      <div class="footer-left">
+        Project of Islah Foundation
+      </div>
+
+      <div class="footer-right">
+        Pakistan Zinda Baad 💚
+      </div>
+
+    </footer>
+
   </div>
 
   <!-- ABOUT DIALOG -->
-  <dialog class="about-dialog" id="aboutDialog">
+  <dialog
+    class="about-dialog"
+    id="aboutDialog"
+  >
+
     <div class="dialog-header">
+
       <h2>About Zubaan AI</h2>
+
       <button
         type="button"
         class="dialog-close"
@@ -397,18 +704,34 @@
       >
         ×
       </button>
+
     </div>
 
     <div class="dialog-content">
-      <p>Your AI-powered assistant for learning and everyday business tasks.</p>
-      <p>Project of Islah Foundation.</p>
+
+      <p>
+        Zubaan AI is an assistant designed to make learning,
+        everyday tasks and small business management easier.
+      </p>
+
+      <p>
+        Project of Islah Foundation.
+      </p>
+
     </div>
+
   </dialog>
 
   <!-- TOAST NOTIFICATIONS -->
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
 
   <!-- APP SCRIPT -->
   <script src="app.js"></script>
+
 </body>
 </html>
