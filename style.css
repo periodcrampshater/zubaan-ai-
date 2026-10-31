@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /* =========================================
-   1. ROOT & GLOBAL STYLES
+   1. ROOT & GLOBAL
 ========================================= */
 
 :root {
@@ -23,7 +23,6 @@
   --green-dark: #25452d;
 
   --danger: #d98d83;
-
   --radius: 12px;
 
   font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
@@ -188,10 +187,7 @@ a:focus-visible {
   font-weight: 600;
   text-align: left;
 
-  transition:
-    background .18s ease,
-    border-color .18s ease,
-    color .18s ease;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
 }
 
 .new-chat-button:hover {
@@ -260,10 +256,7 @@ a:focus-visible {
   font-size: 12px;
   text-align: left;
 
-  transition:
-    background .15s ease,
-    color .15s ease,
-    border-color .15s ease;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
 
 .sidebar-link:hover {
@@ -310,10 +303,8 @@ a:focus-visible {
 
 .text-button {
   padding: 4px 8px;
-
   border: 0;
   background: transparent;
-
   color: var(--muted-soft);
   font-size: 10px;
 }
@@ -342,9 +333,7 @@ a:focus-visible {
   border: 1px solid transparent;
   border-radius: 7px;
 
-  transition:
-    background .15s ease,
-    border-color .15s ease;
+  transition: background .15s ease, border-color .15s ease;
 }
 
 .history-item:hover {
@@ -408,12 +397,9 @@ a:focus-visible {
 
   background: transparent;
   color: var(--muted-soft);
-
   opacity: 0;
 
-  transition:
-    opacity .15s ease,
-    background .15s ease;
+  transition: opacity .15s ease, background .15s ease;
 }
 
 .history-item:hover .history-delete {
@@ -592,6 +578,7 @@ a:focus-visible {
 .mobile-brand {
   display: none;
 }
+
 /* =========================================
    5. WORKSPACES
 ========================================= */
@@ -599,12 +586,21 @@ a:focus-visible {
 .workspace {
   display: none;
   flex: 1;
-  min-height: calc(100vh - 115px);
+  min-height: 0;
 }
 
 .workspace.active {
   display: flex;
   flex-direction: column;
+}
+
+#generalWorkspace {
+  flex: 0 0 auto;
+}
+
+#studentWorkspace,
+#shopkeeperWorkspace {
+  width: 100%;
 }
 
 #welcomeContainer {
@@ -637,37 +633,46 @@ a:focus-visible {
 }
 
 /* =========================================
-   6. SHARED CHAT
+   6. SHARED CHAT - FULL WIDTH
 ========================================= */
 
 .shared-chat-area {
   display: flex;
   flex-direction: column;
+
   width: 100%;
+  min-width: 0;
   min-height: 300px;
   flex: 1;
-  padding-top: 15px;
+
+  padding: 15px 30px 0;
 }
 
 .conversation,
 .conversation-area {
   display: flex;
-  width: min(100% - 40px, 800px);
+
+  width: 100%;
+  min-width: 0;
   flex: 1;
-  margin: 0 auto;
+
+  margin: 0;
 }
 
 .messages,
 .message-list {
   display: flex;
   flex-direction: column;
+
   width: 100%;
+  min-width: 0;
+
   gap: 22px;
   padding: 20px 0;
 }
 
 .chat-message {
-  max-width: 88%;
+  max-width: min(88%, 1100px);
   padding: 13px 16px;
 
   border: 1px solid var(--line);
@@ -702,8 +707,9 @@ a:focus-visible {
 ========================================= */
 
 .question-form {
-  width: min(100% - 40px, 800px);
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .composer {
@@ -860,10 +866,7 @@ a:focus-visible {
   background: var(--panel);
   text-align: left;
 
-  transition:
-    border-color .15s ease,
-    background .15s ease,
-    transform .15s ease;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
 }
 
 .feature-card:hover {
@@ -929,12 +932,11 @@ a:focus-visible {
   border: 1px solid rgba(167, 212, 174, .2);
   border-radius: 12px;
 
-  background:
-    linear-gradient(
-      135deg,
-      rgba(91, 139, 98, .10),
-      rgba(20, 26, 21, .9)
-    );
+  background: linear-gradient(
+    135deg,
+    rgba(91, 139, 98, .10),
+    rgba(20, 26, 21, .9)
+  );
 }
 
 .pdf-import-heading {
@@ -1207,11 +1209,12 @@ a:focus-visible {
 
 .app-footer,
 .main-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 15px;
 
+  width: 100%;
   margin-top: auto;
   padding: 17px 30px;
 
@@ -1221,20 +1224,23 @@ a:focus-visible {
   font-size: 10px;
 }
 
-.app-footer p {
-  margin: 0;
+.footer-left {
+  text-align: left;
 }
 
-.footer-link {
-  padding: 5px 8px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.footer-link:hover {
+.footer-center {
+  text-align: center;
   color: var(--green-light);
+  font-weight: 700;
+}
+
+.footer-right {
+  text-align: right;
+}
+
+.footer-heart {
+  display: inline-block;
+  margin-left: 3px;
 }
 
 /* =========================================
@@ -1341,10 +1347,7 @@ a:focus-visible {
 
   transform: translateY(7px);
 
-  transition:
-    opacity .18s ease,
-    transform .18s ease,
-    visibility .18s ease;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
 }
 
 .toast.visible {
@@ -1389,6 +1392,11 @@ body.large-text .welcome-container p {
   .main-header {
     padding: 0 22px;
   }
+
+  .shared-chat-area {
+    padding-right: 22px;
+    padding-left: 22px;
+  }
 }
 
 /* =========================================
@@ -1402,9 +1410,7 @@ body.large-text .welcome-container p {
     transform: translateX(-105%);
     visibility: hidden;
 
-    transition:
-      transform .2s ease,
-      visibility .2s ease;
+    transition: transform .2s ease, visibility .2s ease;
 
     box-shadow: 12px 0 35px rgba(0, 0, 0, .25);
   }
@@ -1445,7 +1451,7 @@ body.large-text .welcome-container p {
     display: grid;
   }
 
-  /* MOBILE BRAND POSITION FIX */
+  /* MOBILE BRAND */
 
   .mobile-brand {
     display: flex;
@@ -1494,7 +1500,7 @@ body.large-text .welcome-container p {
   }
 
   .workspace {
-    min-height: calc(100vh - 105px);
+    min-height: 0;
   }
 
   #welcomeContainer {
@@ -1506,15 +1512,25 @@ body.large-text .welcome-container p {
     font-size: clamp(27px, 7vw, 35px);
   }
 
+  /* MOBILE CHAT */
+
+  .shared-chat-area {
+    width: 100%;
+    min-height: 260px;
+    padding: 12px 14px 0;
+  }
+
   .conversation,
   .conversation-area,
   .question-form {
-    width: calc(100% - 28px);
+    width: 100%;
   }
 
   .chat-message {
     max-width: 95%;
   }
+
+  /* MOBILE DASHBOARD */
 
   .dashboard-container {
     width: calc(100% - 32px);
@@ -1547,13 +1563,22 @@ body.large-text .welcome-container p {
     padding: 16px;
   }
 
-  .shared-chat-area {
-    min-height: 260px;
-  }
+  /* MOBILE FOOTER */
 
   .app-footer,
   .main-footer {
-    padding: 14px 16px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 9px;
+
+    padding: 16px 14px;
+    text-align: center;
+  }
+
+  .footer-left,
+  .footer-center,
+  .footer-right {
+    text-align: center;
   }
 }
 
@@ -1600,11 +1625,6 @@ body.large-text .welcome-container p {
 
   .disclaimer {
     font-size: 8px;
-  }
-
-  .app-footer,
-  .main-footer {
-    flex-wrap: wrap;
   }
 
   .student-tool-panel,
