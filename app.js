@@ -1,6 +1,6 @@
 /**
- * Zubaan AI — app.js
- * Existing HTML and CSS ke saath compatible vanilla JavaScript.
+ * Zubaan AI — Updated app.js
+ * Vanilla JavaScript
  */
 (() => {
   "use strict";
@@ -8,37 +8,311 @@
   if (window.__zubaanApp) return;
   window.__zubaanApp = true;
 
-  /* CONFIG */
-  const API_URL = "";
-  const API_TIMEOUT = 30000;
-  const TOAST_DURATION = 3500;
+  /* =====================================
+     1. CONFIGURATION
+  ===================================== */
 
-  const LANGUAGES = ["roman", "ur", "en", "pa", "sd", "ps"];
-  const LANGUAGE_NAMES = {
-    roman: "Roman Urdu",
-    ur: "Urdu",
-    en: "English",
-    pa: "Punjabi",
-    sd: "Sindhi",
-    ps: "Pashto"
+  const CONFIG = {
+    API_URL: "",
+    API_TIMEOUT: 30000,
+    TOAST_DURATION: 3500,
+    MAX_MESSAGE_LENGTH: 4000
   };
-
-  const SPEECH_LANGUAGES = {
-    roman: "ur-PK",
-    ur: "ur-PK",
-    en: "en-US",
-    pa: "pa-Arab-PK",
-    sd: "sd-PK",
-    ps: "ps-AF"
-  };
-
-  const MODES = ["general", "student", "shopkeeper"];
 
   const STORAGE = {
     data: "zubaan.data.v2",
     language: "zubaan.lang",
     largeText: "zubaan.largeText"
   };
+
+  const LANGUAGES = {
+    roman: {
+      name: "Roman Urdu",
+      speech: "ur-PK",
+      direction: "ltr"
+    },
+    ur: {
+      name: "Urdu",
+      speech: "ur-PK",
+      direction: "rtl"
+    },
+    en: {
+      name: "English",
+      speech: "en-US",
+      direction: "ltr"
+    },
+    pa: {
+      name: "Punjabi",
+      speech: "pa-Arab-PK",
+      direction: "rtl"
+    },
+    sd: {
+      name: "Sindhi",
+      speech: "sd-PK",
+      direction: "rtl"
+    },
+    ps: {
+      name: "Pashto",
+      speech: "ps-AF",
+      direction: "rtl"
+    }
+  };
+
+  const MODES = [
+    "general",
+    "student",
+    "shopkeeper"
+  ];
+
+  /* =====================================
+     2. APPLICATION STATE
+  ===================================== */
+
+  const state = {
+    lang: "roman",
+    mode: "general",
+    currentId: null,
+    largeText: false,
+
+    conversations: [],
+
+    student: {
+      chapters: [],
+      notes: [],
+      cards: [],
+      plans: []
+    },
+
+    shop: {
+      customers: [],
+      ledger: [],
+      sales: [],
+      expenses: [],
+      stock: []
+    },
+
+    ui: {
+      sidebar: false,
+      studentTool: null,
+      shopTool: null,
+      editing: null,
+      output: {},
+      flipped: {}
+    },
+
+    pending: new Set()
+  };
+
+  /* =====================================
+     3. DOM HELPERS
+  ===================================== */
+
+  const $ = (selector, root = document) =>
+    root.querySelector(selector);
+
+  const $$ = (selector, root = document) =>
+    [...root.querySelectorAll(selector)];
+
+  const uid = () =>
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2, 9);
+
+  const today = () =>
+    new Date().toISOString().slice(0, 10);
+
+  const money = value =>
+    "Rs " + (Number(value) || 0).toLocaleString();
+
+  const escapeHTML = value =>
+    String(value ?? "").replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]);
+
+  function element(tag, attributes = {}, ...children) {
+    const node = document.createElement(tag);
+
+    Object.entries(attributes).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === false) {
+        return;
+      }
+
+      if (key === "text") {
+        node.textContent = value;
+      } else if (key === "class") {
+        node.className = value;
+      } else if (key === "dataset") {
+        Object.entries(value).forEach(([name, val]) => {
+          node.dataset[name] = val;
+        });
+      } else if (key === "style") {
+        node.setAttribute("style", value);
+      } else if (key in node) {
+        node[key] = value;
+      } else {
+        node.setAttribute(key, value);
+      }
+    });
+
+    children.flat().forEach(child => {
+      if (child === null || child === undefined || child === false) {
+        return;
+      }
+
+      node.append(
+        child.nodeType
+          ? child
+          : document.createTextNode(String(child))
+      );
+    });
+
+    return node;
+  }
+
+  function textLines(value) {
+    return String(value || "")
+      .split("\n")
+      .map(line => element("p", { text: line }));
+  }
+
+  /* =====================================
+     4. LANGUAGE HELPER
+  ===================================== */
+
+  function t(key) {
+    const dictionaries = {
+      en: TEXT.en,
+      roman: TEXT.roman,
+      ur: UR,
+      pa: TEXT.pa,
+      sd: TEXT.sd,
+      ps: TEXT.ps
+    };
+
+    const dictionary = dictionaries[state.lang] || TEXT.en;
+
+    return dictionary[key] || TEXT.en[key] || key;
+  }
+
+  /* =====================================
+     5. LOCAL STORAGE
+  ===================================== */
+
+  function safeStoreGet(key, fallback) {
+    try {
+      const value = localStorage.getItem(key);
+
+      return value === null
+        ? fallback
+        : JSON.parse(value);
+    } catch (error) {
+      console.warn("Storage read failed:", error);
+      return fallback;
+    }
+  }
+
+  function safeStoreSet(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.warn("Storage write failed:", error);
+      return false;
+    }
+  }
+
+  let storageWarningShown = false;
+
+  function persist() {
+    const success = safeStoreSet(STORAGE.data, {
+      mode: state.mode,
+      currentId: state.currentId,
+      conversations: state.conversations,
+      student: state.student,
+      shop: state.shop
+    });
+
+    if (!success && !storageWarningShown) {
+      storageWarningShown = true;
+      showToast(t("toastStorage"), "warning");
+    }
+  }
+
+  function loadSavedData() {
+    const saved = safeStoreGet(STORAGE.data, {});
+
+    if (!saved || typeof saved !== "object") return;
+
+    if (MODES.includes(saved.mode)) {
+      state.mode = saved.mode;
+    }
+
+    state.currentId = saved.currentId || null;
+
+    state.conversations = Array.isArray(saved.conversations)
+      ? saved.conversations
+      : [];
+
+    if (saved.student && typeof saved.student === "object") {
+      state.student = {
+        ...state.student,
+        ...saved.student
+      };
+    }
+
+    if (saved.shop && typeof saved.shop === "object") {
+      state.shop = {
+        ...state.shop,
+        ...saved.shop
+      };
+    }
+
+    const language = safeStoreGet(STORAGE.language, "roman");
+
+    state.lang = LANGUAGES[language] ? language : "roman";
+
+    state.largeText = Boolean(
+      safeStoreGet(STORAGE.largeText, false)
+    );
+  }
+
+  /* =====================================
+     6. NOTIFICATIONS
+  ===================================== */
+
+  let toastTimer = null;
+
+  function showToast(message, type = "info") {
+    const toast = $("#toast");
+
+    if (!toast) return;
+
+    clearTimeout(toastTimer);
+
+    toast.textContent = String(message || "");
+    toast.dataset.type = type;
+
+    toast.classList.remove("visible");
+
+    void toast.offsetWidth;
+
+    toast.classList.add("visible");
+
+    toastTimer = setTimeout(() => {
+      toast.classList.remove("visible");
+    }, CONFIG.TOAST_DURATION);
+  }
+
+  /* =====================================
+     PART 1 COMPLETE
+     PART 2 CONTINUES BELOW
+  ===================================== */
+   /* =====================================
+     7. LANGUAGE DICTIONARIES
+  ===================================== */
 
   const TEXT = {
     en: {
@@ -74,7 +348,7 @@
       ready: "Ready to help",
       notConnected: "AI service not connected",
       listening: "Listening...",
-      errNoApi: "AI service is not connected. Please configure API_URL in app.js.",
+      errNoApi: "AI service is not connected. Configure API_URL in app.js.",
       errOffline: "You appear to be offline.",
       errRequest: "Something went wrong. Please try again.",
       errTimeout: "The request took too long. Please try again.",
@@ -145,7 +419,7 @@
       low: "Low-stock alert at",
       selectCustomer: "— Select customer —",
       otherItem: "— Other item —",
-      noCustomer: "Add a customer first (Customers tool).",
+      noCustomer: "Add a customer first.",
       lowStock: "Low stock",
       tasksDone: "Tasks done",
       savedChapters: "Saved chapters",
@@ -153,7 +427,7 @@
       hideAnswer: "Hide answer",
       markDone: "Mark done",
       reopen: "Reopen",
-      confirmCustomer: "Delete this customer and their related records?",
+      confirmCustomer: "Delete this customer and related records?",
       sCustomers: "Customers",
       sOutstanding: "Outstanding",
       sOwing: "Customers owing",
@@ -293,7 +567,7 @@
       sSalesToday: "Aaj ki farokht",
       sSalesAll: "Kul farokht",
       sExpenses: "Kul akhrajaat",
-      sProfit: "Farokht − akhrajaat",
+      sProfit: "Farokht minus akhrajaat",
       sReceived: "Kul wusooli",
       sProducts: "Products",
       sLow: "Kam stock",
@@ -305,7 +579,8 @@
       easy: "Aasaan",
       medium: "Darmiyana",
       hard: "Mushkil"
-       },
+    },
+
     pa: {
       newChat: "نئی گفتگو",
       general: "عام معاون",
@@ -372,10 +647,16 @@
       easy: "آسان",
       medium: "درمیانہ",
       hard: "اوکھا"
-    },
+    }
   };
 
+  /* =====================================
+     8. URDU DICTIONARY
+  ===================================== */
+
   const UR = {
+    ...TEXT.en,
+
     newChat: "نئی گفتگو",
     general: "عمومی معاون",
     student: "طالب علم",
@@ -408,7 +689,7 @@
     ready: "مدد کے لیے تیار",
     notConnected: "اے آئی سروس منسلک نہیں",
     listening: "سن رہا ہوں...",
-    errNoApi: "اے آئی سروس ابھی منسلک نہیں۔ app.js میں API_URL ترتیب دیں۔",
+    errNoApi: "اے آئی سروس منسلک نہیں۔ app.js میں API_URL ترتیب دیں۔",
     errOffline: "آپ آف لائن لگتے ہیں۔",
     errRequest: "کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔",
     errTimeout: "درخواست میں بہت وقت لگ گیا۔",
@@ -508,7 +789,12 @@
     hard: "مشکل"
   };
 
+  /* =====================================
+     9. SINDHI DICTIONARY
+  ===================================== */
+
   TEXT.sd = {
+    ...TEXT.en,
     newChat: "نئين گفتگو",
     general: "عام مددگار",
     student: "شاگرد",
@@ -575,7 +861,13 @@
     medium: "وچولو",
     hard: "مشڪل"
   };
-    TEXT.ps = {
+
+  /* =====================================
+     10. PASHTO DICTIONARY
+  ===================================== */
+
+  TEXT.ps = {
+    ...TEXT.en,
     newChat: "نوې خبرې اترې",
     general: "عمومي مرستیال",
     student: "زده کوونکی",
@@ -590,11 +882,7 @@
     placeholder: "Zubaan AI ته پیغام ولیکئ...",
     hint: "ستاسو ژبه، ستاسو طریقه.",
     send: "لېږل",
-    disclaimer: "Zubaan AI تېروتنه کولی شي. مهم معلومات تایید کړئ.",
     thinking: "فکر کوم...",
-    emptyHistory: "ستاسو خبرې اترې به دلته ښکاره شي.",
-    noRecords: "تر اوسه هېڅ ریکارډ نشته.",
-    savedEmpty: "ستاسو خوندي شوي فصلونه به دلته ښکاره شي.",
     back: "← شاته",
     add: "زیاتول",
     update: "تازه کول",
@@ -606,35 +894,7 @@
     online: "آنلاین",
     offline: "آفلاین",
     ready: "مرستې ته چمتو",
-    notConnected: "د AI خدمت نه دی نښلول شوی",
     listening: "اورم...",
-    errNoApi: "د AI خدمت نه دی نښلول شوی. په app.js کې API_URL تنظیم کړئ.",
-    errOffline: "تاسو آفلاین ښکاري.",
-    errRequest: "یو څه ستونزه پېښه شوه. بیا هڅه وکړئ.",
-    errTimeout: "غوښتنې ډېر وخت ونیو. بیا هڅه وکړئ.",
-    errInvalid: "د AI ځواب ونه لوستل شو.",
-    errEmpty: "لومړی پیغام ولیکئ.",
-    errVoice: "په دې براوزر کې غږیز ان پټ نشته.",
-    errVoiceFail: "غږیز ان پټ ناکام شو. بیا هڅه وکړئ.",
-    toastLang: "ژبه بدله شوه",
-    toastNew: "نوې خبرې اترې پیل شوې",
-    toastCleared: "تاریخچه پاکه شوه",
-    toastSaved: "وساتل شو",
-    toastUpdated: "تازه شو",
-    toastDeleted: "ړنګ شو",
-    toastStorage: "په دې وسیله کې معلومات نه شول ساتل کېدای.",
-    confirmHistory: "ټولې خبرې اترې ړنګې کړئ؟",
-    confirmDelete: "دا توکی ړنګ کړئ؟",
-    errRequired: "مهرباني وکړئ اړین ځایونه ډک کړئ.",
-    errName: "مهرباني وکړئ نوم ولیکئ.",
-    errAmount: "له صفر څخه زیاته اندازه ولیکئ.",
-    errNumber: "سمه شمېره ولیکئ.",
-    errCustomer: "مهرباني وکړئ پېرودونکی وټاکئ.",
-    errOverpay: "تادیه له پاتې پور څخه زیاته ده.",
-    errStock: "د دې پلور لپاره کافي ذخیره نشته.",
-    errItem: "توکی ولیکئ یا محصول وټاکئ.",
-    errDuplicate: "په دې نوم محصول له مخکې شته.",
-    balance: "پاتې حساب",
     customer: "پېرودونکی",
     amount: "اندازه (روپۍ)",
     name: "نوم",
@@ -644,2208 +904,41 @@
     date: "نېټه",
     subject: "مضمون",
     chapter: "څپرکی / موضوع",
-    count: "د پوښتنو شمېر",
     difficulty: "د ستونزمنوالي کچه",
-    material: "مواد دلته کېږدئ (اختیاري)",
     generate: "جوړول",
     summarize: "د AI له لارې لنډیز",
     title: "سرلیک",
     content: "متن",
     task: "دنده",
     due: "وروستۍ نېټه",
-    front: "مخ (پوښتنه)",
-    backSide: "شا (ځواب)",
-    addCard: "کارت زیاتول",
     flashcards: "فلش کارتونه",
-    mock: "ازمایښتي ازموینه جوړول",
-    mcq: "MCQs جوړول",
     summary: "د څپرکو لنډیزونه",
     notes: "زما یادښتونه",
     planner: "د زده کړې پلان",
-    credit: "د پور حساب",
     customers: "پېرودونکي",
     sales: "ورځنی پلور",
     expenses: "لګښتونه",
-    payments: "د تادیاتو تاریخچه",
     stock: "د زېرمو یادښتونه",
     quantity: "اندازه",
     price: "د واحد بیه (روپۍ)",
     product: "له زېرمو څخه محصول",
     item: "توکی",
-    paymentType: "د تادیې ډول",
     cash: "نغدې پیسې",
-    creditType: "پور",
     category: "کټګوري",
-    low: "د کمې زېرمو خبرتیا",
-    selectCustomer: "— پېرودونکی وټاکئ —",
-    otherItem: "— بل توکی —",
-    noCustomer: "لومړی یو پېرودونکی زیات کړئ.",
-    lowStock: "زېرمه کمه ده",
-    tasksDone: "ترسره شوې دندې",
-    savedChapters: "خوندي شوي څپرکي",
     showAnswer: "ځواب ښکاره کړئ",
     hideAnswer: "ځواب پټ کړئ",
     markDone: "بشپړ شوی وټاکئ",
     reopen: "بیا پرانیستل",
-    confirmCustomer: "دا پېرودونکی او اړوند ریکارډونه ړنګ کړئ؟",
-    sCustomers: "پېرودونکي",
-    sOutstanding: "پاتې پور",
-    sOwing: "پور لرونکي پېرودونکي",
-    sSalesToday: "د نن پلور",
-    sSalesAll: "ټول پلور",
-    sExpenses: "ټول لګښتونه",
-    sProfit: "پلور − لګښتونه",
-    sReceived: "ټولې ترلاسه شوې پیسې",
-    sProducts: "محصولات",
-    sLow: "کمه زېرمه",
-    sValue: "د زېرمو ارزښت",
-    saveChapter: "څپرکی خوندي کول",
-    saveOut: "څپرکو کې خوندي کول",
-    saveCards: "دا کارتونه خوندي کول",
-    addCardAI: "د AI په مرسته کارتونه جوړول",
     easy: "اسانه",
     medium: "منځنۍ",
     hard: "ستونزمن"
   };
 
-  const state = {
-    lang: "roman",
-    mode: "general",
-    currentId: null,
-    largeText: false,
-    conversations: [],
-    student: {
-      chapters: [],
-      notes: [],
-      cards: [],
-      plans: []
-    },
-    shop: {
-      customers: [],
-      ledger: [],
-      sales: [],
-      expenses: [],
-      stock: []
-    },
-    ui: {
-      sidebar: false,
-      studentTool: null,
-      shopTool: null,
-      editing: null,
-      output: {},
-      flipped: {}
-    },
-    pending: new Set()
-  };
-
-  const $ = (selector, root = document) => root.querySelector(selector);
-  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
-  const today = () => new Date().toISOString().slice(0, 10);
-  const money = value => "Rs " + (Number(value) || 0).toLocaleString();
-
- function t(key) {
-  const dictionaries = {
-    en: TEXT.en,
-    roman: TEXT.roman,
-    ur: UR,
-    pa: TEXT.pa,
-    sd: TEXT.sd,
-    ps: TEXT.ps
-  };
-
-  const dictionary = dictionaries[state.lang] || TEXT.en;
-
-  return dictionary[key] || TEXT.en[key] || key;
-}
-
-  function safeStoreGet(key, fallback) {
-    try {
-      const value = localStorage.getItem(key);
-      return value === null ? fallback : JSON.parse(value);
-    } catch {
-      return fallback;
-    }
-  }
-
-  function safeStoreSet(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  let storageWarningShown = false;
-
-  function persist() {
-    const success = safeStoreSet(STORAGE.data, {
-      mode: state.mode,
-      currentId: state.currentId,
-      conversations: state.conversations,
-      student: state.student,
-      shop: state.shop
-    });
-
-    if (!success && !storageWarningShown) {
-      storageWarningShown = true;
-      showToast(t("toastStorage"), "warning");
-    }
-  }
-
-  function element(tag, attributes = {}, ...children) {
-    const node = document.createElement(tag);
-
-    Object.entries(attributes).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === false) return;
-
-      if (key === "text") {
-        node.textContent = value;
-      } else if (key === "class") {
-        node.className = value;
-      } else if (key === "dataset") {
-        Object.entries(value).forEach(([name, val]) => {
-          if (val !== undefined && val !== null) node.dataset[name] = val;
-        });
-      } else if (key === "style") {
-        node.setAttribute("style", value);
-      } else if (key in node) {
-        node[key] = value;
-      } else {
-        node.setAttribute(key, value);
-      }
-    });
-
-    children.flat().forEach(child => {
-      if (child === null || child === undefined || child === false) return;
-      node.append(child.nodeType ? child : document.createTextNode(String(child)));
-    });
-
-    return node;
-  }
-
-  function textLines(value) {
-    return String(value || "").split("\n").map(line =>
-      element("p", { text: line })
-    );
-  }
-
-  /* NOTIFICATIONS */
-
-  let toastTimer;
-
-  function showToast(message, type = "info") {
-    const toast = $("#toast");
-    if (!toast) return;
-
-    clearTimeout(toastTimer);
-
-    toast.textContent = String(message || "");
-    toast.dataset.type = type;
-    toast.classList.remove("visible");
-
-    void toast.offsetWidth;
-
-    toast.classList.add("visible");
-
-    toastTimer = setTimeout(() => {
-      toast.classList.remove("visible");
-    }, TOAST_DURATION);
-  }
-
-  /* AI REQUEST */
-
-  async function requestAI({ task = "chat", message, context = {}, history = [] }) {
-    if (!API_URL) {
-      throw new Error("errNoApi");
-    }
-
-    if (!navigator.onLine) {
-      throw new Error("errOffline");
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), API_TIMEOUT);
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          message,
-          mode: state.mode,
-          language: state.lang,
-          languageName: LANGUAGE_NAMES[state.lang],
-          task,
-          context,
-          history
-        })
-      });
-
-      if (!response.ok) throw new Error("errRequest");
-
-      const data = await response.json();
-
-      const answer = data && typeof data === "object"
-        ? [data.reply, data.message, data.response, data.text]
-            .find(value => typeof value === "string" && value.trim())
-        : null;
-
-      if (!answer) throw new Error("errInvalid");
-
-      return answer.trim();
-    } catch (error) {
-      if (error.name === "AbortError") throw new Error("errTimeout");
-      if (error.message.startsWith("err")) throw error;
-      throw new Error("errRequest");
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  function errorMessage(error) {
-    return t(error && error.message && error.message.startsWith("err")
-      ? error.message
-      : "errRequest");
-  }
-
-  /* GENERAL CHAT */
-
-  function currentConversation() {
-    return state.conversations.find(item => item.id === state.currentId) || null;
-  }
-
-  function createConversation() {
-    const now = Date.now();
-
-    const conversation = {
-      id: uid(),
-      title: "",
-      createdAt: now,
-      updatedAt: now,
-      messages: []
-    };
-
-    state.conversations.unshift(conversation);
-    state.currentId = conversation.id;
-
-    return conversation;
-  }
-
-  function newChat() {
-    setMode("general");
-
-    const conversation = currentConversation();
-
-    if (!conversation || conversation.messages.length) {
-      createConversation();
-    }
-
-    persist();
-    renderChat();
-    renderHistory();
-    showToast(t("toastNew"), "success");
-
-    $("#question")?.focus();
-  }
-
-  function openConversation(id) {
-    if (!state.conversations.some(item => item.id === id)) return;
-
-    state.currentId = id;
-    setMode("general");
-    persist();
-    renderChat();
-    renderHistory();
-  }
-
-  function deleteConversation(id) {
-    if (!confirm(t("confirmDelete"))) return;
-
-    state.conversations = state.conversations.filter(item => item.id !== id);
-    state.pending.delete(id);
-
-    if (state.currentId === id) {
-      if (state.conversations.length) {
-        state.currentId = state.conversations[0].id;
-      } else {
-        createConversation();
-      }
-    }
-
-    persist();
-    renderChat();
-    renderHistory();
-    showToast(t("toastDeleted"), "success");
-  }
-
-  function clearHistory() {
-    if (!confirm(t("confirmHistory"))) return;
-
-    state.conversations = [];
-    state.pending.clear();
-    createConversation();
-
-    persist();
-    renderChat();
-    renderHistory();
-    showToast(t("toastCleared"), "success");
-  }
-
-  async function sendMessage(message) {
-    const conversation = currentConversation() || createConversation();
-
-    if (state.pending.has(conversation.id)) return;
-
-    const conversationId = conversation.id;
-    const now = Date.now();
-
-    conversation.messages.push({
-      id: uid(),
-      role: "user",
-      content: message,
-      ts: now
-    });
-
-    if (!conversation.title) {
-      conversation.title = message.length > 40
-        ? message.slice(0, 40) + "..."
-        : message;
-    }
-
-    conversation.updatedAt = now;
-    state.pending.add(conversationId);
-
-    persist();
-    renderChat();
-    renderHistory();
-
-    try {
-      const history = conversation.messages.slice(-21, -1).map(item => ({
-        role: item.role,
-        content: item.content
-      }));
-
-      const reply = await requestAI({
-        task: "chat",
-        message,
-        history
-      });
-
-      const target = state.conversations.find(item => item.id === conversationId);
-
-      if (target) {
-        target.messages.push({
-          id: uid(),
-          role: "assistant",
-          content: reply,
-          ts: Date.now()
-        });
-
-        target.updatedAt = Date.now();
-      }
-    } catch (error) {
-      showToast(errorMessage(error), "error");
-    } finally {
-      state.pending.delete(conversationId);
-      persist();
-      renderChat();
-      renderHistory();
-    }
-  }
-
-  function renderChat() {
-    const list = $("#generalMessages");
-    if (!list) return;
-
-    const conversation = currentConversation();
-
-    list.replaceChildren();
-
-    (conversation?.messages || []).forEach(message => {
-      const messageElement = element(
-        "div",
-        {
-          class: "chat-message " + (message.role === "user" ? "user" : "assistant"),
-          dir: "auto"
-        },
-        ...textLines(message.content)
-      );
-
-      list.append(messageElement);
-    });
-
-    const loading = !!(
-      conversation && state.pending.has(conversation.id)
-    );
-
-    if (loading) {
-      list.append(
-        element(
-          "div",
-          { class: "chat-message assistant loading", "aria-live": "polite" },
-          element("p", { text: t("thinking") })
-        )
-      );
-    }
-
-    const welcome = $("#welcomeContainer");
-    if (welcome) {
-      welcome.style.display =
-        conversation && (conversation.messages.length || loading)
-          ? "none"
-          : "";
-    }
-
-    const sendButton = $("#askButton");
-    if (sendButton) sendButton.disabled = loading;
-
-    list.lastElementChild?.scrollIntoView({ block: "end" });
-  }
-
-  function renderHistory() {
-    const list = $("#recentList");
-    if (!list) return;
-
-    const empty = $("#emptyHistoryText");
-    if (empty) empty.textContent = t("emptyHistory");
-
-    list.replaceChildren();
-
-    const conversations = state.conversations
-      .filter(item => item.messages.length)
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-
-    if (!conversations.length) {
-      if (empty) list.append(empty);
-      return;
-    }
-
-    conversations.forEach(conversation => {
-      const row = element(
-        "div",
-        {
-          class: "history-item" +
-            (conversation.id === state.currentId ? " active" : "")
-        },
-        element(
-          "button",
-          {
-            type: "button",
-            class: "history-chat-button",
-            dataset: { conv: conversation.id }
-          },
-          element("span", { class: "history-chat-icon", text: "◦" }),
-          element("span", {
-            class: "history-chat-title",
-            text: conversation.title || t("newChat")
-          })
-        ),
-        element("button", {
-          type: "button",
-          class: "history-delete",
-          dataset: { delConv: conversation.id },
-          "aria-label": t("delete"),
-          title: t("delete"),
-          text: "×"
-        })
-      );
-
-      list.append(row);
-    });
-  }
-
-  function updateCounter() {
-    const input = $("#question");
-    const counter = $("#charCount");
-
-    if (!input) return;
-
-    if (counter) {
-      counter.textContent =
-        input.value.length + " / " + (input.maxLength || 4000);
-    }
-
-    input.style.height = "auto";
-    input.style.height = Math.min(input.scrollHeight, 180) + "px";
-  }
-
-  function submitChat() {
-    const input = $("#question");
-    if (!input) return;
-
-    const message = input.value.trim();
-
-    if (!message) {
-      showToast(t("errEmpty"), "warning");
-      return;
-    }
-
-    const conversation = currentConversation();
-
-    if (conversation && state.pending.has(conversation.id)) return;
-
-    input.value = "";
-    updateCounter();
-
-    sendMessage(message);
-  }
-
-  /* VOICE INPUT */
-
-  let recognition = null;
-
-  function toggleVoice() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      showToast(t("errVoice"), "warning");
-      return;
-    }
-
-    if (recognition) {
-      recognition.stop();
-      return;
-    }
-
-    const button = $("#voiceButton");
-
-    try {
-      recognition = new SpeechRecognition();
-      recognition.lang = SPEECH_LANGUAGES[state.lang] || "en-US";
-      recognition.interimResults = false;
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        button?.classList.add("recording");
-        showToast(t("listening"), "info");
-      };
-
-      recognition.onresult = event => {
-        const result = [...event.results]
-          .map(item => item[0].transcript)
-          .join(" ")
-          .trim();
-
-        const input = $("#question");
-
-        if (input && result) {
-          input.value = (
-            input.value ? input.value + " " : ""
-          ) + result;
-
-          input.value = input.value.slice(0, input.maxLength || 4000);
-          updateCounter();
-          input.focus();
-        }
-      };
-
-      recognition.onerror = () => {
-        showToast(t("errVoiceFail"), "error");
-      };
-
-      recognition.onend = () => {
-        button?.classList.remove("recording");
-        recognition = null;
-      };
-
-      recognition.start();
-    } catch {
-      recognition = null;
-      showToast(t("errVoiceFail"), "error");
-    }
-  }
-    /* FORMS */
-
-  function field(name, label, type = "text", required = false, extra = {}) {
-    return { name, label, type, required, ...extra };
-  }
-
-  function buildForm(formKey, fields, values = {}, buttons = [], editing = false) {
-    const form = element("form", {
-      class: "local-form",
-      dataset: { form: formKey },
-      noValidate: true
-    });
-
-    fields.forEach(item => {
-      const id = "f_" + formKey.replace(":", "_") + "_" + item.name;
-      const value = values[item.name] ?? "";
-      let input;
-
-      if (item.type === "select") {
-        input = element(
-          "select",
-          { id, name: item.name },
-          ...(item.options || []).map(option =>
-            element("option", {
-              value: option.value,
-              text: option.label,
-              selected: String(option.value) === String(value)
-            })
-          )
-        );
-      } else if (item.type === "textarea") {
-        input = element("textarea", {
-          id,
-          name: item.name,
-          value,
-          maxLength: 8000
-        });
-      } else {
-        input = element("input", {
-          id,
-          name: item.name,
-          type: item.type,
-          value,
-          min: item.min,
-          step: item.step,
-          maxLength: item.type === "number" || item.type === "date" ? null : 200
-        });
-      }
-
-      form.append(
-        element("label", {
-          htmlFor: id,
-          text: t(item.label) + (item.required ? " *" : "")
-        }),
-        input
-      );
-    });
-
-    buttons.forEach(button => {
-      form.append(
-        element("button", {
-          type: "submit",
-          dataset: { action: button.action || "" },
-          text: t(button.label)
-        })
-      );
-    });
-
-    if (editing) {
-      form.append(
-        element("button", {
-          type: "button",
-          dataset: { act: "cancel-edit" },
-          text: t("cancel")
-        })
-      );
-    }
-
-    return form;
-  }
-
-  function recordRow(title, meta, body, actions = []) {
-    return element(
-      "div",
-      { class: "local-record" },
-      element(
-        "div",
-        {},
-        element("strong", { text: title }),
-        meta ? element("small", { text: meta }) : null,
-        body ? element("p", {
-          text: body,
-          style: "white-space:pre-wrap"
-        }) : null
-      ),
-      element(
-        "div",
-        {
-          class: "local-actions",
-          style: "display:flex;gap:6px;flex-wrap:wrap"
-        },
-        ...actions
-      )
-    );
-  }
-
-  function actionButton(label, action, data = {}, className = "local-action") {
-    return element("button", {
-      type: "button",
-      class: className,
-      dataset: { act: action, ...data },
-      text: t(label)
-    });
-  }
-
-  function statsBar(items) {
-    return element(
-      "div",
-      { class: "shop-stats" },
-      ...items.map(([label, value]) =>
-        element(
-          "div",
-          { class: "tool-stat" },
-          element("span", { text: t(label) }),
-          element("strong", { text: String(value) })
-        )
-      )
-    );
-  }
-
-  function cleanForm(form) {
-    const data = {};
-
-    new FormData(form).forEach((value, key) => {
-      data[key] = String(value).trim();
-    });
-
-    return data;
-  }
-
-  function numberValue(value) {
-    const text = String(value ?? "").replace(/,/g, "").trim();
-    if (!text) return NaN;
-
-    const number = Number(text);
-
-    return Number.isFinite(number) && Math.abs(number) < 1e10
-      ? number
-      : NaN;
-  }
-
-  /* SHOPKEEPER */
-
-  const shop = state.shop;
-
-  function customerById(id) {
-    return shop.customers.find(item => item.id === id);
-  }
-
-  function customerName(id) {
-    return customerById(id)?.name || "Deleted customer";
-  }
-
-  function balance(customerId, excludedId) {
-    return shop.ledger
-      .filter(item =>
-        item.customerId === customerId && item.id !== excludedId
-      )
-      .reduce(
-        (total, item) =>
-          total + (item.type === "credit"
-            ? Number(item.amount)
-            : -Number(item.amount)),
-        0
-      );
-  }
-
-  function totalOutstanding() {
-    return shop.customers.reduce(
-      (total, customer) =>
-        total + Math.max(0, balance(customer.id)),
-      0
-    );
-  }
-
-  function sum(items, property) {
-    return items.reduce(
-      (total, item) => total + (Number(item[property]) || 0),
-      0
-    );
-  }
-
-  function customerOptions() {
-    return [
-      { value: "", label: t("selectCustomer") },
-      ...shop.customers.map(customer => ({
-        value: customer.id,
-        label: customer.name
-      }))
-    ];
-  }
-
-  function productOptions() {
-    return [
-      { value: "", label: t("otherItem") },
-      ...shop.stock.map(product => ({
-        value: product.id,
-        label: product.name
-      }))
-    ];
-  }
-
-  function paymentOptions() {
-    return [
-      { value: "cash", label: t("cash") },
-      { value: "credit", label: t("creditType") }
-    ];
-  }
-
-  const amountOptions = { min: "0", step: "any" };
-
-  const SHOP_TOOLS = {
-    customers: {
-      title: "customers",
-      store: "customers",
-      editable: true,
-
-      fields: [
-        field("name", "name", "text", true),
-        field("phone", "phone", "tel"),
-        field("address", "address")
-      ],
-
-      stats: () => [
-        ["sCustomers", shop.customers.length],
-        ["sOutstanding", money(totalOutstanding())]
-      ],
-
-      items: () => shop.customers,
-
-      view: customer => ({
-        title: customer.name,
-        meta: [customer.phone, customer.address].filter(Boolean).join(" · "),
-        body: t("balance") + ": " + money(balance(customer.id))
-      }),
-
-      save(data, editing) {
-        if (!data.name) return "errName";
-
-        const record = editing || { id: uid() };
-
-        Object.assign(record, {
-          name: data.name.slice(0, 80),
-          phone: data.phone,
-          address: data.address
-        });
-
-        if (!editing) shop.customers.push(record);
-
-        return null;
-      },
-
-      confirm: () => t("confirmCustomer"),
-
-      remove(customer) {
-        shop.ledger = shop.ledger.filter(
-          item => item.customerId !== customer.id
-        );
-
-        shop.sales.forEach(sale => {
-          if (sale.customerId === customer.id) {
-            sale.customerId = "";
-          }
-        });
-
-        shop.customers = shop.customers.filter(
-          item => item !== customer
-        );
-
-        return null;
-      }
-    },
-
-    credit: {
-      title: "credit",
-      store: "ledger",
-      editable: true,
-      type: "credit",
-
-      fields: [
-        field("customerId", "customer", "select", true, {
-          options: customerOptions
-        }),
-        field("amount", "amount", "number", true, amountOptions),
-        field("note", "note"),
-        field("date", "date", "date")
-      ],
-
-      stats: () => [
-        ["sOutstanding", money(totalOutstanding())],
-        ["sOwing", shop.customers.filter(c => balance(c.id) > 0).length]
-      ],
-
-      items: () => shop.ledger.filter(item => item.type === "credit"),
-
-      view: item => ({
-        title: customerName(item.customerId) + " — " + money(item.amount),
-        meta: item.date,
-        body: item.note
-      }),
-
-      canEdit: item => !item.saleId,
-      canDelete: item => !item.saleId,
-
-      save(data, editing) {
-        const amount = numberValue(data.amount);
-
-        if (!customerById(data.customerId)) return "errCustomer";
-        if (!(amount > 0)) return "errAmount";
-
-        if (balance(data.customerId, editing?.id) + amount < 0) {
-          return "errNumber";
-        }
-
-        const record = editing || {
-          id: uid(),
-          type: "credit"
-        };
-
-        Object.assign(record, {
-          customerId: data.customerId,
-          amount,
-          note: data.note.slice(0, 200),
-          date: validDate(data.date)
-        });
-
-        if (!editing) shop.ledger.push(record);
-
-        return null;
-      },
-
-      remove(item) {
-        if (balance(item.customerId, item.id) < 0) {
-          return "errNumber";
-        }
-
-        shop.ledger = shop.ledger.filter(record => record !== item);
-        return null;
-      }
-    },
-
-    payments: {
-      title: "payments",
-      store: "ledger",
-      editable: true,
-      type: "payment",
-
-      fields: [
-        field("customerId", "customer", "select", true, {
-          options: customerOptions
-        }),
-        field("amount", "amount", "number", true, amountOptions),
-        field("note", "note"),
-        field("date", "date", "date")
-      ],
-
-      stats: () => [
-        ["sReceived", money(sum(
-          shop.ledger.filter(item => item.type === "payment"),
-          "amount"
-        ))],
-        ["sOutstanding", money(totalOutstanding())]
-      ],
-
-      items: () => shop.ledger.filter(item => item.type === "payment"),
-
-      view: item => ({
-        title: customerName(item.customerId) + " — " + money(item.amount),
-        meta: item.date,
-        body: item.note
-      }),
-
-      canEdit: item => !item.saleId,
-      canDelete: item => !item.saleId,
-
-      save(data, editing) {
-        const amount = numberValue(data.amount);
-
-        if (!customerById(data.customerId)) return "errCustomer";
-        if (!(amount > 0)) return "errAmount";
-
-        if (amount > balance(data.customerId, editing?.id)) {
-          return "errOverpay";
-        }
-
-        const record = editing || {
-          id: uid(),
-          type: "payment"
-        };
-
-        Object.assign(record, {
-          customerId: data.customerId,
-          amount,
-          note: data.note.slice(0, 200),
-          date: validDate(data.date)
-        });
-
-        if (!editing) shop.ledger.push(record);
-
-        return null;
-      },
-
-      remove(item) {
-        shop.ledger = shop.ledger.filter(record => record !== item);
-        return null;
-      }
-    },
-
-    sales: {
-      title: "sales",
-      store: "sales",
-      editable: false,
-
-      fields: [
-        field("productId", "product", "select", false, {
-          options: productOptions
-        }),
-        field("item", "item"),
-        field("qty", "quantity", "number", true, {
-          min: "0",
-          step: "any"
-        }),
-        field("amount", "amount", "number", true, amountOptions),
-        field("payType", "paymentType", "select", false, {
-          options: paymentOptions
-        }),
-        field("customerId", "customer", "select", false, {
-          options: customerOptions
-        }),
-        field("date", "date", "date")
-      ],
-
-      defaults: () => ({ qty: 1, payType: "cash" }),
-
-      stats: () => [
-        ["sSalesToday", money(sum(
-          shop.sales.filter(item => item.date === today()),
-          "amount"
-        ))],
-        ["sSalesAll", money(sum(shop.sales, "amount"))]
-      ],
-
-      items: () => shop.sales,
-
-      view: sale => ({
-        title: sale.item + " × " + sale.qty + " — " + money(sale.amount),
-        meta: sale.date + " · " + t(
-          sale.payType === "credit" ? "creditType" : "cash"
-        )
-      }),
-
-      save(data) {
-        const quantity = numberValue(data.qty);
-        const amount = numberValue(data.amount);
-
-        if (!(quantity > 0)) return "errNumber";
-        if (!(amount > 0)) return "errAmount";
-
-        const product = data.productId
-          ? shop.stock.find(item => item.id === data.productId)
-          : null;
-
-        if (data.productId && !product) return "errItem";
-        if (!product && !data.item) return "errItem";
-        if (product && quantity > product.qty) return "errStock";
-
-        if (data.payType === "credit" && !customerById(data.customerId)) {
-          return "errCustomer";
-        }
-
-        const sale = {
-          id: uid(),
-          item: (product ? product.name : data.item).slice(0, 80),
-          productId: product?.id || "",
-          qty: quantity,
-          amount,
-          payType: data.payType === "credit" ? "credit" : "cash",
-          customerId: customerById(data.customerId) ? data.customerId : "",
-          date: validDate(data.date)
-        };
-
-        if (product) product.qty -= quantity;
-
-        shop.sales.push(sale);
-
-        if (sale.payType === "credit") {
-          shop.ledger.push({
-            id: uid(),
-            type: "credit",
-            customerId: sale.customerId,
-            amount,
-            note: sale.item,
-            date: sale.date,
-            saleId: sale.id
-          });
-        }
-
-        return null;
-      },
-            remove(sale) {
-        const linked = shop.ledger.find(item => item.saleId === sale.id);
-
-        if (linked && balance(linked.customerId, linked.id) < 0) {
-          return "errNumber";
-        }
-
-        const product = shop.stock.find(
-          item => item.id === sale.productId
-        );
-
-        if (product) product.qty += sale.qty;
-
-        if (linked) {
-          shop.ledger = shop.ledger.filter(item => item !== linked);
-        }
-
-        shop.sales = shop.sales.filter(item => item !== sale);
-
-        return null;
-      }
-    },
-
-    expenses: {
-      title: "expenses",
-      store: "expenses",
-      editable: true,
-
-      fields: [
-        field("title", "title", "text", true),
-        field("amount", "amount", "number", true, amountOptions),
-        field("category", "category"),
-        field("date", "date", "date")
-      ],
-
-      stats: () => [
-        ["sExpenses", money(sum(shop.expenses, "amount"))],
-        ["sSalesAll", money(sum(shop.sales, "amount"))],
-        ["sProfit", money(
-          sum(shop.sales, "amount") - sum(shop.expenses, "amount")
-        )]
-      ],
-
-      items: () => shop.expenses,
-
-      view: item => ({
-        title: item.title + " — " + money(item.amount),
-        meta: item.date + (item.category ? " · " + item.category : "")
-      }),
-
-      save(data, editing) {
-        const amount = numberValue(data.amount);
-
-        if (!data.title) return "errRequired";
-        if (!(amount > 0)) return "errAmount";
-
-        const record = editing || { id: uid() };
-
-        Object.assign(record, {
-          title: data.title.slice(0, 80),
-          amount,
-          category: data.category,
-          date: validDate(data.date)
-        });
-
-        if (!editing) shop.expenses.push(record);
-
-        return null;
-      }
-    },
-
-    stock: {
-      title: "stock",
-      store: "stock",
-      editable: true,
-
-      fields: [
-        field("name", "name", "text", true),
-        field("qty", "quantity", "number", true, {
-          min: "0",
-          step: "any"
-        }),
-        field("price", "price", "number", false, amountOptions),
-        field("low", "low", "number", false, {
-          min: "0",
-          step: "any"
-        })
-      ],
-
-      defaults: () => ({ qty: 0, low: 5 }),
-
-      stats: () => [
-        ["sProducts", shop.stock.length],
-        ["sLow", shop.stock.filter(
-          item => item.qty <= item.low
-        ).length],
-        ["sValue", money(shop.stock.reduce(
-          (total, item) => total + item.qty * item.price,
-          0
-        ))]
-      ],
-
-      items: () => shop.stock,
-
-      view: item => ({
-        title: item.name,
-        meta: t("quantity") + ": " + item.qty + " · " + money(item.price),
-        body: item.qty <= item.low ? "⚠ " + t("lowStock") : ""
-      }),
-
-      extra: item => [
-        actionButton("minus", "adjust", {
-          scope: "shop",
-          tool: "stock",
-          id: item.id,
-          dir: "-1"
-        }),
-        actionButton("plus", "adjust", {
-          scope: "shop",
-          tool: "stock",
-          id: item.id,
-          dir: "1"
-        })
-      ],
-
-      save(data, editing) {
-        const quantity = numberValue(data.qty);
-        const price = data.price === "" ? 0 : numberValue(data.price);
-        const low = data.low === "" ? 5 : numberValue(data.low);
-
-        if (!data.name) return "errName";
-        if (!(quantity >= 0) || !(price >= 0) || !(low >= 0)) {
-          return "errNumber";
-        }
-
-        const duplicate = shop.stock.some(item =>
-          item !== editing &&
-          item.name.toLowerCase() === data.name.toLowerCase()
-        );
-
-        if (duplicate) return "errDuplicate";
-
-        const record = editing || { id: uid() };
-
-        Object.assign(record, {
-          name: data.name.slice(0, 80),
-          qty: quantity,
-          price,
-          low
-        });
-
-        if (!editing) shop.stock.push(record);
-
-        return null;
-      }
-    }
-  };
-
-  function validDate(value) {
-    return /^\d{4}-\d{2}-\d{2}$/.test(value || "")
-      ? value
-      : today();
-  }
-
-  function getEditingRecord(scope, tool) {
-    const editing = state.ui.editing;
-
-    if (!editing || editing.scope !== scope || editing.tool !== tool) {
-      return null;
-    }
-
-    const collection = scope === "shop"
-      ? shop[SHOP_TOOLS[tool].store]
-      : state.student[tool === "planner" ? "plans" : tool];
-
-    return collection?.find(item => item.id === editing.id) || null;
-  }
-
-  function renderShopPanel() {
-    const panel = $("#shopToolPanel");
-    const content = $("#shopToolContent");
-    const title = $("#shopToolTitle");
-    const id = state.ui.shopTool;
-
-    if (!panel || !content) return;
-
-    panel.hidden = !id;
-
-    $$("[data-shop-tool]").forEach(button => {
-      button.classList.toggle("active", button.dataset.shopTool === id);
-    });
-
-    if (!id || !SHOP_TOOLS[id]) {
-      content.replaceChildren();
-      return;
-    }
-
-    const config = SHOP_TOOLS[id];
-
-    if (title) title.textContent = t(config.title);
-
-    const editing = getEditingRecord("shop", id);
-    const wrapper = element("div");
-
-    wrapper.append(statsBar(config.stats()));
-
-    if (
-      (id === "credit" || id === "payments") &&
-      !shop.customers.length
-    ) {
-      wrapper.append(element("p", {
-        text: t("noCustomer")
-      }));
-    } else {
-      const values = editing
-        ? { ...editing }
-        : {
-            date: today(),
-            ...(config.defaults ? config.defaults() : {})
-          };
-
-      wrapper.append(buildForm(
-        "shop:" + id,
-        config.fields,
-        values,
-        [{ label: editing ? "update" : "add" }],
-        !!editing
-      ));
-    }
-
-    const records = config.items().slice().reverse();
-
-    if (!records.length) {
-      wrapper.append(element("p", { text: t("noRecords") }));
-    } else {
-      wrapper.append(
-        element(
-          "div",
-          { class: "local-record-list" },
-          ...records.map(record => {
-            const view = config.view(record);
-            const data = {
-              scope: "shop",
-              tool: id,
-              id: record.id
-            };
-
-            const actions = [];
-
-            if (config.extra) {
-              actions.push(...config.extra(record));
-            }
-
-            if (
-              config.editable &&
-              (!config.canEdit || config.canEdit(record))
-            ) {
-              actions.push(actionButton("edit", "edit", data));
-            }
-
-            if (!config.canDelete || config.canDelete(record)) {
-              actions.push(actionButton(
-                "delete",
-                "delete",
-                data,
-                "local-delete"
-              ));
-            }
-
-            return recordRow(
-              view.title,
-              view.meta,
-              view.body,
-              actions
-            );
-          })
-        )
-      );
-    }
-
-    content.replaceChildren(wrapper);
-  }
-
-  /* STUDENT */
-
-  const STUDENT_TOOLS = {
-    mock: "mock",
-    mcq: "mcq",
-    summary: "summary",
-    flashcards: "flashcards",
-    notes: "notes",
-    planner: "planner"
-  };
-
-  function parseFlashcards(text) {
-    const cards = [];
-    let current = null;
-    let currentField = null;
-
-    String(text).split("\n").forEach(line => {
-      let match;
-
-      if (match = line.match(/^\s*(?:Q\d*|Front)\s*[:.)]\s*(.*)$/i)) {
-        current = { front: match[1], back: "" };
-        cards.push(current);
-        currentField = "front";
-      } else if (
-        current &&
-        (match = line.match(/^\s*(?:A\d*|Back)\s*[:.)]\s*(.*)$/i))
-      ) {
-        current.back = match[1];
-        currentField = "back";
-      } else if (current && currentField && line.trim()) {
-        current[currentField] += " " + line.trim();
-      }
-    });
-
-    return cards.filter(card =>
-      card.front.trim() && card.back.trim()
-    ).slice(0, 50);
-  }
-
-  async function runStudentAI(tool, data) {
-    if (state.ui.output[tool]?.loading) return;
-
-    let task;
-    let message;
-    let title;
-
-    const languageInstruction =
-      " Respond in " + LANGUAGE_NAMES[state.lang] + ".";
-
-    const material = data.material
-      ? "\n\nUse this material:\n" + data.material.slice(0, 8000)
-      : "";
-
-    if (tool === "mock") {
-      task = "mock_test";
-      title = data.subject + " · Mock test";
-
-      message =
-        "Create a mock test with " + (data.count || 10) +
-        " questions (" + (data.level || "medium") +
-        " difficulty) for subject \"" + data.subject + "\"" +
-        (data.chapter ? ", chapter/topic \"" + data.chapter + "\"" : "") +
-        ". Include an answer key at the end." +
-        languageInstruction + material;
-    } else if (tool === "mcq") {
-      task = "mcq";
-      title = data.subject + " · MCQs";
-
-      message =
-        "Generate " + (data.count || 10) +
-        " multiple-choice questions (options A-D, " +
-        (data.level || "medium") +
-        " difficulty) for subject \"" + data.subject + "\"" +
-        (data.chapter ? ", chapter/topic \"" + data.chapter + "\"" : "") +
-        ". Include an answer key." +
-        languageInstruction + material;
-    } else if (tool === "summary") {
-      task = "summary";
-      title = data.title;
-
-      message =
-        "Summarize the chapter titled \"" + data.title +
-        "\" into clear revision notes with key points." +
-        languageInstruction + "\n\n" + data.text.slice(0, 8000);
-    } else {
-      task = "flashcards";
-      title = data.topic + " · Flashcards";
-
-      message =
-        "Create 10 flashcards about \"" + data.topic +
-        "\". Use this exact format:\nQ: question\nA: answer" +
-        languageInstruction + material;
-    }
-
-    state.ui.output[tool] = { loading: true };
-    refreshStudentOutput(tool);
-
-    try {
-      const response = await requestAI({
-        task,
-        message,
-        context: {
-          tool,
-          subject: data.subject,
-          chapter: data.chapter,
-          topic: data.topic
-        }
-      });
-
-      state.ui.output[tool] = {
-        text: response,
-        title,
-        saved: false
-      };
-    } catch (error) {
-      state.ui.output[tool] = {
-        error: errorMessage(error)
-      };
-
-      showToast(errorMessage(error), "error");
-    }
-
-    refreshStudentOutput(tool);
-  }
-
-  function studentOutput(tool) {
-    const output = state.ui.output[tool];
-
-    if (!output) return [];
-
-    if (output.loading) {
-      return [element("p", { text: t("thinking") })];
-    }
-
-    if (output.error) {
-      return [element("p", { text: output.error })];
-    }
-
-    const actions = [];
-
-    if (tool === "flashcards") {
-      if (!output.saved && parseFlashcards(output.text).length) {
-        actions.push(actionButton("saveCards", "save-cards", { tool }));
-      }
-    } else if (!output.saved) {
-      actions.push(actionButton("saveOut", "save-out", { tool }));
-    }
-
-    return [
-      element(
-        "div",
-        { class: "local-record" },
-        element("div", { dir: "auto" }, ...textLines(output.text)),
-        element("div", {}, ...actions)
-      )
-    ];
-  }
-
-  function refreshStudentOutput(tool) {
-    const output = $('[data-out="' + tool + '"]');
-
-    if (output) {
-      output.replaceChildren(...studentOutput(tool));
-    }
-  }
-
-  function renderStudentPanel() {
-    const id = state.ui.studentTool;
-    const panel = $("#studentToolPanel");
-    const content = $("#studentToolContent");
-    const title = $("#studentToolTitle");
-
-    if (!panel || !content) return;
-
-    panel.hidden = !id;
-
-    $$("[data-student-tool]").forEach(button => {
-      button.classList.toggle("active", button.dataset.studentTool === id);
-    });
-
-    if (!id || !STUDENT_TOOLS[id]) {
-      content.replaceChildren();
-      return;
-    }
-
-    if (title) title.textContent = t(id);
-
-    const wrapper = element("div");
-    const editing = getEditingRecord("student", id);
-
-    if (id === "mock" || id === "mcq") {
-      wrapper.append(
-        buildForm(
-          "stu:" + id,
-          [
-            field("subject", "subject", "text", true),
-            field("chapter", "chapter"),
-            field("count", "count", "select", false, {
-              options: () => [5, 10, 15, 20].map(value => ({
-                value,
-                label: String(value)
-              }))
-            }),
-            field("level", "difficulty", "select", false, {
-              options: () => ["easy", "medium", "hard"].map(value => ({
-                value,
-                label: t(value)
-              }))
-            }),
-            field("material", "material", "textarea")
-          ],
-          { count: 10, level: "medium" },
-          [{ label: "generate" }]
-        ),
-        element("div", { dataset: { out: id } }, ...studentOutput(id))
-      );
-    }
-
-    if (id === "summary") {
-      wrapper.append(
-        buildForm(
-          "stu:summary",
-          [
-            field("title", "title", "text", true),
-            field("text", "content", "textarea", true)
-          ],
-          {},
-          [
-            { label: "summarize", action: "ai" },
-            { label: "saveChapter", action: "save" }
-          ]
-        ),
-        element("div", {
-          dataset: { out: "summary" }
-        }, ...studentOutput("summary"))
-      );
-    }
-
-    if (id === "flashcards") {
-      wrapper.append(
-        buildForm(
-          "stu:cardsai",
-          [
-            field("topic", "chapter", "text", true),
-            field("material", "material", "textarea")
-          ],
-          {},
-          [{ label: "addCardAI" }]
-        ),
-        element("div", {
-          dataset: { out: "flashcards" }
-        }, ...studentOutput("flashcards")),
-        buildForm(
-          "stu:card",
-          [
-            field("front", "front", "text", true),
-            field("back", "backSide", "text", true)
-          ],
-          {},
-          [{ label: "addCard" }]
-        )
-      );
-
-      if (state.student.cards.length) {
-        wrapper.append(
-          element(
-            "div",
-            { class: "local-record-list" },
-            ...state.student.cards.slice().reverse().map(card => {
-              const open = !!state.ui.flipped[card.id];
-
-              return recordRow(
-                card.front,
-                null,
-                open ? card.back : "",
-                [
-                  actionButton(
-                    open ? "hideAnswer" : "showAnswer",
-                    "flip",
-                    { id: card.id }
-                  ),
-                  actionButton(
-                    "delete",
-                    "delete",
-                    {
-                      scope: "student",
-                      tool: "flashcards",
-                      id: card.id
-                    },
-                    "local-delete"
-                  )
-                ]
-              );
-            })
-          )
-        );
-      } else {
-        wrapper.append(element("p", { text: t("noRecords") }));
-      }
-    }
-
-    if (id === "notes") {
-      wrapper.append(
-        buildForm(
-          "stu:notes",
-          [
-            field("title", "title", "text", true),
-            field("text", "content", "textarea")
-          ],
-          editing || {},
-          [{ label: editing ? "update" : "add" }],
-          !!editing
-        )
-      );
-
-      wrapper.append(
-        state.student.notes.length
-          ? element(
-              "div",
-              { class: "local-record-list" },
-              ...state.student.notes.slice().reverse().map(note =>
-                recordRow(
-                  note.title,
-                  note.date,
-                  note.text,
-                  [
-                    actionButton("edit", "edit", {
-                      scope: "student",
-                      tool: "notes",
-                      id: note.id
-                    }),
-                    actionButton("delete", "delete", {
-                      scope: "student",
-                      tool: "notes",
-                      id: note.id
-                    }, "local-delete")
-                  ]
-                )
-              )
-            )
-          : element("p", { text: t("noRecords") })
-      );
-    }
-
-    if (id === "planner") {
-      wrapper.append(
-        buildForm(
-          "stu:planner",
-          [
-            field("title", "title", "text", true),
-            field("due", "due", "date"),
-            field("note", "note", "textarea")
-          ],
-          editing || {},
-          [{ label: editing ? "update" : "add" }],
-          !!editing
-        )
-      );
-
-      wrapper.append(
-        state.student.plans.length
-          ? element(
-              "div",
-              { class: "local-record-list" },
-              ...state.student.plans.slice().reverse().map(plan =>
-                recordRow(
-                  plan.title,
-                  plan.due,
-                  plan.note,
-                  [
-                    actionButton(
-                      plan.done ? "reopen" : "markDone",
-                      "toggle-plan",
-                      { id: plan.id }
-                    ),
-                    actionButton("edit", "edit", {
-                      scope: "student",
-                      tool: "planner",
-                      id: plan.id
-                    }),
-                    actionButton("delete", "delete", {
-                      scope: "student",
-                      tool: "planner",
-                      id: plan.id
-                    }, "local-delete")
-                  ]
-                )
-              )
-            )
-          : element("p", { text: t("noRecords") })
-      );
-    }
-
-    content.replaceChildren(wrapper);
-  }
-
-  /* END OF STUDENT PANEL */
-   function renderChapters() {
-    const container = $("#savedChapters");
-    if (!container) return;
-
-    if (!state.student.chapters.length) {
-      container.replaceChildren(
-        element("p", { text: t("savedEmpty") })
-      );
-      return;
-    }
-
-    container.replaceChildren(
-      element(
-        "div",
-        { class: "local-record-list" },
-        ...state.student.chapters.map(chapter =>
-          element(
-            "div",
-            { class: "local-record" },
-            element(
-              "details",
-              { dir: "auto" },
-              element("summary", { text: chapter.title }),
-              ...textLines(chapter.content)
-            ),
-            actionButton("delete", "delete", {
-              scope: "student",
-              tool: "chapters",
-              id: chapter.id
-            }, "local-delete")
-          )
-        )
-      )
-    );
-  }
-
-  /* FORM SUBMISSION */
-
-  function submitToolForm(form, submitter) {
-    const [scope, tool] = String(form.dataset.form).split(":");
-    const data = cleanForm(form);
-
-    if (scope === "shop") {
-      const config = SHOP_TOOLS[tool];
-      if (!config) return;
-
-      const editing = getEditingRecord("shop", tool);
-      const error = config.save(data, editing);
-
-      if (error) {
-        showToast(t(error), "warning");
-        return;
-      }
-
-      state.ui.editing = null;
-      persist();
-      showToast(t(editing ? "toastUpdated" : "toastSaved"), "success");
-      renderShopPanel();
-      return;
-    }
-
-    const required = (...keys) => {
-      if (keys.some(key => !data[key])) {
-        showToast(t("errRequired"), "warning");
-        return false;
-      }
-
-      return true;
-    };
-
-    if (tool === "mock" || tool === "mcq") {
-      if (required("subject")) runStudentAI(tool, data);
-      return;
-    }
-
-    if (tool === "summary") {
-      if (!required("title", "text")) return;
-
-      if (submitter?.dataset.action === "save") {
-        state.student.chapters.unshift({
-          id: uid(),
-          title: data.title.slice(0, 120),
-          content: data.text,
-          createdAt: Date.now()
-        });
-
-        persist();
-        renderChapters();
-        showToast(t("toastSaved"), "success");
-      } else {
-        runStudentAI("summary", data);
-      }
-
-      return;
-    }
-
-    if (tool === "cardsai") {
-      if (required("topic")) runStudentAI("flashcards", data);
-      return;
-    }
-
-    if (tool === "card") {
-      if (!required("front", "back")) return;
-
-      state.student.cards.push({
-        id: uid(),
-        front: data.front.slice(0, 200),
-        back: data.back.slice(0, 400)
-      });
-
-      persist();
-      renderStudentPanel();
-      showToast(t("toastSaved"), "success");
-      return;
-    }
-
-    if (tool === "notes") {
-      if (!required("title")) return;
-
-      const editing = getEditingRecord("student", "notes");
-
-      if (editing) {
-        Object.assign(editing, {
-          title: data.title.slice(0, 120),
-          text: data.text
-        });
-      } else {
-        state.student.notes.push({
-          id: uid(),
-          title: data.title.slice(0, 120),
-          text: data.text,
-          date: today()
-        });
-      }
-
-      state.ui.editing = null;
-      persist();
-      renderStudentPanel();
-      showToast(t(editing ? "toastUpdated" : "toastSaved"), "success");
-      return;
-    }
-
-    if (tool === "plan") {
-      if (!required("subject", "task")) return;
-
-      state.student.plans.push({
-        id: uid(),
-        subject: data.subject.slice(0, 80),
-        task: data.task.slice(0, 160),
-        due: validDate(data.due),
-        done: false
-      });
-
-      persist();
-      renderStudentPanel();
-      showToast(t("toastSaved"), "success");
-    }
-  }
-
-  /* RECORD ACTIONS */
-
-  function rerender(scope) {
-    if (scope === "shop") {
-      renderShopPanel();
-    } else {
-      renderStudentPanel();
-      renderChapters();
-    }
-  }
-
-  function handleAction(button) {
-    const data = { ...button.dataset };
-    const action = data.act;
-
-    if (action === "cancel-edit") {
-      const scope = state.ui.editing?.scope;
-      state.ui.editing = null;
-      rerender(scope);
-      return;
-    }
-
-    if (action === "edit") {
-      state.ui.editing = {
-        scope: data.scope,
-        tool: data.tool,
-        id: data.id
-      };
-
-      rerender(data.scope);
-
-      const selector = data.scope === "shop"
-        ? "#shopToolContent form input"
-        : "#studentToolContent form input";
-
-      $(selector)?.focus();
-      return;
-    }
-
-    if (action === "delete") {
-      const collection = data.scope === "shop"
-        ? shop[SHOP_TOOLS[data.tool]?.store]
-        : data.tool === "chapters"
-          ? state.student.chapters
-          : data.tool === "flashcards"
-            ? state.student.cards
-            : data.tool === "notes"
-              ? state.student.notes
-              : state.student.plans;
-
-      const record = collection?.find(item => item.id === data.id);
-      if (!record) return;
-
-      const config = data.scope === "shop"
-        ? SHOP_TOOLS[data.tool]
-        : null;
-
-      const message = config?.confirm
-        ? config.confirm(record)
-        : t("confirmDelete");
-
-      if (!confirm(message)) return;
-
-      if (config?.remove) {
-        const error = config.remove(record);
-
-        if (error) {
-          showToast(t(error), "warning");
-          return;
-        }
-      } else if (config) {
-        shop[config.store] = collection.filter(item => item !== record);
-      } else {
-        const key = data.tool === "chapters"
-          ? "chapters"
-          : data.tool === "flashcards"
-            ? "cards"
-            : data.tool === "notes"
-              ? "notes"
-              : "plans";
-
-        state.student[key] = collection.filter(item => item !== record);
-      }
-
-      if (state.ui.editing?.id === data.id) {
-        state.ui.editing = null;
-      }
-
-      persist();
-      showToast(t("toastDeleted"), "success");
-      rerender(data.scope);
-      return;
-    }
-
-    if (action === "toggle") {
-      const plan = state.student.plans.find(item => item.id === data.id);
-
-      if (plan) {
-        plan.done = !plan.done;
-        persist();
-        renderStudentPanel();
-      }
-
-      return;
-    }
-
-    if (action === "flip") {
-      state.ui.flipped[data.id] = !state.ui.flipped[data.id];
-      renderStudentPanel();
-      return;
-    }
-
-    if (action === "adjust") {
-      const product = shop.stock.find(item => item.id === data.id);
-
-      if (product) {
-        product.qty = Math.max(0, product.qty + Number(data.dir));
-        persist();
-        renderShopPanel();
-      }
-
-      return;
-    }
-
-    if (action === "save-out") {
-      const output = state.ui.output[data.tool];
-
-      if (!output?.text || output.saved) return;
-
-      state.student.chapters.unshift({
-        id: uid(),
-        title: (output.title || t("savedChapters")).slice(0, 120),
-        content: output.text,
-        createdAt: Date.now()
-      });
-
-      output.saved = true;
-      persist();
-      renderChapters();
-      refreshStudentOutput(data.tool);
-      showToast(t("toastSaved"), "success");
-      return;
-    }
-
-    if (action === "save-cards") {
-      const output = state.ui.output[data.tool];
-
-      if (!output?.text || output.saved) return;
-
-      parseFlashcards(output.text).forEach(card => {
-        state.student.cards.push({
-          id: uid(),
-          front: card.front.slice(0, 200),
-          back: card.back.slice(0, 400)
-        });
-      });
-
-      output.saved = true;
-      persist();
-      renderStudentPanel();
-      showToast(t("toastSaved"), "success");
-    }
-  }
-
-  /* MODE AND SIDEBAR */
-
-  function setMode(mode) {
-    if (!MODES.includes(mode)) return;
-
-    state.mode = mode;
-
-    MODES.forEach(name => {
-      const workspace = $('[data-workspace="' + name + '"]');
-
-      if (workspace) {
-        workspace.classList.toggle("active", name === mode);
-        workspace.hidden = name !== mode;
-      }
-    });
-
-    $$("[data-mode]").forEach(button => {
-      const active = button.dataset.mode === mode;
-
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-
-    const title = $("#currentModeTitle");
-    if (title) title.textContent = t(mode);
-
-    persist();
-  }
-
-  function setSidebar(open) {
-    state.ui.sidebar = !!open;
-
-    document.body.classList.toggle(
-      "sidebar-open",
-      state.ui.sidebar
-    );
-
-    $("#openSidebar")?.setAttribute(
-      "aria-expanded",
-      String(state.ui.sidebar)
-    );
-  }
-
-  function setLargeText(enabled) {
-    state.largeText = !!enabled;
-
-    document.body.classList.toggle(
-      "large-text",
-      state.largeText
-    );
-
-    $("#largeText")?.setAttribute(
-      "aria-pressed",
-      String(state.largeText)
-    );
-
-    safeStoreSet(STORAGE.largeText, state.largeText);
-  }
-
-  function setAboutDialog(open) {
-    const dialog = $("#aboutDialog");
-    if (!dialog) return;
-
-    if (open) {
-      if (typeof dialog.showModal === "function") {
-        if (!dialog.open) dialog.showModal();
-      } else {
-        dialog.setAttribute("open", "");
-      }
-    } else if (typeof dialog.close === "function") {
-      dialog.close();
-    } else {
-      dialog.removeAttribute("open");
-    }
-  }
-    function languageText(key) {
+  /* =====================================
+     11. TRANSLATION LOOKUP
+  ===================================== */
+
+  function t(key) {
     const dictionaries = {
       en: TEXT.en,
       roman: TEXT.roman,
@@ -2860,392 +953,1769 @@
     return dictionary[key] || TEXT.en[key] || key;
   }
 
-  function applyLanguage() {
-    const staticTexts = [
-      ["#newChat span:last-child", "newChat"],
-      ["#headerNewChat", "newChat"],
-      [".sidebar-section .sidebar-label", "workspace"],
-      ['[data-mode="general"] span:last-child', "general"],
-      ['[data-mode="student"] span:last-child', "student"],
-      ['[data-mode="shopkeeper"] span:last-child', "shopkeeper"],
-      [".history-heading .sidebar-label", "recent"],
-      ["#clearHistory", "clear"],
-      ['label[for="language"]', "language"],
-      ["#largeText span:last-child", "largerText"],
-      ["#helpButton span:last-child", "about"],
-      ["#welcomeTitle", "welcome"],
-      ["#welcomeIntro", "welcomeIntro"],
-      ["#question", "placeholder", "placeholder"],
-      ["#composerHint", "hint"],
-      ["#askButtonText", "send"],
-      [".composer-disclaimer", "disclaimer"],
-      ["#backToStudent", "back"],
-      ["#backToShop", "back"],
-      ["#aboutTitle", "about"],
-      ["#aboutDone", "gotIt"]
-    ];
+  /* =====================================
+     PART 2 COMPLETE
+     PART 3 CONTINUES BELOW
+  ===================================== */
+   /* =====================================
+     12. CHAT UTILITIES
+  ===================================== */
 
-    staticTexts.forEach(([selector, key, type]) => {
-      $$(selector).forEach(node => {
-        if (type === "placeholder") {
-          node.placeholder = t(key);
-        } else {
-          node.textContent = t(key);
+  function getCurrentConversation() {
+    return state.conversations.find(
+      conversation => conversation.id === state.currentId
+    ) || null;
+  }
+
+  function createConversation() {
+    const conversation = {
+      id: uid(),
+      title: "New chat",
+      mode: state.mode,
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    state.conversations.unshift(conversation);
+    state.currentId = conversation.id;
+
+    persist();
+    renderHistory();
+    renderMessages();
+
+    return conversation;
+  }
+
+  function ensureConversation() {
+    let conversation = getCurrentConversation();
+
+    if (!conversation) {
+      conversation = createConversation();
+    }
+
+    return conversation;
+  }
+
+  function updateConversationTitle(conversation) {
+    if (!conversation || !conversation.messages.length) return;
+
+    const firstUserMessage = conversation.messages.find(
+      message => message.role === "user"
+    );
+
+    if (!firstUserMessage) return;
+
+    conversation.title = firstUserMessage.content
+      .trim()
+      .slice(0, 42);
+
+    if (firstUserMessage.content.length > 42) {
+      conversation.title += "...";
+    }
+  }
+
+  function addMessage(role, content, extra = {}) {
+    const conversation = ensureConversation();
+
+    const message = {
+      id: uid(),
+      role,
+      content: String(content || ""),
+      timestamp: new Date().toISOString(),
+      ...extra
+    };
+
+    conversation.messages.push(message);
+    conversation.updatedAt = message.timestamp;
+
+    updateConversationTitle(conversation);
+
+    persist();
+    renderMessages();
+    renderHistory();
+
+    return message;
+  }
+
+  /* =====================================
+     13. MESSAGE RENDERING
+  ===================================== */
+
+  function formatMessageText(value) {
+    const escaped = escapeHTML(value);
+
+    return escaped
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\n/g, "<br>");
+  }
+
+  function createMessageElement(message) {
+    const wrapper = element("article", {
+      class: `message message-${message.role}`,
+      dataset: {
+        messageId: message.id
+      }
+    });
+
+    const label = element("div", {
+      class: "message-label",
+      text: message.role === "user"
+        ? "You"
+        : "Zubaan AI"
+    });
+
+    const body = element("div", {
+      class: "message-content"
+    });
+
+    body.innerHTML = formatMessageText(message.content);
+
+    wrapper.append(label, body);
+
+    return wrapper;
+  }
+
+  function renderMessages() {
+    const container = $("#generalMessages");
+    const conversationArea = $("#generalConversation");
+    const welcome = $("#welcomeContainer");
+
+    if (!container) return;
+
+    container.replaceChildren();
+
+    const conversation = getCurrentConversation();
+    const messages = conversation?.messages || [];
+
+    if (welcome) {
+      welcome.hidden = messages.length > 0;
+    }
+
+    if (conversationArea) {
+      conversationArea.hidden = messages.length === 0;
+    }
+
+    messages.forEach(message => {
+      container.append(createMessageElement(message));
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  /* =====================================
+     14. CHAT HISTORY
+  ===================================== */
+
+  function renderHistory() {
+    const list = $("#recentList");
+    const empty = $("#emptyHistoryText");
+
+    if (!list) return;
+
+    list.querySelectorAll(".history-item").forEach(item => item.remove());
+
+    const conversations = [...state.conversations]
+      .sort((a, b) =>
+        new Date(b.updatedAt || 0) -
+        new Date(a.updatedAt || 0)
+      );
+
+    if (empty) {
+      empty.hidden = conversations.length > 0;
+      empty.textContent = t("emptyHistory");
+    }
+
+    conversations.forEach(conversation => {
+      const button = element("button", {
+        class: "history-item" +
+          (conversation.id === state.currentId ? " active" : ""),
+        type: "button",
+        dataset: {
+          conversationId: conversation.id
         }
       });
-    });
 
-    const languageSelect = $("#language");
-    if (languageSelect) languageSelect.value = state.lang;
+      const title = element("span", {
+        class: "history-item-title",
+        text: conversation.title || "New chat"
+      });
 
-    document.documentElement.lang =
-      state.lang === "roman" ? "ur-Latn" : state.lang;
+      button.append(title);
 
-    const rtl = ["ur", "pa", "sd", "ps"].includes(state.lang);
+      button.addEventListener("click", () => {
+        openConversation(conversation.id);
+      });
 
-    $$(".workspace, .sidebar, .about-dialog").forEach(node => {
-      node.setAttribute("dir", rtl ? "rtl" : "ltr");
-    });
-
-    $$("[data-student-tool]").forEach(button => {
-      const key = button.dataset.studentTool;
-      const title = button.querySelector(".feature-title");
-
-      if (title) title.textContent = t(key);
-    });
-
-    $$("[data-shop-tool]").forEach(button => {
-      const key = button.dataset.shopTool;
-      const title = button.querySelector(".feature-title");
-
-      if (title) title.textContent = t(key);
+      list.append(button);
     });
   }
 
-  function setLanguage(language) {
-    if (!LANGUAGES.includes(language)) return;
+  function openConversation(id) {
+    const conversation = state.conversations.find(
+      item => item.id === id
+    );
 
-    state.lang = language;
-    safeStoreSet(STORAGE.language, language);
+    if (!conversation) return;
 
-    applyLanguage();
-    renderAll();
+    state.currentId = id;
 
-    showToast(t("toastLang"), "success");
-  }
-
-  /* RENDER */
-
-  function renderConnection() {
-    const online = navigator.onLine !== false;
-    const connection = $("#connection span:last-child");
-    const status = $("#connectionText");
-
-    if (connection) {
-      connection.textContent = t(online ? "online" : "offline");
+    if (MODES.includes(conversation.mode)) {
+      setMode(conversation.mode, false);
     }
 
-    if (status) {
-      status.textContent = !online
-        ? t("offline")
-        : API_URL
-          ? t("ready")
-          : t("notConnected");
-    }
-  }
-
-  function renderAll() {
-    applyLanguage();
-    setMode(state.mode);
-    setSidebar(state.ui.sidebar);
-    renderChat();
+    persist();
     renderHistory();
-    renderStudentPanel();
-    renderShopPanel();
+    renderMessages();
+    closeSidebar();
+  }
+
+  function startNewChat() {
+    state.currentId = null;
+
+    createConversation();
+
+    const input = $("#question");
+
+    if (input) {
+      input.value = "";
+      updateCharacterCount();
+      input.focus();
+    }
+
+    showToast(t("toastNew"));
+  }
+
+  function clearChatHistory() {
+    if (!confirm(t("confirmHistory"))) return;
+
+    state.conversations = [];
+    state.currentId = null;
+
+    persist();
+    renderHistory();
+    renderMessages();
+
+    showToast(t("toastCleared"));
+  }
+
+  /* =====================================
+     15. MODE SWITCHING
+  ===================================== */
+
+  function setMode(mode, save = true) {
+    if (!MODES.includes(mode)) return;
+
+    state.mode = mode;
+
+    $$("[data-mode]").forEach(button => {
+      const active = button.dataset.mode === mode;
+
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    $$("[data-workspace]").forEach(workspace => {
+      const active = workspace.dataset.workspace === mode;
+
+      workspace.classList.toggle("active", active);
+      workspace.hidden = !active;
+    });
+
+    const title = $("#currentModeTitle");
+
+    if (title) {
+      title.textContent = t(mode);
+    }
+
+    const chatArea = $("#sharedChatArea");
+
+    if (chatArea) {
+      chatArea.hidden = false;
+    }
+
+    if (save) {
+      const conversation = getCurrentConversation();
+
+      if (conversation) {
+        conversation.mode = mode;
+      }
+
+      persist();
+    }
+
+    if (mode === "student") {
+      renderChapters();
+    }
+
+    if (mode === "shopkeeper") {
+      renderShopDashboard();
+    }
+
+    closeSidebar();
+  }
+
+  /* =====================================
+     16. AI REQUEST HANDLER
+  ===================================== */
+
+  async function requestAI(payload) {
+    if (!CONFIG.API_URL) {
+      throw new Error("AI_NOT_CONNECTED");
+    }
+
+    if (!navigator.onLine) {
+      throw new Error("OFFLINE");
+    }
+
+    const controller = new AbortController();
+
+    const timeout = setTimeout(
+      () => controller.abort(),
+      CONFIG.API_TIMEOUT
+    );
+
+    try {
+      const response = await fetch(CONFIG.API_URL, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(payload),
+
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP_${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const answer =
+        data.answer ||
+        data.response ||
+        data.message ||
+        data.content ||
+        data.result;
+
+      if (typeof answer !== "string" || !answer.trim()) {
+        throw new Error("INVALID_RESPONSE");
+      }
+
+      return answer.trim();
+
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("TIMEOUT");
+      }
+
+      throw error;
+
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  function getAIErrorMessage(error) {
+    if (error.message === "AI_NOT_CONNECTED") {
+      return t("errNoApi");
+    }
+
+    if (error.message === "OFFLINE") {
+      return t("errOffline");
+    }
+
+    if (error.message === "TIMEOUT") {
+      return t("errTimeout");
+    }
+
+    if (error.message === "INVALID_RESPONSE") {
+      return t("errInvalid");
+    }
+
+    return t("errRequest");
+  }
+
+  /* =====================================
+     17. SEND CHAT MESSAGE
+  ===================================== */
+
+  async function sendMessage(rawMessage) {
+    const message = String(rawMessage || "").trim();
+
+    if (!message) {
+      showToast(t("errEmpty"), "warning");
+      return;
+    }
+
+    if (message.length > CONFIG.MAX_MESSAGE_LENGTH) {
+      showToast(
+        `Maximum ${CONFIG.MAX_MESSAGE_LENGTH} characters allowed.`,
+        "warning"
+      );
+      return;
+    }
+
+    if (state.pending.has("chat")) return;
+
+    const input = $("#question");
+    const sendButton = $("#askButton");
+
+    state.pending.add("chat");
+
+    if (input) {
+      input.value = "";
+      input.disabled = true;
+      updateCharacterCount();
+    }
+
+    if (sendButton) {
+      sendButton.disabled = true;
+    }
+
+    const conversation = ensureConversation();
+
+    addMessage("user", message);
+
+    const loading = element("div", {
+      class: "message message-assistant message-loading",
+      text: t("thinking")
+    });
+
+    const messagesContainer = $("#generalMessages");
+
+    if (messagesContainer) {
+      messagesContainer.append(loading);
+    }
+
+    try {
+      const history = conversation.messages
+        .slice(-12)
+        .map(item => ({
+          role: item.role,
+          content: item.content
+        }));
+
+      const answer = await requestAI({
+        message,
+        mode: state.mode,
+        language: state.lang,
+        history
+      });
+
+      loading.remove();
+
+      addMessage("assistant", answer);
+
+    } catch (error) {
+      loading.remove();
+
+      addMessage(
+        "assistant",
+        getAIErrorMessage(error)
+      );
+
+    } finally {
+      state.pending.delete("chat");
+
+      if (input) {
+        input.disabled = false;
+        input.focus();
+      }
+
+      if (sendButton) {
+        sendButton.disabled = false;
+      }
+
+      renderMessages();
+    }
+  }
+
+  /* =====================================
+     18. CHARACTER COUNTER
+  ===================================== */
+
+  function updateCharacterCount() {
+    const input = $("#question");
+    const counter = $("#charCount");
+
+    if (!input || !counter) return;
+
+    counter.textContent =
+      `${input.value.length}/${CONFIG.MAX_MESSAGE_LENGTH}`;
+  }
+
+  /* =====================================
+     19. SIDEBAR
+  ===================================== */
+
+  function openSidebar() {
+    const sidebar = $("#sidebar");
+
+    if (!sidebar) return;
+
+    sidebar.classList.add("open");
+    state.ui.sidebar = true;
+  }
+
+  function closeSidebar() {
+    const sidebar = $("#sidebar");
+
+    if (!sidebar) return;
+
+    sidebar.classList.remove("open");
+    state.ui.sidebar = false;
+  }
+
+  /* =====================================
+     PART 3 COMPLETE
+     PART 4 CONTINUES BELOW
+  ===================================== */
+   /* =====================================
+     20. STUDENT: SAVED CHAPTERS
+  ===================================== */
+
+  function renderChapters() {
+    const container = $("#savedChapters");
+    if (!container) return;
+
+    container.replaceChildren();
+
+    if (!state.student.chapters.length) {
+      container.append(
+        element("p", {
+          text: t("savedEmpty")
+        })
+      );
+      return;
+    }
+
+    state.student.chapters.forEach(chapter => {
+      const card = element("article", {
+        class: "saved-chapter-card"
+      });
+
+      const heading = element("h3", {
+        text: chapter.title || "Untitled chapter"
+      });
+
+      const description = element("p", {
+        text: chapter.content || ""
+      });
+
+      const date = element("small", {
+        text: chapter.createdAt
+          ? new Date(chapter.createdAt).toLocaleDateString()
+          : ""
+      });
+
+      const deleteButton = element("button", {
+        type: "button",
+        class: "text-button",
+        text: t("delete")
+      });
+
+      deleteButton.addEventListener("click", () => {
+        if (!confirm(t("confirmDelete"))) return;
+
+        state.student.chapters =
+          state.student.chapters.filter(item => item.id !== chapter.id);
+
+        persist();
+        renderChapters();
+        showToast(t("toastDeleted"));
+      });
+
+      card.append(heading, description, date, deleteButton);
+      container.append(card);
+    });
+  }
+
+  function saveChapter(title, content) {
+    if (!String(title || "").trim() ||
+        !String(content || "").trim()) {
+      showToast(t("errRequired"), "warning");
+      return;
+    }
+
+    state.student.chapters.unshift({
+      id: uid(),
+      title: String(title).trim(),
+      content: String(content).trim(),
+      createdAt: new Date().toISOString()
+    });
+
+    persist();
     renderChapters();
-    renderConnection();
-    updateCounter();
+    showToast(t("toastSaved"));
   }
 
-  /* EVENT HANDLERS */
+  /* =====================================
+     21. STUDENT: TOOL PANEL
+  ===================================== */
 
-  function handleClick(event) {
-    const target = event.target instanceof Element
-      ? event.target
-      : null;
+  const STUDENT_TOOLS = {
+    mock: {
+      title: "Make a mock test",
+      description: "Create a practice test from your saved chapters."
+    },
+    mcq: {
+      title: "Generate MCQs",
+      description: "Generate multiple-choice questions for revision."
+    },
+    summary: {
+      title: "Chapter summaries",
+      description: "Create a summary from your saved study material."
+    },
+    flashcards: {
+      title: "Flashcards",
+      description: "Create question and answer cards."
+    },
+    notes: {
+      title: "My notes",
+      description: "Write and save your personal notes."
+    },
+    planner: {
+      title: "Study planner",
+      description: "Organise your study tasks and deadlines."
+    }
+  };
 
-    if (!target) return;
+  function studentField(label, name, type = "text", options = {}) {
+    const wrapper = element("label", {
+      class: "form-field"
+    });
 
-    if (target.closest("#openSidebar")) {
-      setSidebar(!state.ui.sidebar);
-      return;
+    wrapper.append(
+      element("span", { text: label })
+    );
+
+    let input;
+
+    if (type === "textarea") {
+      input = element("textarea", {
+        name,
+        rows: options.rows || 4,
+        placeholder: options.placeholder || ""
+      });
+    } else if (type === "select") {
+      input = element("select", { name });
+
+      (options.choices || []).forEach(choice => {
+        input.append(
+          element("option", {
+            value: choice.value,
+            text: choice.label
+          })
+        );
+      });
+    } else {
+      input = element("input", {
+        name,
+        type,
+        placeholder: options.placeholder || "",
+        ...(options.required ? { required: true } : {})
+      });
     }
 
-    if (target.closest("#closeSidebar")) {
-      setSidebar(false);
-      return;
-    }
-
-    if (state.ui.sidebar && !target.closest("#sidebar")) {
-      setSidebar(false);
-    }
-
-    if (target.closest("#aboutDialog") && target.id === "aboutDialog") {
-      setAboutDialog(false);
-      return;
-    }
-
-    const action = target.closest("[data-act]");
-
-    if (action) {
-      handleAction(action);
-      return;
-    }
-
-    const deleteConversationButton = target.closest("[data-del-conv]");
-
-    if (deleteConversationButton) {
-      deleteConversation(deleteConversationButton.dataset.delConv);
-      return;
-    }
-
-    const conversationButton = target.closest("[data-conv]");
-
-    if (conversationButton) {
-      openConversation(conversationButton.dataset.conv);
-      return;
-    }
-
-    const modeButton = target.closest("[data-mode]");
-
-    if (modeButton) {
-      setMode(modeButton.dataset.mode);
-      return;
-    }
-
-    if (target.closest("#newChat, #headerNewChat")) {
-      newChat();
-      return;
-    }
-
-    if (target.closest("#clearHistory")) {
-      clearHistory();
-      return;
-    }
-
-    if (target.closest("#largeText")) {
-      setLargeText(!state.largeText);
-      return;
-    }
-
-    if (target.closest("#helpButton")) {
-      setAboutDialog(true);
-      return;
-    }
-
-    if (target.closest("#closeAbout, #aboutDone")) {
-      setAboutDialog(false);
-      return;
-    }
-
-    if (target.closest("#voiceButton")) {
-      toggleVoice();
-      return;
-    }
-
-    const studentButton = target.closest("[data-student-tool]");
-
-    if (studentButton) {
-      state.ui.studentTool = studentButton.dataset.studentTool;
-      state.ui.editing = null;
-      renderStudentPanel();
-
-      $("#studentToolPanel")?.scrollIntoView({ block: "start" });
-      return;
-    }
-
-    const shopButton = target.closest("[data-shop-tool]");
-
-    if (shopButton) {
-      state.ui.shopTool = shopButton.dataset.shopTool;
-      state.ui.editing = null;
-      renderShopPanel();
-
-      $("#shopToolPanel")?.scrollIntoView({ block: "start" });
-      return;
-    }
-
-    if (target.closest("#backToStudent")) {
-      state.ui.studentTool = null;
-      state.ui.editing = null;
-      renderStudentPanel();
-      return;
-    }
-
-    if (target.closest("#backToShop")) {
-      state.ui.shopTool = null;
-      state.ui.editing = null;
-      renderShopPanel();
-    }
+    wrapper.append(input);
+    return wrapper;
   }
 
-  function handleSubmit(event) {
-    const form = event.target;
+  function studentForm(fields, submitLabel, callback) {
+    const form = element("form", {
+      class: "tool-form"
+    });
 
-    if (!(form instanceof HTMLFormElement)) return;
+    fields.forEach(field => form.append(field));
 
-    if (form.id === "questionForm") {
+    const submit = element("button", {
+      class: "primary-action",
+      type: "submit",
+      text: submitLabel
+    });
+
+    form.append(submit);
+
+    form.addEventListener("submit", event => {
       event.preventDefault();
-      submitChat();
+
+      const values = Object.fromEntries(
+        new FormData(form).entries()
+      );
+
+      callback(values, form);
+    });
+
+    return form;
+  }
+
+  function openStudentTool(tool) {
+    const config = STUDENT_TOOLS[tool];
+    const panel = $("#studentToolPanel");
+    const content = $("#studentToolContent");
+    const title = $("#studentToolTitle");
+
+    if (!config || !panel || !content) return;
+
+    state.ui.studentTool = tool;
+
+    if (title) title.textContent = config.title;
+
+    content.replaceChildren();
+
+    const description = element("p", {
+      class: "tool-description",
+      text: config.description
+    });
+
+    content.append(description);
+
+    if (tool === "notes") {
+      renderNotesTool(content);
+    } else if (tool === "planner") {
+      renderPlannerTool(content);
+    } else if (tool === "flashcards") {
+      renderFlashcardsTool(content);
+    } else {
+      renderAIStudentTool(tool, content);
+    }
+
+    panel.hidden = false;
+    panel.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  function renderAIStudentTool(tool, container) {
+    const chapters = state.student.chapters;
+
+    const chapterChoices = [
+      {
+        value: "",
+        label: "Select a saved chapter"
+      },
+      ...chapters.map(chapter => ({
+        value: chapter.id,
+        label: chapter.title
+      }))
+    ];
+
+    const form = studentForm([
+      studentField("Subject", "subject", "text", {
+        required: true,
+        placeholder: "e.g. General Science"
+      }),
+      studentField("Chapter / topic", "chapter", "text", {
+        required: true
+      }),
+      studentField("Saved chapter", "savedChapter", "select", {
+        choices: chapterChoices
+      }),
+      studentField("Number of questions", "count", "number", {
+        placeholder: "10"
+      }),
+      studentField("Difficulty", "difficulty", "select", {
+        choices: [
+          { value: "easy", label: "Easy" },
+          { value: "medium", label: "Medium" },
+          { value: "hard", label: "Hard" }
+        ]
+      }),
+      studentField("Additional material", "material", "textarea", {
+        placeholder: "Paste study material here (optional)"
+      })
+    ], "Generate", async values => {
+      const saved = chapters.find(
+        chapter => chapter.id === values.savedChapter
+      );
+
+      const material = [
+        saved ? saved.content : "",
+        values.material || ""
+      ].filter(Boolean).join("\n\n");
+
+      const prompt = tool === "summary"
+        ? `Create a clear, structured study summary for ${values.subject}, chapter ${values.chapter}. Use this material:\n${material}`
+        : `Create ${Math.min(50, Math.max(1, Number(values.count) || 10))} ${values.difficulty || "medium"} difficulty ${tool === "mock" ? "mock test questions with answers" : "multiple choice questions with four options and correct answers"} for ${values.subject}, chapter ${values.chapter}. Use this material:\n${material}`;
+
+      await generateStudentOutput(tool, prompt, container);
+    });
+
+    container.append(form);
+  }
+
+  async function generateStudentOutput(tool, prompt, container) {
+    if (!CONFIG.API_URL) {
+      showToast(t("errNoApi"), "warning");
+
+      const notice = element("p", {
+        class: "tool-notice",
+        text: "Connect the AI backend to generate this content. Your saved chapters and notes remain available locally."
+      });
+
+      container.append(notice);
       return;
     }
 
-    if (form.dataset.form) {
-      event.preventDefault();
-      submitToolForm(form, event.submitter);
+    const result = element("div", {
+      class: "student-generated-output"
+    });
+
+    result.textContent = t("thinking");
+    container.append(result);
+
+    try {
+      const answer = await requestAI({
+        task: tool,
+        mode: "student",
+        language: state.lang,
+        message: prompt
+      });
+
+      result.textContent = answer;
+
+      const saveButton = element("button", {
+        type: "button",
+        class: "secondary-action",
+        text: t("saveOut")
+      });
+
+      saveButton.addEventListener("click", () => {
+        saveChapter(
+          STUDENT_TOOLS[tool]?.title || tool,
+          answer
+        );
+      });
+
+      result.append(saveButton);
+
+    } catch (error) {
+      result.textContent = getAIErrorMessage(error);
     }
   }
 
-  function handleKeydown(event) {
-    if (event.key === "Escape" && state.ui.sidebar) {
-      setSidebar(false);
+  /* =====================================
+     22. STUDENT: NOTES
+  ===================================== */
+
+  function renderNotesTool(container) {
+    const form = studentForm([
+      studentField("Note title", "title", "text", {
+        required: true
+      }),
+      studentField("Note content", "content", "textarea", {
+        required: true,
+        rows: 6
+      })
+    ], "Save note", values => {
+      state.student.notes.unshift({
+        id: uid(),
+        title: values.title.trim(),
+        content: values.content.trim(),
+        createdAt: new Date().toISOString()
+      });
+
+      persist();
+      showToast(t("toastSaved"));
+      openStudentTool("notes");
+    });
+
+    container.append(form);
+
+    const list = element("div", {
+      class: "student-notes-list"
+    });
+
+    state.student.notes.forEach(note => {
+      const card = element("article", {
+        class: "saved-note-card"
+      });
+
+      card.append(
+        element("h3", { text: note.title }),
+        element("p", { text: note.content })
+      );
+
+      const remove = element("button", {
+        type: "button",
+        class: "text-button",
+        text: t("delete")
+      });
+
+      remove.addEventListener("click", () => {
+        state.student.notes =
+          state.student.notes.filter(item => item.id !== note.id);
+
+        persist();
+        openStudentTool("notes");
+        showToast(t("toastDeleted"));
+      });
+
+      card.append(remove);
+      list.append(card);
+    });
+
+    container.append(list);
+  }
+
+  /* =====================================
+     23. STUDENT: STUDY PLANNER
+  ===================================== */
+
+  function renderPlannerTool(container) {
+    const form = studentForm([
+      studentField("Subject", "subject", "text", {
+        required: true
+      }),
+      studentField("Study task", "task", "text", {
+        required: true
+      }),
+      studentField("Due date", "due", "date")
+    ], "Add study task", values => {
+      if (!values.subject.trim() || !values.task.trim()) {
+        showToast(t("errRequired"), "warning");
+        return;
+      }
+
+      state.student.plans.unshift({
+        id: uid(),
+        subject: values.subject.trim(),
+        task: values.task.trim(),
+        due: values.due || "",
+        done: false,
+        createdAt: new Date().toISOString()
+      });
+
+      persist();
+      showToast(t("toastSaved"));
+      openStudentTool("planner");
+    });
+
+    container.append(form);
+
+    const list = element("div", {
+      class: "planner-list"
+    });
+
+    state.student.plans.forEach(plan => {
+      const card = element("article", {
+        class: "planner-item"
+      });
+
+      const details = element("div");
+
+      details.append(
+        element("strong", { text: plan.subject }),
+        element("p", { text: plan.task }),
+        element("small", {
+          text: plan.due ? `Due: ${plan.due}` : "No due date"
+        })
+      );
+
+      if (plan.done) {
+        card.classList.add("completed");
+      }
+
+      const toggle = element("button", {
+        type: "button",
+        class: "secondary-action",
+        text: plan.done ? "Reopen" : "Mark done"
+      });
+
+      toggle.addEventListener("click", () => {
+        plan.done = !plan.done;
+        persist();
+        openStudentTool("planner");
+      });
+
+      const remove = element("button", {
+        type: "button",
+        class: "text-button",
+        text: t("delete")
+      });
+
+      remove.addEventListener("click", () => {
+        state.student.plans =
+          state.student.plans.filter(item => item.id !== plan.id);
+
+        persist();
+        openStudentTool("planner");
+      });
+
+      card.append(details, toggle, remove);
+      list.append(card);
+    });
+
+    container.append(list);
+  }
+
+  /* =====================================
+     24. STUDENT: FLASHCARDS
+  ===================================== */
+
+  function renderFlashcardsTool(container) {
+    const form = studentForm([
+      studentField("Question", "front", "text", {
+        required: true
+      }),
+      studentField("Answer", "back", "textarea", {
+        required: true
+      })
+    ], "Add flashcard", values => {
+      state.student.cards.unshift({
+        id: uid(),
+        front: values.front.trim(),
+        back: values.back.trim(),
+        createdAt: new Date().toISOString()
+      });
+
+      persist();
+      openStudentTool("flashcards");
+      showToast(t("toastSaved"));
+    });
+
+    container.append(form);
+
+    const list = element("div", {
+      class: "flashcard-list"
+    });
+
+    state.student.cards.forEach(card => {
+      const item = element("article", {
+        class: "saved-flashcard"
+      });
+
+      item.append(
+        element("strong", { text: card.front }),
+        element("p", { text: card.back })
+      );
+
+      const remove = element("button", {
+        type: "button",
+        class: "text-button",
+        text: t("delete")
+      });
+
+      remove.addEventListener("click", () => {
+        state.student.cards =
+          state.student.cards.filter(item => item.id !== card.id);
+
+        persist();
+        openStudentTool("flashcards");
+      });
+
+      item.append(remove);
+      list.append(item);
+    });
+
+    container.append(list);
+  }
+
+  /* =====================================
+     25. PDF UPLOAD
+  ===================================== */
+
+  let pdfLibraryPromise = null;
+
+  function loadPDFLibrary() {
+    if (window.pdfjsLib) {
+      return Promise.resolve(window.pdfjsLib);
+    }
+
+    if (pdfLibraryPromise) return pdfLibraryPromise;
+
+    pdfLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+
+      script.onload = () => {
+        if (!window.pdfjsLib) {
+          reject(new Error("PDF_LIBRARY_UNAVAILABLE"));
+          return;
+        }
+
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+        resolve(window.pdfjsLib);
+      };
+
+      script.onerror = () => {
+        reject(new Error("PDF_LIBRARY_LOAD_FAILED"));
+      };
+
+      document.head.append(script);
+    });
+
+    return pdfLibraryPromise;
+  }
+
+  async function extractPDFText(file) {
+    const pdfjs = await loadPDFLibrary();
+
+    const buffer = await file.arrayBuffer();
+
+    const pdf = await pdfjs.getDocument({
+      data: new Uint8Array(buffer)
+    }).promise;
+
+    const pages = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+
+      const pageText = content.items
+        .map(item => item.str || "")
+        .join(" ");
+
+      pages.push(pageText);
+    }
+
+    return {
+      text: pages.join("\n\n"),
+      pageCount: pdf.numPages
+    };
+  }
+
+  async function handlePDFUpload(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const fileInput = $("#bookPdfInput");
+    const titleInput = $("#pdfBookTitle");
+    const instructions = $("#pdfChapterInstructions");
+    const status = $("#pdfUploadStatus");
+    const button = $("#pdfUploadButton");
+
+    const file = fileInput?.files?.[0];
+
+    if (!file) {
+      showToast("Please choose a PDF file.", "warning");
       return;
     }
 
     if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !event.isComposing &&
-      event.target?.id === "question"
+      file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")
     ) {
-      event.preventDefault();
-      submitChat();
-    }
-  }
-
-  /* STORAGE LOAD */
-
-  function loadData() {
-    const language = safeStoreGet(STORAGE.language, "roman");
-
-    state.lang = LANGUAGES.includes(language)
-      ? language
-      : "roman";
-
-    state.largeText = safeStoreGet(STORAGE.largeText, false) === true;
-
-    const saved = safeStoreGet(STORAGE.data, null);
-
-    if (saved && typeof saved === "object") {
-      state.mode = MODES.includes(saved.mode)
-        ? saved.mode
-        : "general";
-
-      state.conversations = Array.isArray(saved.conversations)
-        ? saved.conversations
-        : [];
-
-      state.student = {
-        chapters: saved.student?.chapters || [],
-        notes: saved.student?.notes || [],
-        cards: saved.student?.cards || [],
-        plans: saved.student?.plans || []
-      };
-
-      state.shop = {
-        customers: saved.shop?.customers || [],
-        ledger: saved.shop?.ledger || [],
-        sales: saved.shop?.sales || [],
-        expenses: saved.shop?.expenses || [],
-        stock: saved.shop?.stock || []
-      };
-
-      state.currentId = state.conversations.some(
-        item => item.id === saved.currentId
-      )
-        ? saved.currentId
-        : null;
+      showToast("Only PDF files are supported.", "warning");
+      return;
     }
 
-    if (!currentConversation()) {
-      const latest = state.conversations
-        .slice()
-        .sort((a, b) => b.updatedAt - a.updatedAt)[0];
-
-      if (latest) {
-        state.currentId = latest.id;
-      } else {
-        createConversation();
-      }
+    if (file.size > 25 * 1024 * 1024) {
+      showToast("PDF must be smaller than 25 MB.", "warning");
+      return;
     }
-  }
 
-  /* INITIALIZATION */
+    if (button) button.disabled = true;
+    if (status) status.textContent = "Reading your PDF...";
 
-  function initialize() {
     try {
-      loadData();
-    } catch (error) {
-      console.error("Zubaan AI storage error:", error);
+      const extracted = await extractPDFText(file);
 
-      if (!currentConversation()) {
-        createConversation();
+      if (!extracted.text.trim()) {
+        throw new Error("PDF_NO_TEXT");
+      }
+
+      const bookTitle =
+        titleInput?.value.trim() ||
+        file.name.replace(/\.pdf$/i, "");
+
+      const chapterInstructions =
+        instructions?.value.trim() || "All chapters";
+
+      const chapter = {
+        id: uid(),
+        title: bookTitle,
+        content: extracted.text,
+        instructions: chapterInstructions,
+        pageCount: extracted.pageCount,
+        fileName: file.name,
+        createdAt: new Date().toISOString()
+      };
+
+      state.student.chapters.unshift(chapter);
+
+      persist();
+      renderChapters();
+
+      if (status) {
+        status.textContent =
+          `PDF text extracted from ${extracted.pageCount} pages and saved.`;
+      }
+
+      form.reset();
+      showToast("PDF content saved successfully.");
+
+    } catch (error) {
+      console.error(error);
+
+      const message = error.message === "PDF_NO_TEXT"
+        ? "No readable text found. This may be a scanned PDF."
+        : "Could not process this PDF. Please try another file.";
+
+      if (status) status.textContent = message;
+      showToast(message, "warning");
+
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  /* =====================================
+     26. SHOPKEEPER DASHBOARD
+  ===================================== */
+
+  function renderShopDashboard() {
+    const container = $("#shopkeeperWorkspace");
+    if (!container) return;
+
+    const totalSales = state.shop.sales.reduce(
+      (sum, sale) => sum + (Number(sale.amount) || 0),
+      0
+    );
+
+    const totalExpenses = state.shop.expenses.reduce(
+      (sum, expense) => sum + (Number(expense.amount) || 0),
+      0
+    );
+
+    const totalOutstanding = state.shop.ledger.reduce(
+      (sum, entry) => sum + (Number(entry.amount) || 0),
+      0
+    );
+
+    const metrics = {
+      customers: state.shop.customers.length,
+      sales: money(totalSales),
+      expenses: money(totalExpenses),
+      outstanding: money(totalOutstanding)
+    };
+
+    let dashboard = $("#shopDashboardMetrics");
+
+    if (!dashboard) {
+      dashboard = element("div", {
+        id: "shopDashboardMetrics",
+        class: "shop-dashboard-metrics"
+      });
+
+      const heading = container.querySelector(".dashboard-heading");
+
+      if (heading) {
+        heading.insertAdjacentElement("afterend", dashboard);
+      } else {
+        container.prepend(dashboard);
       }
     }
 
-    document.addEventListener("click", event => {
+    dashboard.replaceChildren();
+
+    Object.entries(metrics).forEach(([label, value]) => {
+      const card = element("div", {
+        class: "shop-metric-card"
+      });
+
+      card.append(
+        element("span", { text: label }),
+        element("strong", { text: String(value) })
+      );
+
+      dashboard.append(card);
+    });
+  }
+
+  /* =====================================
+     27. SHOPKEEPER TOOL PANEL
+  ===================================== */
+
+  const SHOP_TOOLS = {
+    customers: "Customers",
+    credit: "Udhar ledger",
+    sales: "Daily sales",
+    expenses: "Expenses",
+    payments: "Payment history",
+    stock: "Stock notes"
+  };
+
+  function openShopTool(tool) {
+    if (!SHOP_TOOLS[tool]) return;
+
+    state.ui.shopTool = tool;
+
+    const panel = $("#shopToolPanel");
+    const title = $("#shopToolTitle");
+    const content = $("#shopToolContent");
+
+    if (!panel || !content) return;
+
+    if (title) title.textContent = SHOP_TOOLS[tool];
+
+    content.replaceChildren();
+
+    if (tool === "customers") {
+      renderShopCollection(content, "customers", [
+        ["name", "Customer name"],
+        ["phone", "Phone"],
+        ["address", "Address"]
+      ]);
+    } else if (tool === "credit") {
+      renderShopCollection(content, "ledger", [
+        ["customer", "Customer"],
+        ["amount", "Amount"],
+        ["note", "Note"]
+      ], true);
+    } else if (tool === "sales") {
+      renderShopCollection(content, "sales", [
+        ["item", "Item"],
+        ["amount", "Amount"],
+        ["quantity", "Quantity"]
+      ]);
+    } else if (tool === "expenses") {
+      renderShopCollection(content, "expenses", [
+        ["title", "Expense"],
+        ["amount", "Amount"],
+        ["note", "Note"]
+      ]);
+    } else if (tool === "payments") {
+      renderShopCollection(content, "ledger", [
+        ["customer", "Customer"],
+        ["amount", "Amount"],
+        ["note", "Payment note"]
+      ]);
+    } else if (tool === "stock") {
+      renderShopCollection(content, "stock", [
+        ["item", "Product"],
+        ["quantity", "Quantity"],
+        ["price", "Unit price"]
+      ]);
+    }
+
+    panel.hidden = false;
+    panel.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  function renderShopCollection(container, collection, fields, isCredit = false) {
+    const records = state.shop[collection];
+
+    const form = element("form", {
+      class: "tool-form"
+    });
+
+    fields.forEach(([name, label]) => {
+      const wrapper = element("label", {
+        class: "form-field"
+      });
+
+      wrapper.append(
+        element("span", { text: label })
+      );
+
+      const input = element("input", {
+        name,
+        type: name === "amount" || name === "quantity" ||
+          name === "price" ? "number" : "text",
+        required: true,
+        ...(name === "amount" || name === "quantity" ||
+          name === "price" ? { min: "0", step: "0.01" } : {})
+      });
+
+      wrapper.append(input);
+      form.append(wrapper);
+    });
+
+    const submit = element("button", {
+      type: "submit",
+      class: "primary-action",
+      text: "Save record"
+    });
+
+    form.append(submit);
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const values = Object.fromEntries(
+        new FormData(form).entries()
+      );
+
+      const record = {
+        id: uid(),
+        ...values,
+        amount: values.amount ? Number(values.amount) : 0,
+        quantity: values.quantity ? Number(values.quantity) : 0,
+        price: values.price ? Number(values.price) : 0,
+        createdAt: new Date().toISOString()
+      };
+
+      records.unshift(record);
+
+      if (isCredit) {
+        record.type = "credit";
+      }
+
+      persist();
+      renderShopDashboard();
+      openShopTool(state.ui.shopTool);
+      showToast(t("toastSaved"));
+    });
+
+    container.append(form);
+
+    const list = element("div", {
+      class: "shop-record-list"
+    });
+
+    records.forEach(record => {
+      const card = element("article", {
+        class: "shop-record-card"
+      });
+
+      fields.forEach(([name, label]) => {
+        if (record[name] !== undefined && record[name] !== "") {
+          card.append(
+            element("p", {
+              text: `${label}: ${record[name]}`
+            })
+          );
+        }
+      });
+
+      const remove = element("button", {
+        type: "button",
+        class: "text-button",
+        text: t("delete")
+      });
+
+      remove.addEventListener("click", () => {
+        if (!confirm(t("confirmDelete"))) return;
+
+        state.shop[collection] =
+          state.shop[collection].filter(item => item.id !== record.id);
+
+        persist();
+        renderShopDashboard();
+        openShopTool(state.ui.shopTool);
+        showToast(t("toastDeleted"));
+      });
+
+      card.append(remove);
+      list.append(card);
+    });
+
+    container.append(list);
+  }
+
+  /* =====================================
+     28. VOICE INPUT
+  ===================================== */
+
+  let recognition = null;
+  let voiceActive = false;
+  let voiceTranscript = "";
+
+  function setupVoiceInput() {
+    const voiceButton = $("#voiceButton");
+
+    if (!voiceButton) return;
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      voiceButton.addEventListener("click", () => {
+        showToast(t("errVoice"), "warning");
+      });
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      voiceActive = true;
+      voiceTranscript = "";
+
+      voiceButton.classList.add("recording");
+      voiceButton.setAttribute("aria-pressed", "true");
+
+      const hint = $("#composerHint");
+
+      if (hint) hint.textContent = t("listening");
+    };
+
+    recognition.onresult = event => {
+      let finalText = "";
+      let interimText = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+          finalText += transcript;
+        } else {
+          interimText += transcript;
+        }
+      }
+
+      if (finalText) {
+        voiceTranscript += finalText;
+      }
+
+      const input = $("#question");
+
+      if (input) {
+        input.value = [
+          input.value,
+          voiceTranscript,
+          interimText
+        ].filter(Boolean).join(" ").trim();
+
+        updateCharacterCount();
+      }
+    };
+
+    recognition.onerror = () => {
+      showToast(t("errVoiceFail"), "warning");
+    };
+
+    recognition.onend = () => {
+      voiceActive = false;
+
+      voiceButton.classList.remove("recording");
+      voiceButton.setAttribute("aria-pressed", "false");
+
+      const hint = $("#composerHint");
+
+      if (hint) hint.textContent = t("hint");
+
+      const input = $("#question");
+
+      if (input && input.value.trim()) {
+        sendMessage(input.value.trim());
+      }
+    };
+
+    voiceButton.addEventListener("click", () => {
+      if (voiceActive) {
+        recognition.stop();
+        return;
+      }
+
       try {
-        handleClick(event);
+        recognition.lang =
+          LANGUAGES[state.lang]?.speech || "ur-PK";
+
+        recognition.start();
       } catch (error) {
-        console.error(error);
+        showToast(t("errVoiceFail"), "warning");
+      }
+    });
+  }
+
+  /* =====================================
+     29. LANGUAGE AND TEXT SETTINGS
+  ===================================== */
+
+  function updateLanguage(language) {
+    if (!LANGUAGES[language]) return;
+
+    state.lang = language;
+
+    safeStoreSet(STORAGE.language, language);
+
+    document.documentElement.lang =
+      language === "roman" ? "en" : language;
+
+    document.documentElement.dir =
+      LANGUAGES[language].direction;
+
+    const welcomeTitle = $("#welcomeTitle");
+    const welcomeIntro = $("#welcomeIntro");
+    const input = $("#question");
+
+    if (welcomeTitle) {
+      welcomeTitle.textContent = t("welcome");
+    }
+
+    if (welcomeIntro) {
+      welcomeIntro.textContent = t("welcomeIntro");
+    }
+
+    if (input) {
+      input.placeholder = t("placeholder");
+    }
+
+    const currentTitle = $("#currentModeTitle");
+
+    if (currentTitle) {
+      currentTitle.textContent = t(state.mode);
+    }
+
+    renderHistory();
+    renderMessages();
+
+    showToast(t("toastLang"));
+  }
+
+  function toggleLargeText() {
+    state.largeText = !state.largeText;
+
+    document.body.classList.toggle(
+      "large-text",
+      state.largeText
+    );
+
+    safeStoreSet(STORAGE.largeText, state.largeText);
+  }
+
+  /* =====================================
+     30. ABOUT DIALOG
+  ===================================== */
+
+  function openAbout() {
+    const dialog = $("#aboutDialog");
+
+    if (!dialog) return;
+
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      dialog.hidden = false;
+    }
+  }
+
+  function closeAbout() {
+    const dialog = $("#aboutDialog");
+
+    if (!dialog) return;
+
+    if (typeof dialog.close === "function") {
+      dialog.close();
+    } else {
+      dialog.hidden = true;
+    }
+  }
+
+  /* =====================================
+     31. EVENT LISTENERS
+  ===================================== */
+
+  function bindEvents() {
+    $("#newChat")?.addEventListener("click", startNewChat);
+    $("#headerNewChat")?.addEventListener("click", startNewChat);
+
+    $("#clearHistory")?.addEventListener(
+      "click",
+      clearChatHistory
+    );
+
+    $("#openSidebar")?.addEventListener("click", openSidebar);
+    $("#closeSidebar")?.addEventListener("click", closeSidebar);
+
+    $("#helpButton")?.addEventListener("click", openAbout);
+    $("#aboutButton")?.addEventListener("click", openAbout);
+    $("#closeAbout")?.addEventListener("click", closeAbout);
+
+    $("#largeText")?.addEventListener("click", toggleLargeText);
+
+    $("#language")?.addEventListener("change", event => {
+      updateLanguage(event.target.value);
+    });
+
+    $$("[data-mode]").forEach(button => {
+      button.addEventListener("click", () => {
+        setMode(button.dataset.mode);
+      });
+    });
+
+    $$("[data-student-tool]").forEach(button => {
+      button.addEventListener("click", () => {
+        openStudentTool(button.dataset.studentTool);
+      });
+    });
+
+    $$("[data-shop-tool]").forEach(button => {
+      button.addEventListener("click", () => {
+        openShopTool(button.dataset.shopTool);
+      });
+    });
+
+    $("#backToStudent")?.addEventListener("click", () => {
+      state.ui.studentTool = null;
+
+      const panel = $("#studentToolPanel");
+      if (panel) panel.hidden = true;
+    });
+
+    $("#backToShop")?.addEventListener("click", () => {
+      state.ui.shopTool = null;
+
+      const panel = $("#shopToolPanel");
+      if (panel) panel.hidden = true;
+    });
+
+    $("#pdfUploadForm")?.addEventListener(
+      "submit",
+      handlePDFUpload
+    );
+
+    $("#questionForm")?.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const input = $("#question");
+
+      if (input) {
+        sendMessage(input.value);
       }
     });
 
-    document.addEventListener("submit", event => {
-      try {
-        handleSubmit(event);
-      } catch (error) {
-        console.error(error);
+    $("#question")?.addEventListener(
+      "input",
+      updateCharacterCount
+    );
+
+    $("#question")?.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        $("#questionForm")?.requestSubmit();
       }
     });
 
     document.addEventListener("keydown", event => {
-      try {
-        handleKeydown(event);
-      } catch (error) {
-        console.error(error);
+      if (event.key === "Escape") {
+        closeSidebar();
       }
     });
+  }
 
-    document.addEventListener("input", event => {
-      if (event.target?.id === "question") {
-        updateCounter();
-      }
-    });
+  /* =====================================
+     32. INITIALIZE APPLICATION
+  ===================================== */
 
-    document.addEventListener("change", event => {
-      if (event.target?.id === "language") {
-        setLanguage(event.target.value);
-      }
-    });
-
-    window.addEventListener("online", renderConnection);
-    window.addEventListener("offline", renderConnection);
-
-    const dialog = $("#aboutDialog");
-
-    dialog?.addEventListener("click", event => {
-      if (event.target === dialog) {
-        setAboutDialog(false);
-      }
-    });
-
-    document.body.classList.toggle("large-text", state.largeText);
-
-    $("#largeText")?.setAttribute(
-      "aria-pressed",
-      String(state.largeText)
-    );
+  function initializeApp() {
+    loadSavedData();
 
     const languageSelect = $("#language");
 
@@ -3253,15 +2723,76 @@
       languageSelect.value = state.lang;
     }
 
-    persist();
-    renderAll();
+    document.body.classList.toggle(
+      "large-text",
+      state.largeText
+    );
+
+    document.documentElement.dir =
+      LANGUAGES[state.lang].direction;
+
+    document.documentElement.lang =
+      state.lang === "roman" ? "en" : state.lang;
+
+    const welcomeTitle = $("#welcomeTitle");
+    const welcomeIntro = $("#welcomeIntro");
+    const input = $("#question");
+
+    if (welcomeTitle) {
+      welcomeTitle.textContent = t("welcome");
+    }
+
+    if (welcomeIntro) {
+      welcomeIntro.textContent = t("welcomeIntro");
+    }
+
+    if (input) {
+      input.placeholder = t("placeholder");
+    }
+
+    bindEvents();
+    setupVoiceInput();
+
+    renderHistory();
+    renderMessages();
+    renderChapters();
+    renderShopDashboard();
+
+    setMode(state.mode, false);
+
+    const connection = $("#connection");
+    const connectionText = $("#connectionText");
+
+    if (!CONFIG.API_URL) {
+      if (connection) {
+        connection.classList.add("disconnected");
+
+        const label = connection.querySelector("span:last-child");
+        if (label) label.textContent = t("notConnected");
+      }
+
+      if (connectionText) {
+        connectionText.textContent = t("ready");
+      }
+    }
+
+    updateCharacterCount();
+
+    window.addEventListener("online", () => {
+      showToast("Internet connection restored.");
+    });
+
+    window.addEventListener("offline", () => {
+      showToast(t("errOffline"), "warning");
+    });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialize, {
+    document.addEventListener("DOMContentLoaded", initializeApp, {
       once: true
     });
   } else {
-    initialize();
+    initializeApp();
   }
+
 })();
