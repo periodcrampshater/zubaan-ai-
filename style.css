@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 /* =========================================
-   1. ROOT & GLOBAL
+   1. ROOT & GLOBAL STYLES
 ========================================= */
 
 :root {
@@ -23,6 +23,7 @@
   --green-dark: #25452d;
 
   --danger: #d98d83;
+
   --radius: 12px;
 
   font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
@@ -187,7 +188,10 @@ a:focus-visible {
   font-weight: 600;
   text-align: left;
 
-  transition: background .18s ease, border-color .18s ease, color .18s ease;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease;
 }
 
 .new-chat-button:hover {
@@ -256,7 +260,10 @@ a:focus-visible {
   font-size: 12px;
   text-align: left;
 
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  transition:
+    background .15s ease,
+    color .15s ease,
+    border-color .15s ease;
 }
 
 .sidebar-link:hover {
@@ -303,8 +310,10 @@ a:focus-visible {
 
 .text-button {
   padding: 4px 8px;
+
   border: 0;
   background: transparent;
+
   color: var(--muted-soft);
   font-size: 10px;
 }
@@ -333,7 +342,9 @@ a:focus-visible {
   border: 1px solid transparent;
   border-radius: 7px;
 
-  transition: background .15s ease, border-color .15s ease;
+  transition:
+    background .15s ease,
+    border-color .15s ease;
 }
 
 .history-item:hover {
@@ -397,9 +408,12 @@ a:focus-visible {
 
   background: transparent;
   color: var(--muted-soft);
+
   opacity: 0;
 
-  transition: opacity .15s ease, background .15s ease;
+  transition:
+    opacity .15s ease,
+    background .15s ease;
 }
 
 .history-item:hover .history-delete {
@@ -586,21 +600,12 @@ a:focus-visible {
 .workspace {
   display: none;
   flex: 1;
-  min-height: 0;
+  min-height: calc(100vh - 115px);
 }
 
 .workspace.active {
   display: flex;
   flex-direction: column;
-}
-
-#generalWorkspace {
-  flex: 0 0 auto;
-}
-
-#studentWorkspace,
-#shopkeeperWorkspace {
-  width: 100%;
 }
 
 #welcomeContainer {
@@ -633,7 +638,7 @@ a:focus-visible {
 }
 
 /* =========================================
-   6. SHARED CHAT - FULL WIDTH
+   6. SHARED CHAT
 ========================================= */
 
 .shared-chat-area {
@@ -665,14 +670,13 @@ a:focus-visible {
   flex-direction: column;
 
   width: 100%;
-  min-width: 0;
-
   gap: 22px;
+
   padding: 20px 0;
 }
 
 .chat-message {
-  max-width: min(88%, 1100px);
+  max-width: 88%;
   padding: 13px 16px;
 
   border: 1px solid var(--line);
@@ -866,7 +870,10 @@ a:focus-visible {
   background: var(--panel);
   text-align: left;
 
-  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    transform .15s ease;
 }
 
 .feature-card:hover {
@@ -920,52 +927,50 @@ a:focus-visible {
   color: var(--muted-soft);
   font-size: 14px;
 }
-
 /* =========================================
    9. PDF UPLOAD SECTION
 ========================================= */
 
 .pdf-import-section {
   margin-bottom: 30px;
-  padding: 21px;
+  padding: 24px;
 
-  border: 1px solid rgba(167, 212, 174, .2);
+  border: 1px solid var(--line);
   border-radius: 12px;
 
-  background: linear-gradient(
-    135deg,
-    rgba(91, 139, 98, .10),
-    rgba(20, 26, 21, .9)
-  );
+  background: var(--panel);
 }
 
-.pdf-import-heading {
-  margin-bottom: 17px;
+.pdf-import-section .section-heading {
+  margin-bottom: 22px;
 }
 
-.pdf-import-heading h2 {
-  margin: 7px 0;
+.pdf-import-section .section-heading h2 {
+  margin: 8px 0 5px;
   font: 700 19px Manrope, sans-serif;
 }
 
-.pdf-import-heading p {
+.pdf-import-section .section-heading p {
+  max-width: 580px;
   margin: 0;
+
   color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
 }
 
 .pdf-upload-form {
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .pdf-upload-form label {
   display: block;
-  margin-bottom: 6px;
+  margin-top: 5px;
+  margin-bottom: -4px;
 
-  color: var(--muted);
+  color: #cbd5cb;
   font-size: 11px;
   font-weight: 600;
 }
@@ -973,8 +978,8 @@ a:focus-visible {
 .pdf-upload-form input,
 .pdf-upload-form textarea {
   width: 100%;
-  min-height: 42px;
-  padding: 11px 12px;
+  min-height: 43px;
+  padding: 11px 13px;
 
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -982,12 +987,36 @@ a:focus-visible {
   background: #0f1510;
   color: var(--text);
 
-  font-size: 16px;
+  font-size: 14px;
+}
+
+.pdf-upload-form input:focus,
+.pdf-upload-form textarea:focus {
+  border-color: #739b78;
+  outline: none;
 }
 
 .pdf-upload-form input[type="file"] {
-  min-height: auto;
-  padding: 12px;
+  min-height: 46px;
+  padding: 10px;
+
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pdf-upload-form input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 11px;
+
+  border: 1px solid #405744;
+  border-radius: 6px;
+
+  background: #1b2b1e;
+  color: var(--green-light);
+
+  font-size: 11px;
+  cursor: pointer;
 }
 
 .pdf-upload-form textarea {
@@ -996,9 +1025,10 @@ a:focus-visible {
 }
 
 .pdf-upload-form button {
-  align-self: flex-start;
+  justify-self: start;
 
   min-height: 40px;
+  margin-top: 7px;
   padding: 0 16px;
 
   border: 1px solid #55785a;
@@ -1019,8 +1049,9 @@ a:focus-visible {
   min-height: 18px;
   margin: 0;
 
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--muted-soft);
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 /* =========================================
@@ -1203,15 +1234,15 @@ a:focus-visible {
 .local-delete:hover {
   background: rgba(217, 141, 131, .08);
 }
+
 /* =========================================
    13. FOOTER
 ========================================= */
 
-.app-footer,
-.main-footer {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+.app-footer {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 15px;
 
   width: 100%;
@@ -1228,19 +1259,10 @@ a:focus-visible {
   text-align: left;
 }
 
-.footer-center {
-  text-align: center;
-  color: var(--green-light);
-  font-weight: 700;
-}
-
 .footer-right {
+  color: var(--green-light);
+  font-weight: 600;
   text-align: right;
-}
-
-.footer-heart {
-  display: inline-block;
-  margin-left: 3px;
 }
 
 /* =========================================
@@ -1347,7 +1369,10 @@ a:focus-visible {
 
   transform: translateY(7px);
 
-  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+  transition:
+    opacity .18s ease,
+    transform .18s ease,
+    visibility .18s ease;
 }
 
 .toast.visible {
@@ -1370,7 +1395,6 @@ body.large-text .sidebar-link,
 body.large-text .welcome-container p {
   font-size: 14px;
 }
-
 /* =========================================
    17. TABLET RESPONSIVE
 ========================================= */
@@ -1392,11 +1416,6 @@ body.large-text .welcome-container p {
   .main-header {
     padding: 0 22px;
   }
-
-  .shared-chat-area {
-    padding-right: 22px;
-    padding-left: 22px;
-  }
 }
 
 /* =========================================
@@ -1410,7 +1429,9 @@ body.large-text .welcome-container p {
     transform: translateX(-105%);
     visibility: hidden;
 
-    transition: transform .2s ease, visibility .2s ease;
+    transition:
+      transform .2s ease,
+      visibility .2s ease;
 
     box-shadow: 12px 0 35px rgba(0, 0, 0, .25);
   }
@@ -1451,7 +1472,7 @@ body.large-text .welcome-container p {
     display: grid;
   }
 
-  /* MOBILE BRAND */
+  /* MOBILE BRAND POSITION FIX */
 
   .mobile-brand {
     display: flex;
@@ -1500,7 +1521,7 @@ body.large-text .welcome-container p {
   }
 
   .workspace {
-    min-height: 0;
+    min-height: calc(100vh - 105px);
   }
 
   #welcomeContainer {
@@ -1512,7 +1533,7 @@ body.large-text .welcome-container p {
     font-size: clamp(27px, 7vw, 35px);
   }
 
-  /* MOBILE CHAT */
+  /* FULL WIDTH CHAT ON MOBILE */
 
   .shared-chat-area {
     width: 100%;
@@ -1529,8 +1550,6 @@ body.large-text .welcome-container p {
   .chat-message {
     max-width: 95%;
   }
-
-  /* MOBILE DASHBOARD */
 
   .dashboard-container {
     width: calc(100% - 32px);
@@ -1559,26 +1578,21 @@ body.large-text .welcome-container p {
     margin-bottom: 13px;
   }
 
+  /* PDF SECTION ON MOBILE */
+
   .pdf-import-section {
-    padding: 16px;
+    padding: 17px;
   }
 
-  /* MOBILE FOOTER */
-
-  .app-footer,
-  .main-footer {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 9px;
-
-    padding: 16px 14px;
-    text-align: center;
+  .pdf-upload-form button {
+    width: 100%;
   }
 
-  .footer-left,
-  .footer-center,
-  .footer-right {
-    text-align: center;
+  /* FOOTER */
+
+  .app-footer {
+    padding: 15px 14px;
+    gap: 10px;
   }
 }
 
@@ -1627,6 +1641,10 @@ body.large-text .welcome-container p {
     font-size: 8px;
   }
 
+  .app-footer {
+    font-size: 9px;
+  }
+
   .student-tool-panel,
   .shop-tool-panel {
     padding: 14px;
@@ -1664,6 +1682,10 @@ body.large-text .welcome-container p {
 
   .composer-hint {
     display: none;
+  }
+
+  .app-footer {
+    font-size: 8px;
   }
 }
 
