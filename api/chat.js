@@ -101,7 +101,7 @@ Never invent facts or pretend to know something you do not know.
     });
 
     const model =
-      process.env.GEMINI_MODEL || "gemini-2.5-flash";
+     process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
     const controller = new AbortController();
 
