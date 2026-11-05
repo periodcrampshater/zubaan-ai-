@@ -594,18 +594,14 @@ a:focus-visible {
 }
 
 /* =========================================
-   5. WORKSPACES
+   5. WORKSPACE
 ========================================= */
 
 .workspace {
-  display: none;
-  flex: 1;
-  min-height: calc(100vh - 115px);
-}
-
-.workspace.active {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: calc(100vh - 115px);
 }
 
 #welcomeContainer {
@@ -622,21 +618,18 @@ a:focus-visible {
   letter-spacing: .16em;
 }
 
-.welcome-container h1,
-.dashboard-heading h1 {
+.welcome-container h1 {
   margin: 13px 0 9px;
   font: 800 clamp(29px, 4vw, 43px)/1.2 Manrope, sans-serif;
   letter-spacing: -.055em;
 }
 
-.welcome-container p,
-.dashboard-heading p {
+.welcome-container p {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.7;
 }
-
 /* =========================================
    6. SHARED CHAT
 ========================================= */
@@ -706,8 +699,163 @@ a:focus-visible {
   margin-bottom: 0;
 }
 
+.chat-message pre {
+  margin: 10px 0;
+  padding: 12px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #0a0f0b;
+  border: 1px solid #29342b;
+}
+
+.chat-message code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
+.chat-message p code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #0a0f0b;
+  border: 1px solid #29342b;
+}
+
+.chat-message ul,
+.chat-message ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.chat-message li {
+  margin-bottom: 4px;
+}
+
+.chat-message h1,
+.chat-message h2,
+.chat-message h3,
+.chat-message h4 {
+  margin: 14px 0 8px;
+  font-family: Manrope, sans-serif;
+  line-height: 1.35;
+}
+
+.chat-message h1 { font-size: 18px; }
+.chat-message h2 { font-size: 16px; }
+.chat-message h3 { font-size: 14px; }
+
+.chat-message a {
+  color: var(--green-light);
+  text-decoration: underline;
+}
+
+.chat-message table {
+  width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.chat-message th,
+.chat-message td {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.chat-message th {
+  background: #1a231b;
+  font-weight: 600;
+}
+
+.message-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(41, 52, 43, .5);
+}
+
+.message-action-button {
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted-soft);
+  font-size: 10px;
+}
+
+.message-action-button:hover {
+  border-color: #536d56;
+  color: var(--green-light);
+}
+
+.message-loading {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.message-error {
+  border-color: rgba(217, 141, 131, .35);
+  color: var(--danger);
+}
+
 /* =========================================
-   7. CHAT COMPOSER
+   7. ATTACHMENT PREVIEW
+========================================= */
+
+.attachment-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 11px;
+}
+
+.attachment-icon {
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.attachment-size {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted-soft);
+  font-size: 10px;
+}
+
+.attachment-remove {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted-soft);
+  font-size: 15px;
+}
+
+.attachment-remove:hover {
+  background: rgba(217, 141, 131, .12);
+  color: var(--danger);
+}
+
+/* =========================================
+   8. CHAT COMPOSER
 ========================================= */
 
 .question-form {
@@ -826,417 +974,7 @@ a:focus-visible {
 }
 
 /* =========================================
-   8. DASHBOARDS
-========================================= */
-
-.dashboard-container {
-  width: min(100% - 50px, 1000px);
-  margin: 0 auto;
-  padding: 50px 0 60px;
-}
-
-.dashboard-heading {
-  margin-bottom: 34px;
-}
-
-.dashboard-heading h1 {
-  font-size: clamp(30px, 4vw, 42px);
-}
-
-.dashboard-heading p {
-  max-width: 550px;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 13px;
-}
-
-.feature-card {
-  position: relative;
-
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  min-width: 0;
-  min-height: 175px;
-  padding: 19px;
-
-  border: 1px solid var(--line);
-  border-radius: 11px;
-
-  background: var(--panel);
-  text-align: left;
-
-  transition:
-    border-color .15s ease,
-    background .15s ease,
-    transform .15s ease;
-}
-
-.feature-card:hover {
-  border-color: #536d56;
-  background: var(--panel-hover);
-  transform: translateY(-2px);
-}
-
-.feature-card:active {
-  background: #1c281e;
-  transform: translateY(0);
-}
-
-.feature-icon {
-  display: grid;
-  place-items: center;
-
-  width: 37px;
-  height: 37px;
-  margin-bottom: 17px;
-
-  border: 1px solid rgba(167, 212, 174, .19);
-  border-radius: 9px;
-
-  background: rgba(91, 139, 98, .12);
-  color: var(--green-light);
-
-  font-size: 17px;
-}
-
-.feature-title {
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.feature-description {
-  margin-top: 5px;
-  padding-right: 10px;
-
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.65;
-}
-
-.feature-arrow {
-  position: absolute;
-  top: 19px;
-  right: 17px;
-
-  color: var(--muted-soft);
-  font-size: 14px;
-}
-/* =========================================
-   9. PDF UPLOAD SECTION
-========================================= */
-
-.pdf-import-section {
-  margin-bottom: 30px;
-  padding: 24px;
-
-  border: 1px solid var(--line);
-  border-radius: 12px;
-
-  background: var(--panel);
-}
-
-.pdf-import-section .section-heading {
-  margin-bottom: 22px;
-}
-
-.pdf-import-section .section-heading h2 {
-  margin: 8px 0 5px;
-  font: 700 19px Manrope, sans-serif;
-}
-
-.pdf-import-section .section-heading p {
-  max-width: 580px;
-  margin: 0;
-
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.pdf-upload-form {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-}
-
-.pdf-upload-form label {
-  display: block;
-  margin-top: 5px;
-  margin-bottom: -4px;
-
-  color: #cbd5cb;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.pdf-upload-form input,
-.pdf-upload-form textarea {
-  width: 100%;
-  min-height: 43px;
-  padding: 11px 13px;
-
-  border: 1px solid var(--line);
-  border-radius: 8px;
-
-  background: #0f1510;
-  color: var(--text);
-
-  font-size: 14px;
-}
-
-.pdf-upload-form input:focus,
-.pdf-upload-form textarea:focus {
-  border-color: #739b78;
-  outline: none;
-}
-
-.pdf-upload-form input[type="file"] {
-  min-height: 46px;
-  padding: 10px;
-
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.pdf-upload-form input[type="file"]::file-selector-button {
-  margin-right: 12px;
-  padding: 7px 11px;
-
-  border: 1px solid #405744;
-  border-radius: 6px;
-
-  background: #1b2b1e;
-  color: var(--green-light);
-
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.pdf-upload-form textarea {
-  min-height: 85px;
-  resize: vertical;
-}
-
-.pdf-upload-form button {
-  justify-self: start;
-
-  min-height: 40px;
-  margin-top: 7px;
-  padding: 0 16px;
-
-  border: 1px solid #55785a;
-  border-radius: 8px;
-
-  background: #294b30;
-  color: #f0f7ef;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.pdf-upload-form button:hover {
-  background: #355b3c;
-}
-
-.pdf-upload-status {
-  min-height: 18px;
-  margin: 0;
-
-  color: var(--muted-soft);
-  font-size: 10px;
-  line-height: 1.6;
-}
-
-/* =========================================
-   10. SAVED CHAPTERS
-========================================= */
-
-.student-saved-section {
-  margin-top: 44px;
-}
-
-.section-heading {
-  margin-bottom: 15px;
-}
-
-.section-heading h2 {
-  margin: 6px 0 0;
-  font: 700 19px Manrope, sans-serif;
-}
-
-.saved-content {
-  min-height: 65px;
-  padding: 17px;
-
-  border: 1px dashed #344137;
-  border-radius: 9px;
-
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.saved-content p {
-  margin: 0;
-}
-
-/* =========================================
-   11. TOOL PANELS
-========================================= */
-
-.student-tool-panel,
-.shop-tool-panel {
-  margin-top: 28px;
-  padding: 20px;
-
-  border: 1px solid var(--line);
-  border-radius: 12px;
-
-  background: var(--panel);
-}
-
-.tool-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-
-  margin-bottom: 20px;
-}
-
-.tool-panel-header h2 {
-  margin: 0;
-  font: 700 19px Manrope, sans-serif;
-}
-
-.back-button {
-  min-height: 34px;
-  padding: 0 10px;
-
-  border: 1px solid var(--line);
-  border-radius: 7px;
-
-  background: transparent;
-  color: var(--muted);
-
-  font-size: 11px;
-}
-
-.back-button:hover {
-  color: var(--green-light);
-  border-color: #536d56;
-}
-
-/* =========================================
-   12. FORM ELEMENTS
-========================================= */
-
-.local-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.local-form label {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.local-form input,
-.local-form textarea,
-.local-form select {
-  width: 100%;
-  min-height: 42px;
-  padding: 10px 12px;
-
-  border: 1px solid var(--line);
-  border-radius: 8px;
-
-  background: #0f1510;
-  color: var(--text);
-
-  font-size: 16px;
-}
-
-.local-form input:focus,
-.local-form textarea:focus,
-.local-form select:focus {
-  border-color: #739b78;
-  outline: none;
-}
-
-.local-form textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-.local-form button,
-.local-action {
-  align-self: flex-start;
-
-  min-height: 39px;
-  padding: 0 14px;
-
-  border: 1px solid #55785a;
-  border-radius: 8px;
-
-  background: #294b30;
-  color: #f0f7ef;
-
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.local-form button:hover,
-.local-action:hover {
-  background: #355b3c;
-}
-
-.local-record {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-
-  padding: 12px;
-
-  border-bottom: 1px solid var(--line);
-  color: var(--text);
-
-  font-size: 12px;
-}
-
-.local-record:last-child {
-  border-bottom: 0;
-}
-
-.local-record small {
-  color: var(--muted);
-}
-
-.local-delete {
-  padding: 5px 9px;
-
-  border: 1px solid rgba(217, 141, 131, .25);
-  border-radius: 6px;
-
-  background: transparent;
-  color: var(--danger);
-
-  font-size: 10px;
-}
-
-.local-delete:hover {
-  background: rgba(217, 141, 131, .08);
-}
-
-/* =========================================
-   13. FOOTER
+   9. FOOTER
 ========================================= */
 
 .app-footer {
@@ -1266,7 +1004,7 @@ a:focus-visible {
 }
 
 /* =========================================
-   14. ABOUT DIALOG
+   10. ABOUT DIALOG
 ========================================= */
 
 .about-dialog {
@@ -1324,26 +1062,8 @@ a:focus-visible {
   border-color: #536d56;
 }
 
-.primary-action {
-  min-height: 40px;
-  padding: 0 15px;
-
-  border: 1px solid #55785a;
-  border-radius: 8px;
-
-  background: #294b30;
-  color: #f0f7ef;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.primary-action:hover {
-  background: #355b3c;
-}
-
 /* =========================================
-   15. TOAST NOTIFICATIONS
+   11. TOAST NOTIFICATIONS
 ========================================= */
 
 .toast {
@@ -1382,7 +1102,7 @@ a:focus-visible {
 }
 
 /* =========================================
-   16. LARGER TEXT ACCESSIBILITY
+   12. LARGER TEXT ACCESSIBILITY
 ========================================= */
 
 body.large-text {
@@ -1390,13 +1110,13 @@ body.large-text {
 }
 
 body.large-text .chat-message,
-body.large-text .feature-description,
 body.large-text .sidebar-link,
 body.large-text .welcome-container p {
   font-size: 14px;
 }
+
 /* =========================================
-   17. TABLET RESPONSIVE
+   13. TABLET RESPONSIVE
 ========================================= */
 
 @media (max-width: 1050px) {
@@ -1409,17 +1129,13 @@ body.large-text .welcome-container p {
     margin-left: 235px;
   }
 
-  .feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .main-header {
     padding: 0 22px;
   }
 }
 
 /* =========================================
-   18. MOBILE RESPONSIVE
+   14. MOBILE RESPONSIVE
 ========================================= */
 
 @media (max-width: 760px) {
@@ -1471,8 +1187,6 @@ body.large-text .welcome-container p {
   .menu-button {
     display: grid;
   }
-
-  /* MOBILE BRAND POSITION FIX */
 
   .mobile-brand {
     display: flex;
@@ -1533,8 +1247,6 @@ body.large-text .welcome-container p {
     font-size: clamp(27px, 7vw, 35px);
   }
 
-  /* FULL WIDTH CHAT ON MOBILE */
-
   .shared-chat-area {
     width: 100%;
     min-height: 260px;
@@ -1551,45 +1263,6 @@ body.large-text .welcome-container p {
     max-width: 95%;
   }
 
-  .dashboard-container {
-    width: calc(100% - 32px);
-    padding-top: 34px;
-  }
-
-  .dashboard-heading {
-    margin-bottom: 25px;
-  }
-
-  .dashboard-heading h1 {
-    font-size: 31px;
-  }
-
-  .feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .feature-card {
-    min-height: 165px;
-    padding: 14px;
-  }
-
-  .feature-icon {
-    margin-bottom: 13px;
-  }
-
-  /* PDF SECTION ON MOBILE */
-
-  .pdf-import-section {
-    padding: 17px;
-  }
-
-  .pdf-upload-form button {
-    width: 100%;
-  }
-
-  /* FOOTER */
-
   .app-footer {
     padding: 15px 14px;
     gap: 10px;
@@ -1597,7 +1270,7 @@ body.large-text .welcome-container p {
 }
 
 /* =========================================
-   19. SMALL MOBILE
+   15. SMALL MOBILE
 ========================================= */
 
 @media (max-width: 430px) {
@@ -1609,24 +1282,6 @@ body.large-text .welcome-container p {
 
   .header-new-chat::first-letter {
     font-size: 16px;
-  }
-
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .feature-card {
-    min-height: 135px;
-  }
-
-  .feature-icon {
-    width: 33px;
-    height: 33px;
-    margin-bottom: 10px;
-  }
-
-  .dashboard-heading h1 {
-    font-size: 28px;
   }
 
   .composer-actions {
@@ -1644,23 +1299,10 @@ body.large-text .welcome-container p {
   .app-footer {
     font-size: 9px;
   }
-
-  .student-tool-panel,
-  .shop-tool-panel {
-    padding: 14px;
-  }
-
-  .tool-panel-header {
-    gap: 9px;
-  }
-
-  .tool-panel-header h2 {
-    font-size: 16px;
-  }
 }
 
 /* =========================================
-   20. VERY SMALL SCREENS
+   16. VERY SMALL SCREENS
 ========================================= */
 
 @media (max-width: 350px) {
@@ -1690,7 +1332,7 @@ body.large-text .welcome-container p {
 }
 
 /* =========================================
-   21. MOBILE INPUT & KEYBOARD FIX
+   17. MOBILE INPUT & KEYBOARD FIX
 ========================================= */
 
 @media (max-width: 760px) {
@@ -1714,7 +1356,7 @@ body.large-text .welcome-container p {
 }
 
 /* =========================================
-   22. ACCESSIBILITY & REDUCED MOTION
+   18. ACCESSIBILITY & REDUCED MOTION
 ========================================= */
 
 @media (prefers-reduced-motion: reduce) {
