@@ -1,5 +1,6 @@
 /**
  * Zubaan AI — Unified AI Assistant
+ * Full multilingual support: English, Urdu, Roman Urdu, Punjabi, Sindhi, Pashto.
  */
 (() => {
   "use strict";
@@ -26,12 +27,12 @@
   };
 
   const LANGUAGES = {
-    roman: { name: "Roman Urdu", speech: "ur-PK", direction: "ltr" },
-    ur:    { name: "Urdu",       speech: "ur-PK", direction: "rtl" },
-    en:    { name: "English",    speech: "en-US", direction: "ltr" },
-    pa:    { name: "Punjabi",    speech: "pa-Arab-PK", direction: "rtl" },
-    sd:    { name: "Sindhi",     speech: "sd-PK", direction: "rtl" },
-    ps:    { name: "Pashto",     speech: "ps-AF", direction: "rtl" }
+    roman: { name: "Roman Urdu", speech: "ur-PK", direction: "ltr", code: "roman" },
+    ur:    { name: "Urdu",       speech: "ur-PK", direction: "rtl", code: "ur" },
+    en:    { name: "English",    speech: "en-US", direction: "ltr", code: "en" },
+    pa:    { name: "Punjabi",    speech: "pa-Arab-PK", direction: "rtl", code: "pa" },
+    sd:    { name: "Sindhi",     speech: "sd-PK", direction: "rtl", code: "sd" },
+    ps:    { name: "Pashto",     speech: "ps-AF", direction: "rtl", code: "ps" }
   };
 
   /* =====================================
@@ -93,27 +94,33 @@
   }
 
   /* =====================================
-     DICTIONARY
+     DICTIONARIES — EVERY UI STRING
   ===================================== */
   const TEXT = {
     en: {
+      appName: "Zubaan AI",
       newChat: "New chat",
       recent: "RECENT CHATS",
       clear: "Clear",
       language: "LANGUAGE",
       largerText: "Larger text",
       about: "About Zubaan AI",
+      aboutTitle: "About Zubaan AI",
+      aboutText1: "Zubaan AI is an AI assistant designed to make learning, everyday tasks and daily life easier.",
+      aboutText2: "Project of Islah Foundation.",
       welcome: "How can I help you today?",
       welcomeIntro: "Ask anything. Get clear answers in the language you understand.",
+      welcomeEyebrow: "YOUR EVERYDAY ASSISTANT",
       placeholder: "Ask anything...",
       hint: "Press Enter to send",
       send: "Send",
       disclaimer: "AI can make mistakes. Please verify important information.",
+      footerLeft: "Project of Islah Foundation",
+      footerRight: "Pakistan Zinda Baad 💚",
       thinking: "Thinking...",
       emptyHistory: "Your conversations will appear here.",
       online: "Online",
       ready: "Ready to help",
-      notConnected: "AI service not connected",
       listening: "Listening...",
       errOffline: "You appear to be offline.",
       errRequest: "Something went wrong. Please try again.",
@@ -125,38 +132,55 @@
       toastLang: "Language updated",
       toastNew: "New chat started",
       toastCleared: "History cleared",
+      toastDeleted: "Deleted",
       toastStorage: "Could not save data on this device.",
+      toastOnline: "Internet connection restored.",
       confirmHistory: "Delete all conversations?",
       confirmDelete: "Delete this conversation?",
       copy: "Copy",
       copied: "Copied",
       regenerate: "Regenerate",
+      attach: "Attach PDF or TXT",
+      removeAttachment: "Remove attachment",
       attachmentTooLarge: "File is too large. Maximum size is 25 MB.",
       attachmentType: "Only PDF and TXT files are supported.",
       attachmentEmpty: "No readable text found in this file.",
       attachmentScanned: "This PDF appears to be scanned. Text extraction is not available.",
       attachmentReady: "File attached",
       attachmentProcessing: "Reading file...",
-      attachmentFailed: "Could not read this file."
+      attachmentFailed: "Could not read this file.",
+      delete: "Delete",
+      openMenu: "Open menu",
+      closeSidebar: "Close sidebar",
+      aiLabel: "Zubaan AI",
+      youLabel: "You",
+      rateLimit: "AI usage limit reached. Please try again later."
     },
+
     roman: {
+      appName: "Zubaan AI",
       newChat: "Nayi guftagu",
       recent: "HALIYA GUFTAGU",
       clear: "Saaf karein",
       language: "ZUBAAN",
       largerText: "Bara text",
       about: "Zubaan AI ke bare mein",
+      aboutTitle: "Zubaan AI ke bare mein",
+      aboutText1: "Zubaan AI ek AI madadgar hai jo seekhne, rozmarra ke kaam aur zindagi ko asaan banata hai.",
+      aboutText2: "Islah Foundation ka project.",
       welcome: "Aaj main aap ki kya madad karoon?",
       welcomeIntro: "Kuch bhi poochein. Apni samajh ki zubaan mein wazeh jawab payein.",
+      welcomeEyebrow: "AAP KA ROZMARRA MADADGAR",
       placeholder: "Kuch bhi poochein...",
       hint: "Enter dabayein bhejne ke liye",
       send: "Bhejein",
       disclaimer: "Zubaan AI se ghalti ho sakti hai. Aham maloomat ki tasdeeq karein.",
+      footerLeft: "Islah Foundation ka project",
+      footerRight: "Pakistan Zinda Baad 💚",
       thinking: "Soch raha hoon...",
       emptyHistory: "Aap ki guftagu yahan nazar aayegi.",
       online: "Online",
       ready: "Madad ke liye tayyar",
-      notConnected: "AI service connect nahi hai",
       listening: "Sun raha hoon...",
       errOffline: "Aap offline lagte hain.",
       errRequest: "Kuch ghalat ho gaya. Dobara koshish karein.",
@@ -168,26 +192,271 @@
       toastLang: "Zubaan tabdeel ho gayi",
       toastNew: "Nayi guftagu shuru",
       toastCleared: "History saaf ho gayi",
+      toastDeleted: "Delete ho gaya",
       toastStorage: "Data device par save nahi ho saka.",
+      toastOnline: "Internet connection wapas aa gaya.",
       confirmHistory: "Kya tamam guftagu delete karein?",
       confirmDelete: "Kya is guftagu ko delete karein?",
       copy: "Copy",
       copied: "Copy ho gaya",
       regenerate: "Dobara banayein",
+      attach: "PDF ya TXT attach karein",
+      removeAttachment: "Attachment hataayein",
       attachmentTooLarge: "File bohat bari hai. Maximum 25 MB.",
       attachmentType: "Sirf PDF aur TXT files support hain.",
       attachmentEmpty: "Is file mein parhne ke qabil text nahi mila.",
       attachmentScanned: "Yeh PDF scanned lagti hai. Text extraction available nahi.",
       attachmentReady: "File attach ho gayi",
       attachmentProcessing: "File parh raha hoon...",
-      attachmentFailed: "Yeh file parhi nahi ja saki."
+      attachmentFailed: "Yeh file parhi nahi ja saki.",
+      delete: "Delete",
+      openMenu: "Menu kholein",
+      closeSidebar: "Sidebar band karein",
+      aiLabel: "Zubaan AI",
+      youLabel: "Aap",
+      rateLimit: "AI usage limit khatam ho gayi. Baad mein koshish karein."
+    },
+
+    ur: {
+      appName: "زبان اے آئی",
+      newChat: "نئی گفتگو",
+      recent: "حالیہ گفتگو",
+      clear: "صاف کریں",
+      language: "زبان",
+      largerText: "بڑا متن",
+      about: "زبان اے آئی کے بارے میں",
+      aboutTitle: "زبان اے آئی کے بارے میں",
+      aboutText1: "زبان اے آئی ایک مددگار ہے جو سیکھنے، روزمرہ کاموں اور زندگی کو آسان بناتا ہے۔",
+      aboutText2: "اصلاح فاؤنڈیشن کا منصوبہ۔",
+      welcome: "آج میں آپ کی کیا مدد کروں؟",
+      welcomeIntro: "کچھ بھی پوچھیں۔ اپنی سمجھ کی زبان میں واضح جواب پائیں۔",
+      welcomeEyebrow: "آپ کا روزمرہ مددگار",
+      placeholder: "کچھ بھی پوچھیں...",
+      hint: "بھیجنے کے لیے Enter دبائیں",
+      send: "بھیجیں",
+      disclaimer: "زبان اے آئی سے غلطی ہو سکتی ہے۔ اہم معلومات کی تصدیق کریں۔",
+      footerLeft: "اصلاح فاؤنڈیشن کا منصوبہ",
+      footerRight: "پاکستان زندہ باد 💚",
+      thinking: "سوچ رہا ہوں...",
+      emptyHistory: "آپ کی گفتگو یہاں نظر آئے گی۔",
+      online: "آن لائن",
+      ready: "مدد کے لیے تیار",
+      listening: "سن رہا ہوں...",
+      errOffline: "آپ آف لائن لگتے ہیں۔",
+      errRequest: "کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔",
+      errTimeout: "درخواست میں بہت وقت لگ گیا۔",
+      errInvalid: "اے آئی کا جواب پڑھا نہیں جا سکا۔",
+      errEmpty: "پہلے پیغام لکھیں۔",
+      errVoice: "اس براؤزر میں آواز سے ان پٹ دستیاب نہیں۔",
+      errVoiceFail: "آواز کا ان پٹ ناکام ہوا۔",
+      toastLang: "زبان تبدیل ہو گئی",
+      toastNew: "نئی گفتگو شروع",
+      toastCleared: "تاریخ صاف ہو گئی",
+      toastDeleted: "حذف ہو گیا",
+      toastStorage: "ڈیٹا محفوظ نہیں ہو سکا۔",
+      toastOnline: "انٹرنیٹ کنکشن واپس آ گیا۔",
+      confirmHistory: "کیا تمام گفتگو حذف کریں؟",
+      confirmDelete: "کیا اس گفتگو کو حذف کریں؟",
+      copy: "نقل کریں",
+      copied: "نقل ہو گیا",
+      regenerate: "دوبارہ بنائیں",
+      attach: "PDF یا TXT منسلک کریں",
+      removeAttachment: "منسلکہ ہٹائیں",
+      attachmentTooLarge: "فائل بہت بڑی ہے۔ زیادہ سے زیادہ 25 MB۔",
+      attachmentType: "صرف PDF اور TXT فائلیں معاون ہیں۔",
+      attachmentEmpty: "اس فائل میں پڑھنے کے قابل متن نہیں ملا۔",
+      attachmentScanned: "یہ PDF اسکین شدہ لگتی ہے۔ متن نکالنا دستیاب نہیں۔",
+      attachmentReady: "فائل منسلک ہو گئی",
+      attachmentProcessing: "فائل پڑھ رہا ہوں...",
+      attachmentFailed: "یہ فائل پڑھی نہیں جا سکی۔",
+      delete: "حذف کریں",
+      openMenu: "مینو کھولیں",
+      closeSidebar: "سائیڈبار بند کریں",
+      aiLabel: "زبان اے آئی",
+      youLabel: "آپ",
+      rateLimit: "اے آئی کی حد ختم ہو گئی۔ بعد میں کوشش کریں۔"
+    },
+
+    pa: {
+      appName: "زبان اے آئی",
+      newChat: "نئی گفتگو",
+      recent: "حالیہ گفتگو",
+      clear: "صاف کرو",
+      language: "زبان",
+      largerText: "وڈا متن",
+      about: "زبان اے آئی بارے",
+      aboutTitle: "زبان اے آئی بارے",
+      aboutText1: "زبان اے آئی اک مددگار اے جیہڑا سکھن، روزمرہ کم تے زندگی نوں آسان بناندا اے۔",
+      aboutText2: "اصلاح فاؤنڈیشن دا منصوبہ۔",
+      welcome: "اج میں تہاڈی کی مدد کراں؟",
+      welcomeIntro: "کجھ وی پچھو۔ اپنی سمجھ دی زبان وچ واضح جواب لؤ۔",
+      welcomeEyebrow: "تہاڈا روزمرہ مددگار",
+      placeholder: "کجھ وی پچھو...",
+      hint: "بھیجن لئی Enter دبو",
+      send: "بھیجو",
+      disclaimer: "زبان اے آئی توں غلطی ہو سکدی اے۔ اہم معلومات دی تصدیق کرو۔",
+      footerLeft: "اصلاح فاؤنڈیشن دا منصوبہ",
+      footerRight: "پاکستان زندہ باد 💚",
+      thinking: "سوچ ریا واں...",
+      emptyHistory: "تہاڈی گفتگو ایتھے نظر آئے گی۔",
+      online: "آن لائن",
+      ready: "مدد لئی تیار",
+      listening: "سن ریا واں...",
+      errOffline: "تسی آف لائن لگدے او۔",
+      errRequest: "کجھ غلط ہو گیا۔ دوبارہ کوشش کرو۔",
+      errTimeout: "درخواست وچ بہت ویلہ لگ گیا۔",
+      errInvalid: "اے آئی دا جواب پڑھیا نہیں جا سکیا۔",
+      errEmpty: "پہلے پیغام لکھو۔",
+      errVoice: "اس براؤزر وچ آواز نال ان پٹ دستیاب نہیں۔",
+      errVoiceFail: "آواز دا ان پٹ ناکام ہو گیا۔",
+      toastLang: "زبان بدل گئی",
+      toastNew: "نئی گفتگو شروع",
+      toastCleared: "تاریخ صاف ہو گئی",
+      toastDeleted: "حذف ہو گیا",
+      toastStorage: "ڈیٹا محفوظ نہیں ہو سکیا۔",
+      toastOnline: "انٹرنیٹ کنکشن واپس آ گیا۔",
+      confirmHistory: "کیا ساری گفتگو حذف کراں؟",
+      confirmDelete: "کیا ایہہ گفتگو حذف کراں؟",
+      copy: "نقل کرو",
+      copied: "نقل ہو گیا",
+      regenerate: "دوبارہ بناؤ",
+      attach: "PDF یا TXT منسلک کرو",
+      removeAttachment: "منسلکہ ہٹاؤ",
+      attachmentTooLarge: "فائل بہت وڈی اے۔ زیادہ توں زیادہ 25 MB۔",
+      attachmentType: "صرف PDF تے TXT فائلاں معاون نیں۔",
+      attachmentEmpty: "اس فائل وچ پڑھن دے قابل متن نہیں ملیا۔",
+      attachmentScanned: "ایہہ PDF اسکین شدہ لگدی اے۔ متن کڈھنا دستیاب نہیں۔",
+      attachmentReady: "فائل منسلک ہو گئی",
+      attachmentProcessing: "فائل پڑھ ریا واں...",
+      attachmentFailed: "ایہہ فائل پڑھی نہیں جا سکی۔",
+      delete: "حذف کرو",
+      openMenu: "مینو کھولو",
+      closeSidebar: "سائیڈبار بند کرو",
+      aiLabel: "زبان اے آئی",
+      youLabel: "تسی",
+      rateLimit: "اے آئی دی حد ختم ہو گئی۔ بعد وچ کوشش کرو۔"
+    },
+
+    sd: {
+      appName: "زبان اي آئي",
+      newChat: "نئين گفتگو",
+      recent: "تازيون ڳالهيون",
+      clear: "صاف ڪريو",
+      language: "ٻولي",
+      largerText: "وڏو متن",
+      about: "زبان اي آئي بابت",
+      aboutTitle: "زبان اي آئي بابت",
+      aboutText1: "زبان اي آئي هڪ مددگار آهي جيڪو سکڻ، روزمره ڪمن ۽ زندگي کي آسان بڻائي ٿو.",
+      aboutText2: "اصلاح فائونڊيشن جو منصوبو.",
+      welcome: "اڄ مان توهان جي ڪهڙي مدد ڪري سگهان ٿو؟",
+      welcomeIntro: "ڪجهه به پڇو. پنهنجي سمجھ جي ٻولي ۾ واضح جواب حاصل ڪريو.",
+      welcomeEyebrow: "توهان جو روزمره مددگار",
+      placeholder: "ڪجهه به پڇو...",
+      hint: "موڪلڻ لاءِ Enter دٻايو",
+      send: "موڪليو",
+      disclaimer: "زبان اي آئي کان غلطي ٿي سگهي ٿي. اهم معلومات جي تصديق ڪريو.",
+      footerLeft: "اصلاح فائونڊيشن جو منصوبو",
+      footerRight: "پاڪستان زنده باد 💚",
+      thinking: "سوچي رهيو آهيان...",
+      emptyHistory: "توهان جي گفتگو هتي نظر ايندي.",
+      online: "آن لائن",
+      ready: "مدد لاءِ تيار",
+      listening: "ٻڌي رهيو آهيان...",
+      errOffline: "توهان آف لائن لڳو ٿا.",
+      errRequest: "ڪجهه غلط ٿي ويو. ٻيهر ڪوشش ڪريو.",
+      errTimeout: "درخواست ۾ گهڻو وقت لڳو.",
+      errInvalid: "اي آئي جو جواب پڙهي نہ سگهيو.",
+      errEmpty: "پهريان پيغام لکو.",
+      errVoice: "هن برائوزر ۾ آواز سان ان پٽ دستياب ناهي.",
+      errVoiceFail: "آواز جو ان پٽ ناڪام ٿيو.",
+      toastLang: "ٻولي تبديل ٿي وئي",
+      toastNew: "نئين گفتگو شروع",
+      toastCleared: "تاريخ صاف ٿي وئي",
+      toastDeleted: "ختم ٿي ويو",
+      toastStorage: "ڊيٽا محفوظ نہ ٿي سگهيو.",
+      toastOnline: "انٽرنيٽ ڪنيڪشن واپس اچي ويو.",
+      confirmHistory: "ڇا سڀ گفتگو ختم ڪجن؟",
+      confirmDelete: "ڇا هي گفتگو ختم ڪجي؟",
+      copy: "نقل ڪريو",
+      copied: "نقل ٿي ويو",
+      regenerate: "ٻيهر ٺاهيو",
+      attach: "PDF يا TXT منسلڪ ڪريو",
+      removeAttachment: "منسلڪ هٽايو",
+      attachmentTooLarge: "فائل تمام وڏي آهي. وڌ ۾ وڌ 25 MB.",
+      attachmentType: "صرف PDF ۽ TXT فائلون معاون آهن.",
+      attachmentEmpty: "هن فائل ۾ پڙهڻ لائق متن نہ مليو.",
+      attachmentScanned: "هي PDF اسڪين ٿيل لڳي ٿي. متن ڪڍڻ دستياب ناهي.",
+      attachmentReady: "فائل منسلڪ ٿي وئي",
+      attachmentProcessing: "فائل پڙهي رهيو آهيان...",
+      attachmentFailed: "هي فائل پڙهي نہ سگهي.",
+      delete: "ختم ڪريو",
+      openMenu: "مينيو کوليو",
+      closeSidebar: "سائيڊبار بند ڪريو",
+      aiLabel: "زبان اي آئي",
+      youLabel: "توهان",
+      rateLimit: "اي آئي جي حد ختم ٿي وئي. بعد ۾ ڪوشش ڪريو."
+    },
+
+    ps: {
+      appName: "زبان AI",
+      newChat: "نوې خبرې اترې",
+      recent: "وروستۍ خبرې اترې",
+      clear: "پاکول",
+      language: "ژبه",
+      largerText: "لوی متن",
+      about: "د زبان AI په اړه",
+      aboutTitle: "د زبان AI په اړه",
+      aboutText1: "زبان AI یو مرستندویه دی چې زده کړه، ورځني کارونه او ژوند اسانه کوي.",
+      aboutText2: "د اصلاح فاونډیشن پروژه.",
+      welcome: "نن څنګه مرسته درسره وکړم؟",
+      welcomeIntro: "هر څه وپوښتئ. په خپله پوهه ژبه کې روښانه ځوابونه ترلاسه کړئ.",
+      welcomeEyebrow: "ستاسو ورځنی مرستندوی",
+      placeholder: "هر څه وپوښتئ...",
+      hint: "د لېږلو لپاره Enter کېکاږئ",
+      send: "لېږل",
+      disclaimer: "زبان AI ممکن تېروتنه وکړي. مهم معلومات تایید کړئ.",
+      footerLeft: "د اصلاح فاونډیشن پروژه",
+      footerRight: "پاکستان ژوندی وي 💚",
+      thinking: "فکر کوم...",
+      emptyHistory: "ستاسو خبرې اترې به دلته ښکاره شي.",
+      online: "آنلاین",
+      ready: "مرستې ته چمتو",
+      listening: "اورم...",
+      errOffline: "تاسو آفلاین ښکاري.",
+      errRequest: "یو څه غلط شو. بیا هڅه وکړئ.",
+      errTimeout: "غوښتنې ډېر وخت ونیول.",
+      errInvalid: "د AI ځواب ونه لوستل شو.",
+      errEmpty: "لومړی پیغام ولیکئ.",
+      errVoice: "په دې براوزر کې غږیز ان پټ نشته.",
+      errVoiceFail: "غږیز ان پټ ناکام شو.",
+      toastLang: "ژبه بدله شوه",
+      toastNew: "نوې خبرې اترې پیل شوې",
+      toastCleared: "تاریخ پاک شو",
+      toastDeleted: "ړنګ شو",
+      toastStorage: "ډیټا خوندي نشوه.",
+      toastOnline: "انټرنیټ اړیکه بیرته راغله.",
+      confirmHistory: "ایا ټولې خبرې اترې ړنګې کړم؟",
+      confirmDelete: "ایا دا خبرې اترې ړنګې کړم؟",
+      copy: "کاپي",
+      copied: "کاپي شو",
+      regenerate: "بیا جوړول",
+      attach: "PDF یا TXT ضمیمه کړئ",
+      removeAttachment: "ضمیمه لرې کړئ",
+      attachmentTooLarge: "فایل ډېر لوی دی. اعظمي 25 MB.",
+      attachmentType: "یوازې PDF او TXT فایلونه ملاتړ کیږي.",
+      attachmentEmpty: "په دې فایل کې لوستل کیدونکی متن ونه موندل شو.",
+      attachmentScanned: "دا PDF سکن شوې ښکاري. متن ایستل نشته.",
+      attachmentReady: "فایل ضمیمه شو",
+      attachmentProcessing: "فایل لولم...",
+      attachmentFailed: "دا فایل ونه لوستل شو.",
+      delete: "ړنګول",
+      openMenu: "مینو پرانیستل",
+      closeSidebar: "سایډبار بندول",
+      aiLabel: "زبان AI",
+      youLabel: "تاسو",
+      rateLimit: "د AI حد ختم شو. وروسته هڅه وکړئ."
     }
   };
-
-  TEXT.ur = { ...TEXT.en, welcome: "آج میں آپ کی کیا مدد کروں؟", welcomeIntro: "کچھ بھی پوچھیں۔" };
-  TEXT.pa = { ...TEXT.en };
-  TEXT.sd = { ...TEXT.en };
-  TEXT.ps = { ...TEXT.en };
 
   function t(key) {
     const dictionary = TEXT[state.lang] || TEXT.en;
@@ -268,6 +537,138 @@
   }
 
   /* =====================================
+     LANGUAGE — APPLY EVERYWHERE
+  ===================================== */
+  function applyLanguage(language) {
+    if (!LANGUAGES[language]) return;
+
+    state.lang = language;
+    safeStoreSet(STORAGE.language, language);
+
+    const langMeta = LANGUAGES[language];
+
+    // Root direction + lang
+    document.documentElement.lang = langMeta.code === "roman" ? "en" : langMeta.code;
+    document.documentElement.dir = langMeta.direction;
+
+    // Selector
+    const selector = $("#language");
+    if (selector) selector.value = language;
+
+    // Sidebar
+    const newChatBtn = $("#newChat");
+    if (newChatBtn) {
+      const label = newChatBtn.querySelector("span:last-child");
+      if (label) label.textContent = t("newChat");
+    }
+
+    const recentLabel = $(".history-heading .sidebar-label");
+    if (recentLabel) recentLabel.textContent = t("recent");
+
+    const clearBtn = $("#clearHistory");
+    if (clearBtn) clearBtn.textContent = t("clear");
+
+    const langLabel = $(".sidebar-tools .sidebar-label");
+    if (langLabel) langLabel.textContent = t("language");
+
+    const largeTextBtn = $("#largeText");
+    if (largeTextBtn) {
+      const label = largeTextBtn.querySelector("span:last-child");
+      if (label) label.textContent = t("largerText");
+    }
+
+    const helpBtn = $("#helpButton");
+    if (helpBtn) {
+      const label = helpBtn.querySelector("span:last-child");
+      if (label) label.textContent = t("about");
+    }
+
+    const connectionText = $("#connectionText");
+    if (connectionText) connectionText.textContent = t("ready");
+
+    // Header
+    const desktopTitle = $(".desktop-page-title span");
+    if (desktopTitle) desktopTitle.textContent = t("appName");
+
+    const mobileBrand = $(".mobile-brand strong");
+    if (mobileBrand) mobileBrand.textContent = t("appName");
+
+    const connectionLabel = $("#connection span:last-child");
+    if (connectionLabel) connectionLabel.textContent = t("online");
+
+    const headerNewChat = $("#headerNewChat");
+    if (headerNewChat) headerNewChat.textContent = "＋ " + t("newChat");
+
+    const openSidebar = $("#openSidebar");
+    if (openSidebar) openSidebar.setAttribute("aria-label", t("openMenu"));
+
+    const closeSidebarBtn = $("#closeSidebar");
+    if (closeSidebarBtn) closeSidebarBtn.setAttribute("aria-label", t("closeSidebar"));
+
+    // Welcome
+    const eyebrow = $(".welcome-eyebrow");
+    if (eyebrow) eyebrow.textContent = t("welcomeEyebrow");
+
+    const welcomeTitle = $("#welcomeTitle");
+    if (welcomeTitle) welcomeTitle.textContent = t("welcome");
+
+    const welcomeIntro = $("#welcomeIntro");
+    if (welcomeIntro) welcomeIntro.textContent = t("welcomeIntro");
+
+    // Composer
+    const input = $("#question");
+    if (input) {
+      input.placeholder = t("placeholder");
+      input.setAttribute("aria-label", t("placeholder"));
+    }
+
+    const hint = $("#composerHint");
+    if (hint) hint.textContent = t("hint");
+
+    const sendBtn = $("#askButton");
+    if (sendBtn) sendBtn.textContent = t("send");
+
+    const attachBtn = $("#attachButton");
+    if (attachBtn) {
+      attachBtn.setAttribute("title", t("attach"));
+      attachBtn.setAttribute("aria-label", t("attach"));
+    }
+
+    const voiceBtn = $("#voiceButton");
+    if (voiceBtn) voiceBtn.setAttribute("aria-label", t("listening"));
+
+    const disclaimer = $(".disclaimer");
+    if (disclaimer) disclaimer.textContent = t("disclaimer");
+
+    const removeAttachment = $("#removeAttachment");
+    if (removeAttachment) removeAttachment.setAttribute("aria-label", t("removeAttachment"));
+
+    // Footer
+    const footerLeft = $(".footer-left");
+    if (footerLeft) footerLeft.textContent = t("footerLeft");
+
+    const footerRight = $(".footer-right");
+    if (footerRight) footerRight.textContent = t("footerRight");
+
+    // About dialog
+    const aboutTitle = $("#aboutDialog h2");
+    if (aboutTitle) aboutTitle.textContent = t("aboutTitle");
+
+    const aboutParagraphs = $$("#aboutDialog .dialog-content p");
+    if (aboutParagraphs[0]) aboutParagraphs[0].textContent = t("aboutText1");
+    if (aboutParagraphs[1]) aboutParagraphs[1].textContent = t("aboutText2");
+
+    // Re-render dynamic content
+    renderHistory();
+    renderMessages();
+  }
+
+  function updateLanguage(language) {
+    applyLanguage(language);
+    showToast(t("toastLang"));
+  }
+
+  /* =====================================
      CONVERSATIONS
   ===================================== */
   function getCurrentConversation() {
@@ -277,7 +678,7 @@
   function createConversation() {
     const conversation = {
       id: uid(),
-      title: "New chat",
+      title: t("newChat"),
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -325,6 +726,9 @@
   }
 
   /* =====================================
+     PART 1 ENDS — PART 2 CONTINUES
+  ===================================== */
+   /* =====================================
      RENDERING
   ===================================== */
   function formatMessageText(value) {
@@ -389,7 +793,7 @@
           copyBtn.textContent = t("copied");
           setTimeout(() => { copyBtn.textContent = t("copy"); }, 1500);
         } catch {
-          showToast("Could not copy.");
+          showToast(t("errRequest"));
         }
       });
 
@@ -437,7 +841,6 @@
     const conversation = getCurrentConversation();
     const messages = conversation?.messages || [];
 
-    // Only toggle welcome screen. Never hide the chat area (that was the bug).
     if (welcome) welcome.hidden = messages.length > 0;
 
     messages.forEach(message => {
@@ -476,7 +879,7 @@
 
       button.append(
         element("span", { class: "history-chat-icon", text: "◈" }),
-        element("span", { class: "history-chat-title", text: conversation.title || "New chat" })
+        element("span", { class: "history-chat-title", text: conversation.title || t("newChat") })
       );
 
       button.addEventListener("click", () => openConversation(conversation.id));
@@ -485,7 +888,7 @@
         type: "button",
         class: "history-delete",
         text: "×",
-        ariaLabel: "Delete conversation"
+        ariaLabel: t("delete")
       });
 
       del.addEventListener("click", (e) => {
@@ -497,7 +900,7 @@
         persist();
         renderHistory();
         renderMessages();
-        showToast("Deleted");
+        showToast(t("toastDeleted"));
       });
 
       item.append(button, del);
@@ -543,9 +946,6 @@
   }
 
   /* =====================================
-     PART 1 ENDS HERE
-  ===================================== */
-   /* =====================================
      AI REQUEST
   ===================================== */
   async function requestAI(payload) {
@@ -594,7 +994,7 @@
       OFFLINE: t("errOffline"),
       TIMEOUT: t("errTimeout"),
       INVALID_RESPONSE: t("errInvalid"),
-      RATE_LIMIT: "AI usage limit reached. Please try again later."
+      RATE_LIMIT: t("rateLimit")
     };
 
     if (messages[error.message]) return messages[error.message];
@@ -649,7 +1049,7 @@
 
       const payload = {
         message,
-        language: state.lang,
+        language: state.lang,   // <-- AI response language
         history
       };
 
@@ -898,32 +1298,8 @@
   }
 
   /* =====================================
-     LANGUAGE / TEXT
+     TEXT SIZE
   ===================================== */
-  function updateLanguage(language) {
-    if (!LANGUAGES[language]) return;
-
-    state.lang = language;
-    safeStoreSet(STORAGE.language, language);
-
-    document.documentElement.lang = language === "roman" ? "en" : language;
-    document.documentElement.dir = LANGUAGES[language].direction;
-
-    const welcomeTitle = $("#welcomeTitle");
-    const welcomeIntro = $("#welcomeIntro");
-    const input = $("#question");
-    const hint = $("#composerHint");
-
-    if (welcomeTitle) welcomeTitle.textContent = t("welcome");
-    if (welcomeIntro) welcomeIntro.textContent = t("welcomeIntro");
-    if (input) input.placeholder = t("placeholder");
-    if (hint) hint.textContent = t("hint");
-
-    renderHistory();
-    renderMessages();
-    showToast(t("toastLang"));
-  }
-
   function toggleLargeText() {
     state.largeText = !state.largeText;
     document.body.classList.toggle("large-text", state.largeText);
@@ -996,32 +1372,16 @@
   ===================================== */
   function initializeApp() {
     loadSavedData();
-
-    const languageSelect = $("#language");
-    if (languageSelect) languageSelect.value = state.lang;
+    applyLanguage(state.lang);   // applies every UI string + dir
 
     document.body.classList.toggle("large-text", state.largeText);
-    document.documentElement.dir = LANGUAGES[state.lang].direction;
-    document.documentElement.lang = state.lang === "roman" ? "en" : state.lang;
-
-    const welcomeTitle = $("#welcomeTitle");
-    const welcomeIntro = $("#welcomeIntro");
-    const input = $("#question");
-    const hint = $("#composerHint");
-
-    if (welcomeTitle) welcomeTitle.textContent = t("welcome");
-    if (welcomeIntro) welcomeIntro.textContent = t("welcomeIntro");
-    if (input) input.placeholder = t("placeholder");
-    if (hint) hint.textContent = t("hint");
 
     bindEvents();
     setupVoiceInput();
 
-    renderHistory();
-    renderMessages();
     updateCharacterCount();
 
-    window.addEventListener("online", () => showToast("Internet connection restored."));
+    window.addEventListener("online", () => showToast(t("toastOnline")));
     window.addEventListener("offline", () => showToast(t("errOffline"), "warning"));
   }
 
