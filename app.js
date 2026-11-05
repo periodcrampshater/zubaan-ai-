@@ -1,6 +1,5 @@
 /**
  * Zubaan AI — Unified AI Assistant
- * Vanilla JavaScript
  */
 (() => {
   "use strict";
@@ -9,9 +8,8 @@
   window.__zubaanApp = true;
 
   /* =====================================
-     1. CONFIGURATION
+     CONFIG
   ===================================== */
-
   const CONFIG = {
     API_URL: "/.netlify/functions/chat",
     API_TIMEOUT: 30000,
@@ -37,9 +35,8 @@
   };
 
   /* =====================================
-     2. APPLICATION STATE
+     STATE
   ===================================== */
-
   const state = {
     lang: "roman",
     currentId: null,
@@ -50,9 +47,8 @@
   };
 
   /* =====================================
-     3. DOM HELPERS
+     HELPERS
   ===================================== */
-
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -61,11 +57,8 @@
 
   const escapeHTML = value =>
     String(value ?? "").replace(/[&<>"']/g, character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
     })[character]);
 
   function element(tag, attributes = {}, ...children) {
@@ -93,18 +86,15 @@
 
     children.flat().forEach(child => {
       if (child === null || child === undefined || child === false) return;
-      node.append(
-        child.nodeType ? child : document.createTextNode(String(child))
-      );
+      node.append(child.nodeType ? child : document.createTextNode(String(child)));
     });
 
     return node;
   }
 
   /* =====================================
-     4. LANGUAGE DICTIONARY
+     DICTIONARY
   ===================================== */
-
   const TEXT = {
     en: {
       newChat: "New chat",
@@ -125,7 +115,6 @@
       ready: "Ready to help",
       notConnected: "AI service not connected",
       listening: "Listening...",
-      errNoApi: "AI service is not connected.",
       errOffline: "You appear to be offline.",
       errRequest: "Something went wrong. Please try again.",
       errTimeout: "The request took too long. Please try again.",
@@ -142,7 +131,6 @@
       copy: "Copy",
       copied: "Copied",
       regenerate: "Regenerate",
-      attach: "Attach PDF or TXT",
       attachmentTooLarge: "File is too large. Maximum size is 25 MB.",
       attachmentType: "Only PDF and TXT files are supported.",
       attachmentEmpty: "No readable text found in this file.",
@@ -170,7 +158,6 @@
       ready: "Madad ke liye tayyar",
       notConnected: "AI service connect nahi hai",
       listening: "Sun raha hoon...",
-      errNoApi: "AI service connect nahi hai.",
       errOffline: "Aap offline lagte hain.",
       errRequest: "Kuch ghalat ho gaya. Dobara koshish karein.",
       errTimeout: "Request mein bohat waqt lag gaya.",
@@ -187,7 +174,6 @@
       copy: "Copy",
       copied: "Copy ho gaya",
       regenerate: "Dobara banayein",
-      attach: "PDF ya TXT attach karein",
       attachmentTooLarge: "File bohat bari hai. Maximum 25 MB.",
       attachmentType: "Sirf PDF aur TXT files support hain.",
       attachmentEmpty: "Is file mein parhne ke qabil text nahi mila.",
@@ -198,7 +184,6 @@
     }
   };
 
-  // Fill missing languages with English fallback
   TEXT.ur = { ...TEXT.en, welcome: "آج میں آپ کی کیا مدد کروں؟", welcomeIntro: "کچھ بھی پوچھیں۔" };
   TEXT.pa = { ...TEXT.en };
   TEXT.sd = { ...TEXT.en };
@@ -210,9 +195,8 @@
   }
 
   /* =====================================
-     5. LOCAL STORAGE
+     STORAGE
   ===================================== */
-
   function safeStoreGet(key, fallback) {
     try {
       const value = localStorage.getItem(key);
@@ -236,7 +220,6 @@
   let storageWarningShown = false;
 
   function persist() {
-    // Preserve legacy student/shop data if it exists
     const existing = safeStoreGet(STORAGE.data, {});
     const success = safeStoreSet(STORAGE.data, {
       currentId: state.currentId,
@@ -264,9 +247,8 @@
   }
 
   /* =====================================
-     6. NOTIFICATIONS
+     TOAST
   ===================================== */
-
   let toastTimer = null;
 
   function showToast(message, type = "info") {
@@ -286,9 +268,8 @@
   }
 
   /* =====================================
-     7. CHAT UTILITIES
+     CONVERSATIONS
   ===================================== */
-
   function getCurrentConversation() {
     return state.conversations.find(c => c.id === state.currentId) || null;
   }
@@ -318,10 +299,8 @@
 
   function updateConversationTitle(conversation) {
     if (!conversation || !conversation.messages.length) return;
-
     const firstUser = conversation.messages.find(m => m.role === "user");
     if (!firstUser) return;
-
     conversation.title = firstUser.content.trim().slice(0, 42);
     if (firstUser.content.length > 42) conversation.title += "...";
   }
@@ -346,13 +325,11 @@
   }
 
   /* =====================================
-     8. MESSAGE RENDERING (Safe Markdown)
+     RENDERING
   ===================================== */
-
   function formatMessageText(value) {
     let escaped = escapeHTML(value);
 
-    // Code blocks first (protect their content)
     const codeBlocks = [];
     escaped = escaped.replace(/```([\s\S]*?)```/g, (match, code) => {
       const id = `__CODEBLOCK_${codeBlocks.length}__`;
@@ -360,26 +337,16 @@
       return id;
     });
 
-    // Inline code
     escaped = escaped.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-    // Bold and italic
     escaped = escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     escaped = escaped.replace(/\*(.+?)\*/g, "<em>$1</em>");
-
-    // Headings
     escaped = escaped.replace(/^### (.+)$/gm, "<h3>$1</h3>");
     escaped = escaped.replace(/^## (.+)$/gm, "<h2>$1</h2>");
     escaped = escaped.replace(/^# (.+)$/gm, "<h1>$1</h1>");
-
-    // Unordered lists
     escaped = escaped.replace(/^[-*] (.+)$/gm, "<li>$1</li>");
     escaped = escaped.replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>");
-
-    // Ordered lists
     escaped = escaped.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
 
-    // Paragraphs
     escaped = escaped
       .split(/\n{2,}/)
       .map(block => {
@@ -390,7 +357,6 @@
       })
       .join("");
 
-    // Restore code blocks
     codeBlocks.forEach((block, i) => {
       escaped = escaped.replace(`__CODEBLOCK_${i}__`, block);
     });
@@ -440,11 +406,9 @@
         const index = conversation.messages.findIndex(m => m.id === message.id);
         if (index < 0) return;
 
-        // Find the user message before this assistant message
         for (let i = index - 1; i >= 0; i--) {
           if (conversation.messages[i].role === "user") {
             const userText = conversation.messages[i].content;
-            // Remove everything from that user message onwards
             conversation.messages.splice(i);
             persist();
             renderMessages();
@@ -464,7 +428,6 @@
 
   function renderMessages() {
     const container = $("#generalMessages");
-    const conversationArea = $("#generalConversation");
     const welcome = $("#welcomeContainer");
 
     if (!container) return;
@@ -474,8 +437,8 @@
     const conversation = getCurrentConversation();
     const messages = conversation?.messages || [];
 
+    // Only toggle welcome screen. Never hide the chat area (that was the bug).
     if (welcome) welcome.hidden = messages.length > 0;
-    if (conversationArea) conversationArea.hidden = messages.length === 0;
 
     messages.forEach(message => {
       container.append(createMessageElement(message));
@@ -483,10 +446,6 @@
 
     container.scrollTop = container.scrollHeight;
   }
-
-  /* =====================================
-     9. CHAT HISTORY
-  ===================================== */
 
   function renderHistory() {
     const list = $("#recentList");
@@ -568,6 +527,7 @@
       input.focus();
     }
 
+    closeSidebar();
     showToast(t("toastNew"));
   }
 
@@ -583,308 +543,492 @@
   }
 
   /* =====================================
-     PART 1 COMPLETE — PART 2 CONTINUES
+     PART 1 ENDS HERE
   ===================================== */
- /**
- * Zubaan AI — Chat backend with multi-provider fallback.
- * Providers tried in order: Gemini → Groq → OpenRouter.
- *
- * Environment variables:
- *   GEMINI_API_KEY       (required for Gemini)
- *   GROQ_API_KEY         (optional, for fallback)
- *   OPENROUTER_API_KEY   (optional, for fallback)
- */
+   /* =====================================
+     AI REQUEST
+  ===================================== */
+  async function requestAI(payload) {
+    if (!navigator.onLine) throw new Error("OFFLINE");
 
-const PROVIDER_TIMEOUT_MS = 3500;
-const MAX_MESSAGE_LENGTH = 4000;
-const MAX_ATTACHMENT_LENGTH = 60000;
-const MAX_HISTORY_TURNS = 12;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT);
 
-exports.handler = async (event) => {
-  const headers = {
-    "Content-Type": "application/json",
-    "Cache-Control": "no-store",
-  };
+    try {
+      const response = await fetch(CONFIG.API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
 
-  const respond = (statusCode, data) => ({
-    statusCode,
-    headers,
-    body: JSON.stringify(data),
-  });
+      if (!response.ok) {
+        let detail = "";
+        try {
+          const errData = await response.json();
+          detail = errData.error || "";
+        } catch { /* ignore */ }
 
-  if (event.httpMethod !== "POST") {
-    return respond(405, { error: "POST requests only." });
+        if (response.status === 429) throw new Error("RATE_LIMIT");
+        throw new Error(detail || `HTTP_${response.status}`);
+      }
+
+      const data = await response.json();
+      const answer = data.reply || data.answer || "";
+
+      if (typeof answer !== "string" || !answer.trim()) {
+        throw new Error("INVALID_RESPONSE");
+      }
+
+      return answer.trim();
+    } catch (error) {
+      if (error.name === "AbortError") throw new Error("TIMEOUT");
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
-  let requestData;
-  try {
-    requestData = JSON.parse(event.body || "{}");
-  } catch {
-    return respond(400, { error: "Invalid request format." });
+  function getAIErrorMessage(error) {
+    const messages = {
+      OFFLINE: t("errOffline"),
+      TIMEOUT: t("errTimeout"),
+      INVALID_RESPONSE: t("errInvalid"),
+      RATE_LIMIT: "AI usage limit reached. Please try again later."
+    };
+
+    if (messages[error.message]) return messages[error.message];
+    if (error.message && error.message.length < 200) return error.message;
+    return t("errRequest");
   }
 
-  const { message, language, history, attachment } = requestData;
+  /* =====================================
+     SEND MESSAGE
+  ===================================== */
+  async function sendMessage(rawMessage) {
+    const message = String(rawMessage || "").trim();
+    if (!message) {
+      showToast(t("errEmpty"), "warning");
+      return;
+    }
 
-  // Validate message
-  if (
-    typeof message !== "string" ||
-    !message.trim() ||
-    message.length > MAX_MESSAGE_LENGTH
-  ) {
-    return respond(400, {
-      error: `Enter a message of up to ${MAX_MESSAGE_LENGTH} characters.`,
+    if (message.length > CONFIG.MAX_MESSAGE_LENGTH) {
+      showToast(`Maximum ${CONFIG.MAX_MESSAGE_LENGTH} characters allowed.`, "warning");
+      return;
+    }
+
+    if (state.pending.has("chat")) return;
+
+    const input = $("#question");
+    const sendButton = $("#askButton");
+    const attachment = state.attachment;
+
+    state.pending.add("chat");
+    if (input) { input.value = ""; input.disabled = true; updateCharacterCount(); }
+    if (sendButton) sendButton.disabled = true;
+
+    try {
+      const conversation = ensureConversation();
+      const history = conversation.messages
+        .slice(-12)
+        .map(m => ({
+          role: m.role === "assistant" ? "model" : "user",
+          text: m.content
+        }));
+
+      addMessage("user", message, attachment ? { attachment: { name: attachment.name } } : {});
+
+      const loading = element("div", {
+        class: "chat-message assistant message-loading",
+        text: t("thinking")
+      });
+      $("#generalMessages")?.append(loading);
+
+      const messagesEl = $("#generalMessages");
+      if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      const payload = {
+        message,
+        language: state.lang,
+        history
+      };
+
+      if (attachment) {
+        payload.attachment = {
+          name: attachment.name,
+          text: attachment.text
+        };
+      }
+
+      const answer = await requestAI(payload);
+      loading.remove();
+      addMessage("assistant", answer);
+      clearAttachment();
+
+    } catch (error) {
+      $$(".message-loading").forEach(el => el.remove());
+      addMessage("assistant", getAIErrorMessage(error));
+
+    } finally {
+      state.pending.delete("chat");
+      if (input) { input.disabled = false; input.focus(); }
+      if (sendButton) sendButton.disabled = false;
+      renderMessages();
+    }
+  }
+
+  /* =====================================
+     CHARACTER COUNT
+  ===================================== */
+  function updateCharacterCount() {
+    const input = $("#question");
+    const counter = $("#charCount");
+    if (!input || !counter) return;
+    counter.textContent = `${input.value.length}/${CONFIG.MAX_MESSAGE_LENGTH}`;
+  }
+
+  /* =====================================
+     SIDEBAR
+  ===================================== */
+  function openSidebar() {
+    document.body.classList.add("sidebar-open");
+  }
+
+  function closeSidebar() {
+    document.body.classList.remove("sidebar-open");
+  }
+
+  /* =====================================
+     PDF / TXT
+  ===================================== */
+  let pdfLibraryPromise = null;
+
+  function loadPDFLibrary() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (pdfLibraryPromise) return pdfLibraryPromise;
+
+    pdfLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+
+      script.onload = () => {
+        if (!window.pdfjsLib) { reject(new Error("PDF_LIBRARY_UNAVAILABLE")); return; }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve(window.pdfjsLib);
+      };
+
+      script.onerror = () => reject(new Error("PDF_LIBRARY_LOAD_FAILED"));
+      document.head.append(script);
     });
+
+    return pdfLibraryPromise;
   }
 
-  // Build system prompt (no modes)
-  const languageNames = {
-    en: "English",
-    roman: "Roman Urdu using Latin letters",
-    ur: "Urdu script",
-    pa: "Punjabi in Shahmukhi script",
-    sd: "Sindhi",
-    ps: "Pashto",
-  };
+  async function extractPDFText(file) {
+    const pdfjs = await loadPDFLibrary();
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
 
-  const selectedLanguage =
-    languageNames[language] || "the same language as the user";
+    const pages = [];
+    const maxPages = Math.min(pdf.numPages, CONFIG.MAX_PDF_PAGES);
 
-  const systemPrompt =
-    "You are Zubaan AI, a helpful AI assistant for people in Pakistan. " +
-    "Be accurate, respectful, clear, and useful. " +
-    "Reply in " + selectedLanguage + ". " +
-    "For Roman Urdu, use natural Urdu written in Latin letters. " +
-    "For educational questions, explain step by step. " +
-    "Never invent facts or claim certainty when unsure. " +
-    "For medical, legal, or political matters, clearly communicate uncertainty. " +
-    "If the user attaches a document, use it as context but do not claim to have read anything beyond the provided text.";
+    for (let i = 1; i <= maxPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str || "").join(" ");
+      pages.push(pageText);
+    }
 
-  // Build conversation contents
-  const contents = [];
+    return { text: pages.join("\n\n"), pageCount: pdf.numPages };
+  }
 
-  if (Array.isArray(history)) {
-    history.slice(-MAX_HISTORY_TURNS).forEach((item) => {
-      if (
-        item &&
-        ["user", "model"].includes(item.role) &&
-        typeof item.text === "string" &&
-        item.text.trim()
-      ) {
-        contents.push({
-          role: item.role,
-          parts: [{ text: item.text.slice(0, MAX_MESSAGE_LENGTH) }],
-        });
+  async function handleFileSelect(file) {
+    if (!file) return;
+
+    if (file.size > CONFIG.MAX_FILE_SIZE) {
+      showToast(t("attachmentTooLarge"), "warning");
+      return;
+    }
+
+    const isPDF = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    const isTXT = file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt");
+
+    if (!isPDF && !isTXT) {
+      showToast(t("attachmentType"), "warning");
+      return;
+    }
+
+    showToast(t("attachmentProcessing"));
+
+    try {
+      let text = "";
+      let pageCount = 0;
+
+      if (isPDF) {
+        const result = await extractPDFText(file);
+        text = result.text;
+        pageCount = result.pageCount;
+      } else {
+        text = await file.text();
+      }
+
+      if (!text.trim()) {
+        showToast(isPDF ? t("attachmentScanned") : t("attachmentEmpty"), "warning");
+        return;
+      }
+
+      const maxTextLength = 60000;
+      if (text.length > maxTextLength) {
+        text = text.slice(0, maxTextLength) + "\n\n[Document truncated due to length]";
+      }
+
+      state.attachment = {
+        name: file.name,
+        text,
+        pageCount,
+        size: file.size
+      };
+
+      renderAttachmentPreview();
+      showToast(t("attachmentReady"));
+
+    } catch (error) {
+      console.error(error);
+      showToast(t("attachmentFailed"), "warning");
+    }
+  }
+
+  function renderAttachmentPreview() {
+    const preview = $("#attachmentPreview");
+    const name = $("#attachmentName");
+    const size = $("#attachmentSize");
+
+    if (!preview) return;
+
+    if (!state.attachment) {
+      preview.hidden = true;
+      return;
+    }
+
+    preview.hidden = false;
+    if (name) name.textContent = state.attachment.name;
+    if (size) {
+      const kb = Math.round(state.attachment.size / 1024);
+      size.textContent = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
+    }
+  }
+
+  function clearAttachment() {
+    state.attachment = null;
+    renderAttachmentPreview();
+    const fileInput = $("#fileInput");
+    if (fileInput) fileInput.value = "";
+  }
+
+  /* =====================================
+     VOICE
+  ===================================== */
+  let recognition = null;
+  let voiceActive = false;
+
+  function setupVoiceInput() {
+    const voiceButton = $("#voiceButton");
+    if (!voiceButton) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      voiceButton.addEventListener("click", () => showToast(t("errVoice"), "warning"));
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      voiceActive = true;
+      voiceButton.classList.add("recording");
+      const hint = $("#composerHint");
+      if (hint) hint.textContent = t("listening");
+    };
+
+    recognition.onresult = event => {
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript;
+        }
+      }
+
+      if (finalText) {
+        const input = $("#question");
+        if (input) {
+          input.value = (input.value + " " + finalText).trim();
+          updateCharacterCount();
+        }
+      }
+    };
+
+    recognition.onerror = () => showToast(t("errVoiceFail"), "warning");
+
+    recognition.onend = () => {
+      voiceActive = false;
+      voiceButton.classList.remove("recording");
+      const hint = $("#composerHint");
+      if (hint) hint.textContent = t("hint");
+
+      const input = $("#question");
+      if (input && input.value.trim()) {
+        sendMessage(input.value.trim());
+      }
+    };
+
+    voiceButton.addEventListener("click", () => {
+      if (voiceActive) { recognition.stop(); return; }
+      try {
+        recognition.lang = LANGUAGES[state.lang]?.speech || "ur-PK";
+        recognition.start();
+      } catch {
+        showToast(t("errVoiceFail"), "warning");
       }
     });
   }
 
-  // Build the final user turn (with optional attachment)
-  let userText = message.trim();
+  /* =====================================
+     LANGUAGE / TEXT
+  ===================================== */
+  function updateLanguage(language) {
+    if (!LANGUAGES[language]) return;
 
-  if (attachment && typeof attachment === "object" && typeof attachment.text === "string") {
-    const attachmentText = attachment.text.slice(0, MAX_ATTACHMENT_LENGTH);
-    const attachmentName = String(attachment.name || "document").slice(0, 200);
+    state.lang = language;
+    safeStoreSet(STORAGE.language, language);
 
-    userText =
-      `[Attached document: ${attachmentName}]\n\n` +
-      `--- DOCUMENT START ---\n` +
-      attachmentText +
-      `\n--- DOCUMENT END ---\n\n` +
-      `User question: ${userText}`;
+    document.documentElement.lang = language === "roman" ? "en" : language;
+    document.documentElement.dir = LANGUAGES[language].direction;
+
+    const welcomeTitle = $("#welcomeTitle");
+    const welcomeIntro = $("#welcomeIntro");
+    const input = $("#question");
+    const hint = $("#composerHint");
+
+    if (welcomeTitle) welcomeTitle.textContent = t("welcome");
+    if (welcomeIntro) welcomeIntro.textContent = t("welcomeIntro");
+    if (input) input.placeholder = t("placeholder");
+    if (hint) hint.textContent = t("hint");
+
+    renderHistory();
+    renderMessages();
+    showToast(t("toastLang"));
   }
 
-  contents.push({
-    role: "user",
-    parts: [{ text: userText }],
-  });
-
-  // ----- Provider 1: Gemini -----
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    try {
-      const reply = await callGemini(geminiKey, systemPrompt, contents);
-      return respond(200, { reply, provider: "gemini" });
-    } catch (err) {
-      console.error("Gemini failed:", err.message);
-    }
+  function toggleLargeText() {
+    state.largeText = !state.largeText;
+    document.body.classList.toggle("large-text", state.largeText);
+    safeStoreSet(STORAGE.largeText, state.largeText);
   }
 
-  // ----- Provider 2: Groq -----
-  const groqKey = process.env.GROQ_API_KEY;
-  if (groqKey) {
-    try {
-      const reply = await callGroq(groqKey, systemPrompt, contents);
-      return respond(200, { reply, provider: "groq" });
-    } catch (err) {
-      console.error("Groq failed:", err.message);
-    }
+  /* =====================================
+     ABOUT
+  ===================================== */
+  function openAbout() {
+    const dialog = $("#aboutDialog");
+    if (!dialog) return;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.hidden = false;
   }
 
-  // ----- Provider 3: OpenRouter -----
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
-  if (openrouterKey) {
-    try {
-      const reply = await callOpenRouter(openrouterKey, systemPrompt, contents);
-      return respond(200, { reply, provider: "openrouter" });
-    } catch (err) {
-      console.error("OpenRouter failed:", err.message);
-    }
+  function closeAbout() {
+    const dialog = $("#aboutDialog");
+    if (!dialog) return;
+    if (typeof dialog.close === "function") dialog.close();
+    else dialog.hidden = true;
   }
 
-  return respond(502, {
-    error: "All AI providers are currently unavailable. Please try again later.",
-  });
-};
+  /* =====================================
+     EVENTS
+  ===================================== */
+  function bindEvents() {
+    $("#newChat")?.addEventListener("click", startNewChat);
+    $("#headerNewChat")?.addEventListener("click", startNewChat);
+    $("#clearHistory")?.addEventListener("click", clearChatHistory);
 
-/* =========================================
-   PROVIDER IMPLEMENTATIONS
-========================================= */
+    $("#openSidebar")?.addEventListener("click", openSidebar);
+    $("#closeSidebar")?.addEventListener("click", closeSidebar);
 
-async function callGemini(apiKey, systemPrompt, contents) {
-  // gemini-1.5-flash has 1,500 free requests/day
-  const model = "gemini-1.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    $("#helpButton")?.addEventListener("click", openAbout);
+    $("#closeAbout")?.addEventListener("click", closeAbout);
+    $("#largeText")?.addEventListener("click", toggleLargeText);
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+    $("#language")?.addEventListener("change", e => updateLanguage(e.target.value));
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1200,
-        },
-      }),
-      signal: controller.signal,
+    $("#attachButton")?.addEventListener("click", () => $("#fileInput")?.click());
+    $("#fileInput")?.addEventListener("change", e => {
+      const file = e.target.files?.[0];
+      if (file) handleFileSelect(file);
+    });
+    $("#removeAttachment")?.addEventListener("click", clearAttachment);
+
+    $("#questionForm")?.addEventListener("submit", event => {
+      event.preventDefault();
+      const input = $("#question");
+      if (input) sendMessage(input.value);
     });
 
-    const data = await response.json();
+    $("#question")?.addEventListener("input", updateCharacterCount);
 
-    if (!response.ok) {
-      throw new Error(data.error?.message || `Gemini HTTP ${response.status}`);
-    }
-
-    const reply = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || "")
-      .join("")
-      .trim();
-
-    if (!reply) {
-      throw new Error("Gemini returned no text.");
-    }
-
-    return reply;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function callGroq(apiKey, systemPrompt, contents) {
-  const model = "llama-3.1-8b-instant";
-  const url = "https://api.groq.com/openai/v1/chat/completions";
-
-  // Convert Gemini-style contents to OpenAI-style messages
-  const messages = [
-    { role: "system", content: systemPrompt },
-    ...contents.map((item) => ({
-      role: item.role === "model" ? "assistant" : "user",
-      content: item.parts.map((p) => p.text).join(""),
-    })),
-  ];
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1200,
-      }),
-      signal: controller.signal,
+    $("#question")?.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        $("#questionForm")?.requestSubmit();
+      }
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || `Groq HTTP ${response.status}`);
-    }
-
-    const reply = data.choices?.[0]?.message?.content?.trim();
-
-    if (!reply) {
-      throw new Error("Groq returned no text.");
-    }
-
-    return reply;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function callOpenRouter(apiKey, systemPrompt, contents) {
-  // A reliable free model on OpenRouter
-  const model = "meta-llama/llama-3.3-70b-instruct:free";
-  const url = "https://openrouter.ai/api/v1/chat/completions";
-
-  const messages = [
-    { role: "system", content: systemPrompt },
-    ...contents.map((item) => ({
-      role: item.role === "model" ? "assistant" : "user",
-      content: item.parts.map((p) => p.text).join(""),
-    })),
-  ];
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://zubaan-ai.netlify.app",
-        "X-Title": "Zubaan AI",
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1200,
-      }),
-      signal: controller.signal,
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeSidebar();
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || `OpenRouter HTTP ${response.status}`);
-    }
-
-    const reply = data.choices?.[0]?.message?.content?.trim();
-
-    if (!reply) {
-      throw new Error("OpenRouter returned no text.");
-    }
-
-    return reply;
-  } finally {
-    clearTimeout(timer);
   }
-}
+
+  /* =====================================
+     INIT
+  ===================================== */
+  function initializeApp() {
+    loadSavedData();
+
+    const languageSelect = $("#language");
+    if (languageSelect) languageSelect.value = state.lang;
+
+    document.body.classList.toggle("large-text", state.largeText);
+    document.documentElement.dir = LANGUAGES[state.lang].direction;
+    document.documentElement.lang = state.lang === "roman" ? "en" : state.lang;
+
+    const welcomeTitle = $("#welcomeTitle");
+    const welcomeIntro = $("#welcomeIntro");
+    const input = $("#question");
+    const hint = $("#composerHint");
+
+    if (welcomeTitle) welcomeTitle.textContent = t("welcome");
+    if (welcomeIntro) welcomeIntro.textContent = t("welcomeIntro");
+    if (input) input.placeholder = t("placeholder");
+    if (hint) hint.textContent = t("hint");
+
+    bindEvents();
+    setupVoiceInput();
+
+    renderHistory();
+    renderMessages();
+    updateCharacterCount();
+
+    window.addEventListener("online", () => showToast("Internet connection restored."));
+    window.addEventListener("offline", () => showToast(t("errOffline"), "warning"));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeApp, { once: true });
+  } else {
+    initializeApp();
+  }
+
+})();
