@@ -1,27 +1,146 @@
+
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const GROQ_MODEL = "openai/gpt-oss-20b";
+
+const TIMEOUT_MS = 12000;
+
+const languages = {
+  en: "English",
+  English: "English",
+  ur: "Urdu script",
+  Urdu: "Urdu script",
+  roman: "Roman Urdu using Latin letters",
+  "Roman Urdu": "Roman Urdu using Latin letters",
+  pa: "Punjabi in Shahmukhi script",
+  Punjabi: "Punjabi in Shahmukhi script",
+  sd: "Sindhi",
+  Sindhi: "Sindhi",
+  ps: "Pashto",
+  Pashto: "Pashto"
+};
+
+function getHistory(history) {
+  if (!Array.isArray(history)) return [];
+
+  return history.slice(-12).filter((item) =>
+    item &&
+    ["user", "model"].includes(item.role) &&
+    typeof (item.text || item.content) === "string"
+  );
+}
+
+async function requestWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function askGemini(apiKey, systemPrompt, history, message) {
+  const contents = history.map((item) => ({
+    role: item.role,
+    parts: [{ text: (item.text || item.content).slice(0, 4000) }]
+  }));
+
+  contents.push({
+    role: "user",
+    parts: [{ text: message }]
+  });
+
+  const response = await requestWithTimeout(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800
+        }
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Gemini ${response.status}: ${data.error?.message || "Request failed"}`);
+  }
+
+  const reply = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join("")
+    .trim();
+
+  if (!reply) throw new Error("Gemini returned an empty response.");
+
+  return reply;
+}
+
+async function askGroq(apiKey, systemPrompt, history, message) {
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history.map((item) => ({
+      role: item.role === "model" ? "assistant" : "user",
+      content: (item.text || item.content).slice(0, 4000)
+    })),
+    { role: "user", content: message }
+  ];
+
+  const response = await requestWithTimeout(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages,
+        temperature: 0.7,
+        max_completion_tokens: 800
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Groq ${response.status}: ${data.error?.message || "Request failed"}`);
+  }
+
+  const reply = data.choices?.[0]?.message?.content?.trim();
+
+  if (!reply) throw new Error("Groq returned an empty response.");
+
+  return reply;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "POST requests only."
-    });
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    console.error("GEMINI_API_KEY is missing.");
-
-    return res.status(500).json({
-      error: "AI configuration is missing."
-    });
+    return res.status(405).json({ error: "POST requests only." });
   }
 
   try {
     const body =
-      typeof req.body === "string"
-        ? JSON.parse(req.body)
-        : req.body || {};
+      typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
 
     const { message, language, history } = body;
 
@@ -35,29 +154,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const languages = {
-      en: "English",
-      English: "English",
-      ur: "Urdu script",
-      Urdu: "Urdu script",
-      roman: "Roman Urdu using Latin letters",
-      "Roman Urdu": "Roman Urdu using Latin letters",
-      pa: "Punjabi in Shahmukhi script",
-      Punjabi: "Punjabi in Shahmukhi script",
-      sd: "Sindhi",
-      Sindhi: "Sindhi",
-      ps: "Pashto",
-      Pashto: "Pashto"
-    };
-
     const selectedLanguage =
       languages[language] || "the same language as the user";
 
     const systemPrompt = `
 You are Zubaan AI, a helpful general-purpose AI assistant.
 
-You can help with education, programming, business,
-writing, research, technology, science and everyday questions.
+Help with education, programming, business, writing, research,
+technology, science and everyday questions.
 
 There are no separate assistant modes.
 
@@ -67,125 +171,68 @@ For Roman Urdu, use natural Urdu written in Latin letters.
 For Urdu, use proper Urdu script.
 For Punjabi, use Shahmukhi script.
 
-Maintain the user's selected language throughout the conversation.
-
+Maintain the selected language throughout the conversation.
 Be accurate, helpful, respectful and clear.
 Explain complicated subjects step by step when useful.
 Never invent facts or pretend to know something you do not know.
 `;
 
-    const contents = [];
+    const cleanHistory = getHistory(history);
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
 
-    if (Array.isArray(history)) {
-      history.slice(-12).forEach((item) => {
-        if (
-          item &&
-          ["user", "model"].includes(item.role) &&
-          typeof (item.text || item.content) === "string"
-        ) {
-          contents.push({
-            role: item.role,
-            parts: [
-              {
-                text: (item.text || item.content).slice(0, 4000)
-              }
-            ]
-          });
-        }
+    if (!geminiKey && !groqKey) {
+      return res.status(500).json({
+        error: "AI configuration is missing."
       });
     }
 
-    contents.push({
-      role: "user",
-      parts: [{ text: message.trim() }]
-    });
+    // Try Gemini first.
+    if (geminiKey) {
+      try {
+        const reply = await askGemini(
+          geminiKey,
+          systemPrompt,
+          cleanHistory,
+          message.trim()
+        );
 
-    const model =process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
-
-    const controller = new AbortController();
-
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 30000);
-
-    let response;
-
-    try {
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey
-          },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systemPrompt }]
-            },
-            contents,
-            generationConfig: {
-              temperature: 0.7,
-             maxOutputTokens: 800
-            }
-          }),
-          signal: controller.signal
-        }
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error(
-        "Gemini API error:",
-        response.status,
-        data.error?.message || "Unknown error"
-      );
-
-      if (response.status === 429) {
-        return res.status(429).json({
-          error: "AI usage limit reached. Please try again later."
+        return res.status(200).json({
+          reply,
+          answer: reply,
+          provider: "gemini"
         });
+      } catch (error) {
+        console.error("Gemini failed; trying fallback:", error.message);
       }
+    }
 
-      if (response.status === 404) {
-        return res.status(502).json({
-          error: "Gemini model unavailable. Check GEMINI_MODEL."
+    // Use Groq if Gemini is unavailable or fails.
+    if (groqKey) {
+      try {
+        const reply = await askGroq(
+          groqKey,
+          systemPrompt,
+          cleanHistory,
+          message.trim()
+        );
+
+        return res.status(200).json({
+          reply,
+          answer: reply,
+          provider: "groq"
         });
+      } catch (error) {
+        console.error("Groq fallback failed:", error.message);
       }
-
-      return res.status(502).json({
-        error: "AI request failed. Please try again."
-      });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || "")
-      .join("")
-      .trim();
-
-    if (!reply) {
-      return res.status(502).json({
-        error: "AI returned an empty response."
-      });
-    }
-
-    return res.status(200).json({
-      reply,
-      answer: reply
+    return res.status(502).json({
+      error: "AI is temporarily unavailable. Please try again."
     });
 
   } catch (error) {
     console.error("Zubaan AI error:", error.message);
-
-    if (error.name === "AbortError") {
-      return res.status(504).json({
-        error: "AI request timed out. Please try again."
-      });
-    }
 
     return res.status(500).json({
       error: "Something went wrong. Please try again."
