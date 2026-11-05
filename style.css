@@ -882,3 +882,48 @@ body.large-text .welcome-container p { font-size: 14px; }
 @media (hover: none) {
   .history-delete { opacity: 1; }
 }
+/* =========================================
+   RTL SUPPORT
+========================================= */
+
+[dir="rtl"] .chat-message.user {
+  align-self: flex-start;
+}
+
+[dir="rtl"] .chat-message.assistant {
+  align-self: flex-end;
+}
+
+[dir="rtl"] .message-content {
+  text-align: right;
+}
+
+[dir="rtl"] .chat-message pre,
+[dir="rtl"] .chat-message code {
+  direction: ltr;
+  text-align: left;
+}
+
+[dir="rtl"] .composer-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .composer-hint {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+[dir="rtl"] .app-footer {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .footer-left,
+[dir="rtl"] .footer-right {
+  text-align: center;
+}
+
+[dir="rtl"] .chat-message ul,
+[dir="rtl"] .chat-message ol {
+  padding-left: 0;
+  padding-right: 20px;
+}
