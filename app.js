@@ -12,7 +12,7 @@
      CONFIG
   ===================================== */
   const CONFIG = {
-    API_URL: "/.netlify/functions/chat",
+ API_URL: "/api/chat",
     API_TIMEOUT: 30000,
     TOAST_DURATION: 3500,
     MAX_MESSAGE_LENGTH: 4000,
