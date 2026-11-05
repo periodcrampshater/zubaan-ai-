@@ -100,8 +100,7 @@ Never invent facts or pretend to know something you do not know.
       parts: [{ text: message.trim() }]
     });
 
-    const model =
-     process.env.GEMINI_MODEL || "gemini-3.8-flash";
+    const model =process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
     const controller = new AbortController();
 
