@@ -127,7 +127,7 @@ Never invent facts or pretend to know something you do not know.
             contents,
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 1200
+             maxOutputTokens: 800
             }
           }),
           signal: controller.signal
