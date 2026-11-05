@@ -1,7 +1,6 @@
-
 "use strict";
 
-const CACHE_NAME = "zubaan-ai-shell-v6";
+const CACHE_NAME = "zubaan-ai-shell-v7";
 
 const APP_FILES = [
   "./",
@@ -12,7 +11,6 @@ const APP_FILES = [
   "./icon.svg"
 ];
 
-// Install the new version and cache the app shell.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,7 +19,6 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Remove outdated caches when this version activates.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
@@ -36,7 +33,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Keep AI API requests online-only; never cache their responses.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
@@ -48,7 +44,6 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.includes("/.netlify/functions/")) return;
 
-  // For page navigation, prefer the latest version from the network.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -59,31 +54,24 @@ self.addEventListener("fetch", (event) => {
               .then((cache) => cache.put("./index.html", copy))
               .catch(() => {});
           }
-
           return response;
         })
         .catch(async () => {
-          return (
-            await caches.match("./index.html")
-          ) || Response.error();
+          return (await caches.match("./index.html")) || Response.error();
         })
     );
-
     return;
   }
 
-  // For app assets, use the network first and fall back to cache.
   event.respondWith(
     fetch(request)
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
-
           caches.open(CACHE_NAME)
             .then((cache) => cache.put(request, copy))
             .catch(() => {});
         }
-
         return response;
       })
       .catch(async () => {
