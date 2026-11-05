@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "zubaan-ai-shell-v7";
+const CACHE_NAME = "zubaan-ai-shell-v9";
 
 const APP_FILES = [
   "./",
