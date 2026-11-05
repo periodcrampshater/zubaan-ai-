@@ -1087,7 +1087,7 @@
     counter.textContent = `${input.value.length}/${CONFIG.MAX_MESSAGE_LENGTH}`;
   }
 
-  /* =====================================
+   /* =====================================
      SIDEBAR
   ===================================== */
   function openSidebar() {
@@ -1096,6 +1096,25 @@
 
   function closeSidebar() {
     document.body.classList.remove("sidebar-open");
+  }
+
+  function isSidebarOpen() {
+    return document.body.classList.contains("sidebar-open");
+  }
+
+  function handleOutsideClick(event) {
+    if (!isSidebarOpen()) return;
+
+    const sidebar = $("#sidebar");
+    if (!sidebar) return;
+
+    // Click inside sidebar → do nothing
+    if (sidebar.contains(event.target)) return;
+
+    // Click on the menu (hamburger) button → let its own handler toggle
+    if (event.target.closest("#openSidebar")) return;
+
+    closeSidebar();
   }
 
   /* =====================================
@@ -1361,6 +1380,8 @@
         $("#questionForm")?.requestSubmit();
       }
     });
+
+       document.addEventListener("click", handleOutsideClick);
 
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") closeSidebar();
